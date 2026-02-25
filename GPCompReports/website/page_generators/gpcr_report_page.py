@@ -64,18 +64,19 @@ def _prepare_snake_plot(gpcr_id, delta_df, var_df, sig_threshold):
         return None, None
 
 
-def generate_all_reports(env: Environment, store, output_dir):
-    """Generate reports/{gpcr_id}.html for all GPCRs."""
+def generate_all_reports(env: Environment, store, output_dir, limit=None):
+    """Generate reports/{gpcr_id}.html for all GPCRs (or first N if limit set)."""
     reports_dir = output_dir / 'reports'
     reports_dir.mkdir(parents=True, exist_ok=True)
 
-    # Pre-compute rankings
+    # Pre-compute rankings from ALL data (so ranks are accurate even with limit)
     info_df = store.get_all_info_df()
     info_df = info_df.sort_values('sum_abs_delta', ascending=False).reset_index(drop=True)
     rank_map = {row['gpcr_id']: idx + 1 for idx, row in info_df.iterrows()}
 
     template = env.get_template('gpcr_report.html')
     total = len(store.gpcr_ids)
+    gpcr_ids = store.gpcr_ids[:limit] if limit else store.gpcr_ids
 
     snake_ok = _OUROBOROS_OK and _BUILDER_OK
     if snake_ok:
@@ -83,9 +84,10 @@ def generate_all_reports(env: Environment, store, output_dir):
     else:
         print(f"  Snake plots disabled (ouroboros or builder not available)")
 
-    for i, gid in enumerate(store.gpcr_ids):
+    gen_total = len(gpcr_ids)
+    for i, gid in enumerate(gpcr_ids):
         if (i + 1) % 50 == 0 or i == 0:
-            print(f"  Generating reports: {i + 1}/{total}...")
+            print(f"  Generating reports: {i + 1}/{gen_total}...")
 
         info = store.gpcr_info[gid]
         delta_df = store.delta_data.get(gid, pd.DataFrame())
@@ -190,7 +192,7 @@ def generate_all_reports(env: Environment, store, output_dir):
         out_path = reports_dir / f'{gid}.html'
         out_path.write_text(html, encoding='utf-8')
 
-    print(f"  Generated: {total} report pages")
+    print(f"  Generated: {gen_total} report pages")
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +248,7 @@ def _make_scatter_plot(delta_df, name):
         mode='markers',
         marker=dict(
             color=delta_df['delta_rrcs'].tolist(),
-            colorscale='RdBu_r',
+            colorscale='RdBu',
             showscale=True,
             colorbar=dict(title='ΔRRCS'),
             size=5,
@@ -319,7 +321,7 @@ def _make_residue_changes(delta_df, annot_map, name):
         marker=dict(
             size=(df_c['max_abs'] / df_c['max_abs'].max() * 15 + 3).tolist(),
             color=df_c['mean_change'].tolist(),
-            colorscale='RdBu_r',
+            colorscale='RdBu',
             showscale=True,
             colorbar=dict(title='Mean ΔRRCS'),
             opacity=0.7,

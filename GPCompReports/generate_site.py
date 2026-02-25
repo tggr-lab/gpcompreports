@@ -25,6 +25,8 @@ def main():
                         help='Batch analysis directory')
     parser.add_argument('--metadata', type=str, default=None,
                         help='Path to class_A_all.csv')
+    parser.add_argument('--limit', type=int, default=None,
+                        help='Only generate N individual reports (for testing)')
     args = parser.parse_args()
 
     start = time.time()
@@ -33,6 +35,7 @@ def main():
         batch_dir=args.batch_dir,
         metadata_csv=args.metadata,
         output_dir=args.output,
+        limit=args.limit,
     )
     generator.run()
 

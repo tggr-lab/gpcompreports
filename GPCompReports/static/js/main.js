@@ -1,4 +1,4 @@
-/* GPCompReports — Client-side search, filter, sort, pagination */
+/* GPCompReports — Client-side search, filter, sort, pagination + Material interactions */
 
 (function() {
     'use strict';
@@ -137,7 +137,7 @@
         const pageData = filteredData.slice(start, start + perPage);
 
         tbody.innerHTML = pageData.map((d, i) => `
-            <tr>
+            <tr onclick="window.location='../reports/${d.gpcr_id}.html'" class="clickable-row">
                 <td>${start + i + 1}</td>
                 <td><a href="../reports/${d.gpcr_id}.html">${d.uniprot_name}</a></td>
                 <td>${d.gene_name}</td>
@@ -376,8 +376,53 @@ function exportTableToCSV(tableId, filename) {
     document.body.removeChild(link);
 }
 
-// Auto-init pagination for report tables on DOMContentLoaded
+/* ===== Collapsible Cards ===== */
+
+function toggleCollapse(cardId) {
+    var body = document.getElementById(cardId + '-body');
+    var icon = document.getElementById(cardId + '-icon');
+    if (!body) return;
+    body.classList.toggle('collapsed');
+    if (icon) {
+        icon.textContent = body.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+    }
+}
+
+/* ===== Tooltip Smart Repositioning ===== */
+
+function initTooltips() {
+    var tooltipEls = document.querySelectorAll('[data-tooltip]');
+    tooltipEls.forEach(function(el) {
+        el.addEventListener('mouseenter', function() {
+            var rect = el.getBoundingClientRect();
+            var viewW = window.innerWidth;
+
+            // Reset positioning classes
+            el.classList.remove('tooltip-bottom', 'tooltip-left', 'tooltip-right');
+
+            // Flip to bottom if too close to top
+            if (rect.top < 80) {
+                el.classList.add('tooltip-bottom');
+            }
+
+            // Shift right if too close to left edge
+            if (rect.left < 160) {
+                el.classList.add('tooltip-right');
+            }
+
+            // Shift left if too close to right edge
+            if (viewW - rect.right < 160) {
+                el.classList.add('tooltip-left');
+            }
+        });
+    });
+}
+
+// Auto-init pagination for report tables and tooltips on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Materialize components (sidenav, etc.)
+    if (typeof M !== 'undefined') M.AutoInit();
+
     var tables = document.querySelectorAll('table[id]');
     tables.forEach(function(table) {
         var tableId = table.id;
@@ -386,4 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             initPagination(tableId, 25);
         }
     });
+
+    // Initialize tooltip repositioning
+    initTooltips();
 });

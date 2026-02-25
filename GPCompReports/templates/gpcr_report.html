@@ -140,9 +140,9 @@
         </div>
         {% if uniprot_id %}
         <div class="db-links">
-            <a class="db-link" href="https://www.uniprot.org/uniprotkb/{{ uniprot_id }}" target="_blank">UniProt</a>
-            <a class="db-link" href="https://gpcrdb.org/protein/{{ gpcr_id }}/" target="_blank">GPCRdb</a>
-            <a class="db-link" href="https://www.ncbi.nlm.nih.gov/gene/?term={{ uniprot_id }}[Accession]" target="_blank">NCBI Gene</a>
+            <a class="db-link" href="https://www.uniprot.org/uniprotkb/{{ uniprot_id }}" target="_blank" data-tooltip="UniProt protein knowledgebase entry">UniProt</a>
+            <a class="db-link" href="https://gpcrdb.org/protein/{{ gpcr_id }}/" target="_blank" data-tooltip="GPCRdb receptor page with generic numbering">GPCRdb</a>
+            <a class="db-link" href="https://www.ncbi.nlm.nih.gov/gene/?term={{ uniprot_id }}[Accession]" target="_blank" data-tooltip="NCBI Gene database entry">NCBI Gene</a>
         </div>
         {% endif %}
     </div>
@@ -151,19 +151,19 @@
     <!-- Summary stats                                                      -->
     <!-- ================================================================== -->
     <div class="stats-grid" style="margin-top:0; margin-bottom:1.5rem;">
-        <div class="stat-card">
+        <div class="stat-card" data-tooltip="Residue pairs within 4.5Å in either active or inactive structure">
             <div class="stat-number">{{ total_contacts }}</div>
             <div class="stat-label">Total Contact Pairs</div>
         </div>
-        <div class="stat-card accent">
+        <div class="stat-card accent" data-tooltip="Contacts where |ΔRRCS| ≥ {{ '%.1f'|format(sig_threshold) }} (mean + 2×std)">
             <div class="stat-number">{{ significant_changes }}</div>
             <div class="stat-label">Significant Changes</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-tooltip="Largest positive ΔRRCS — contact strengthened most in active state">
             <div class="stat-number">{{ "%.2f"|format(max_increase) }}</div>
             <div class="stat-label">Max Increase</div>
         </div>
-        <div class="stat-card accent">
+        <div class="stat-card accent" data-tooltip="Largest negative ΔRRCS — contact weakened most in active state">
             <div class="stat-number">{{ "%.2f"|format(max_decrease) }}</div>
             <div class="stat-label">Max Decrease</div>
         </div>
@@ -173,15 +173,20 @@
     <!-- Methods                                                            -->
     <!-- ================================================================== -->
     <div class="card">
-        <div class="card-header">Methods</div>
-        <div class="info-box" style="margin-top:0;">
-            <p><strong>RRCS Analysis:</strong> Residue-Residue Contact Scores were calculated for each conformational
-            state based on inter-atomic distances. Changes (ΔRRCS) were computed by comparing active and inactive
-            AlphaFold-predicted structures.</p>
-            <p><strong>Significance Threshold:</strong> |ΔRRCS| &ge; {{ "%.1f"|format(sig_threshold) }}
-            (mean + 2&times;std of |ΔRRCS|)</p>
-            <p><strong>Data Sources:</strong> Structures from AlphaFold multistate models; variants from gnomAD v4;
-            pathogenicity from AlphaMissense; conservation from ProtVar/UniProt; TM domains from GPCRdb.</p>
+        <div class="card-header card-header-collapsible" onclick="toggleCollapse('methods')">
+            <span>Methods</span>
+            <span class="collapse-icon" id="methods-icon">&#x25BC;</span>
+        </div>
+        <div class="card-body-collapsible" id="methods-body">
+            <div class="info-box" style="margin-top:0;">
+                <p><strong>RRCS Analysis:</strong> Residue-Residue Contact Scores were calculated for each conformational
+                state based on inter-atomic distances. Changes (ΔRRCS) were computed by comparing active and inactive
+                AlphaFold-predicted structures.</p>
+                <p><strong>Significance Threshold:</strong> |ΔRRCS| &ge; {{ "%.1f"|format(sig_threshold) }}
+                (mean + 2&times;std of |ΔRRCS|)</p>
+                <p><strong>Data Sources:</strong> Structures from AlphaFold multistate models; variants from gnomAD v4;
+                pathogenicity from AlphaMissense; conservation from ProtVar/UniProt; TM domains from GPCRdb.</p>
+            </div>
         </div>
     </div>
 
@@ -201,14 +206,14 @@
         </div>
 
         <div class="snake-toolbar">
-            <button class="snake-btn active" data-view="delta_rrcs" onclick="switchSnakeView('delta_rrcs')">Delta RRCS</button>
-            <button class="snake-btn" data-view="active_rrcs" onclick="switchSnakeView('active_rrcs')">Active RRCS</button>
-            <button class="snake-btn" data-view="inactive_rrcs" onclick="switchSnakeView('inactive_rrcs')">Inactive RRCS</button>
-            <button class="snake-btn" data-view="variants" onclick="switchSnakeView('variants')">Variants</button>
-            <button class="snake-btn" data-view="conservation" onclick="switchSnakeView('conservation')">Conservation</button>
-            <button class="snake-btn" data-view="alphamissense" onclick="switchSnakeView('alphamissense')">AlphaMissense</button>
-            <button class="snake-btn" data-view="cfr" onclick="switchSnakeView('cfr')">Core Functional</button>
-            <button class="snake-btn" data-view="aa_properties" onclick="switchSnakeView('aa_properties')">AA Properties</button>
+            <button class="snake-btn active" data-view="delta_rrcs" onclick="switchSnakeView('delta_rrcs')" data-tooltip="Mean ΔRRCS per residue. Blue = active-favoring, Red = inactive-favoring">Delta RRCS</button>
+            <button class="snake-btn" data-view="active_rrcs" onclick="switchSnakeView('active_rrcs')" data-tooltip="RRCS values in the active conformation. Brighter = stronger contacts">Active RRCS</button>
+            <button class="snake-btn" data-view="inactive_rrcs" onclick="switchSnakeView('inactive_rrcs')" data-tooltip="RRCS values in the inactive conformation. Brighter = stronger contacts">Inactive RRCS</button>
+            <button class="snake-btn" data-view="variants" onclick="switchSnakeView('variants')" data-tooltip="Positions with gnomAD variants. Brighter = more variants at position">Variants</button>
+            <button class="snake-btn" data-view="conservation" onclick="switchSnakeView('conservation')" data-tooltip="Sequence conservation across species. Darker = more conserved">Conservation</button>
+            <button class="snake-btn" data-view="alphamissense" onclick="switchSnakeView('alphamissense')" data-tooltip="AlphaMissense pathogenicity prediction. Red = pathogenic, Blue = benign">AlphaMissense</button>
+            <button class="snake-btn" data-view="cfr" onclick="switchSnakeView('cfr')" data-tooltip="Core Functional Residues — positions with conserved activation changes">Core Functional</button>
+            <button class="snake-btn" data-view="aa_properties" onclick="switchSnakeView('aa_properties')" data-tooltip="Amino acid chemical properties: hydrophobic, polar, charged, etc.">AA Properties</button>
             <label class="snake-links-toggle">
                 <input type="checkbox" id="snake-links-cb" onchange="toggleSnakeLinks(this.checked)">
                 Show Contact Links
@@ -243,12 +248,12 @@
         <table id="top-changes-table" class="data-table">
             <thead>
                 <tr>
-                    <th onclick="sortTable('top-changes-table', 0)">Rank</th>
+                    <th onclick="sortTable('top-changes-table', 0)" data-tooltip="Ordered by |ΔRRCS| magnitude">Rank</th>
                     <th onclick="sortTable('top-changes-table', 1)">Residue 1</th>
                     <th onclick="sortTable('top-changes-table', 2)">Residue 2</th>
-                    <th onclick="sortTable('top-changes-table', 3)">Active RRCS</th>
-                    <th onclick="sortTable('top-changes-table', 4)">Inactive RRCS</th>
-                    <th onclick="sortTable('top-changes-table', 5)">ΔRRCS</th>
+                    <th onclick="sortTable('top-changes-table', 3)" data-tooltip="Contact strength in active conformation (0 = no contact)">Active RRCS</th>
+                    <th onclick="sortTable('top-changes-table', 4)" data-tooltip="Contact strength in inactive conformation">Inactive RRCS</th>
+                    <th onclick="sortTable('top-changes-table', 5)" data-tooltip="Active − Inactive: positive = stronger in active, negative = stronger in inactive">ΔRRCS</th>
                     <th onclick="sortTable('top-changes-table', 6)">Magnitude</th>
                 </tr>
             </thead>
@@ -263,7 +268,7 @@
                     <td class="{{ 'positive-delta' if row.delta_rrcs > 0 else 'negative-delta' }}">
                         <strong>{{ "%+.3f"|format(row.delta_rrcs) }}</strong>
                     </td>
-                    <td><span class="badge {{ row.badge_class }}">{{ row.magnitude }}</span></td>
+                    <td><span class="badge {{ row.badge_class }}" data-tooltip="{% if row.magnitude == 'HIGH' %}|ΔRRCS| ≥ 5.0 — major structural rearrangement{% elif row.magnitude == 'MED' %}Threshold ≤ |ΔRRCS| < 5.0 — moderate change{% else %}|ΔRRCS| below significance threshold{% endif %}">{{ row.magnitude }}</span></td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -279,8 +284,8 @@
     <div class="card">
         <div class="card-header">Transmembrane Domain Analysis</div>
         <div class="info-box" style="margin-top:0;">
-            <p><strong>Active-favoring</strong> residues (teal) form stronger contacts in the active state (positive ΔRRCS).
-            <strong>Inactive-favoring</strong> residues (orange) form stronger contacts in the inactive state (negative ΔRRCS).
+            <p><strong>Active-favoring</strong> residues (<span style="color:#1565c0; font-weight:600;">blue</span>) form stronger contacts in the active state (positive ΔRRCS).
+            <strong>Inactive-favoring</strong> residues (<span style="color:#c62828; font-weight:600;">red</span>) form stronger contacts in the inactive state (negative ΔRRCS).
             Only residues with |ΔRRCS| &ge; 3.0 are shown.</p>
         </div>
 
@@ -396,12 +401,12 @@
                     <th onclick="sortTable('variants-table', 0)">Position</th>
                     <th onclick="sortTable('variants-table', 1)">Protein Change</th>
                     <th onclick="sortTable('variants-table', 2)">DNA Change</th>
-                    <th onclick="sortTable('variants-table', 3)">Allele Freq</th>
+                    <th onclick="sortTable('variants-table', 3)" data-tooltip="Population frequency from gnomAD v4: lower = rarer variant">Allele Freq</th>
                     <th onclick="sortTable('variants-table', 4)">Het / Hom</th>
-                    <th onclick="sortTable('variants-table', 5)">ΔRRCS</th>
-                    <th onclick="sortTable('variants-table', 6)">AM Score</th>
+                    <th onclick="sortTable('variants-table', 5)" data-tooltip="Absolute magnitude of change at this position">ΔRRCS</th>
+                    <th onclick="sortTable('variants-table', 6)" data-tooltip="AlphaMissense pathogenicity score: 0 = benign, 1 = pathogenic">AM Score</th>
                     <th onclick="sortTable('variants-table', 7)">Pathogenicity</th>
-                    <th onclick="sortTable('variants-table', 8)">Conservation</th>
+                    <th onclick="sortTable('variants-table', 8)" data-tooltip="Sequence conservation: 0 = highly variable, 1 = perfectly conserved">Conservation</th>
                     <th onclick="sortTable('variants-table', 9)">dbSNP ID</th>
                 </tr>
             </thead>
@@ -439,8 +444,8 @@
             <p><strong>Significance Threshold:</strong> |ΔRRCS| &ge; {{ "%.2f"|format(sig_threshold) }}
             (mean + 2&times;std). Highlighted rows indicate significant changes.</p>
             <p><strong>Color coding:</strong>
-            <span class="positive-delta">Red = stronger in active state</span>,
-            <span class="negative-delta">Blue = stronger in inactive state</span></p>
+            <span class="positive-delta">Blue = active-favoring (stronger contacts in active state)</span>,
+            <span class="negative-delta">Red = inactive-favoring (stronger contacts in inactive state)</span></p>
         </div>
 
         <div class="controls">
@@ -456,10 +461,10 @@
                     <th onclick="sortTable('rrcs-table', 1)">AA1</th>
                     <th onclick="sortTable('rrcs-table', 2)">Res2</th>
                     <th onclick="sortTable('rrcs-table', 3)">AA2</th>
-                    <th onclick="sortTable('rrcs-table', 4)">Active RRCS</th>
-                    <th onclick="sortTable('rrcs-table', 5)">Inactive RRCS</th>
-                    <th onclick="sortTable('rrcs-table', 6)">ΔRRCS</th>
-                    <th onclick="sortTable('rrcs-table', 7)">|ΔRRCS|</th>
+                    <th onclick="sortTable('rrcs-table', 4)" data-tooltip="Contact strength in active conformation (0 = no contact)">Active RRCS</th>
+                    <th onclick="sortTable('rrcs-table', 5)" data-tooltip="Contact strength in inactive conformation">Inactive RRCS</th>
+                    <th onclick="sortTable('rrcs-table', 6)" data-tooltip="Active − Inactive: positive = stronger in active, negative = stronger in inactive">ΔRRCS</th>
+                    <th onclick="sortTable('rrcs-table', 7)" data-tooltip="Absolute magnitude of change">|ΔRRCS|</th>
                 </tr>
             </thead>
             <tbody>
@@ -526,8 +531,11 @@
     <!-- Understanding the Results                                          -->
     <!-- ================================================================== -->
     <div class="card">
-        <div class="card-header">Understanding the Results</div>
-
+        <div class="card-header card-header-collapsible" onclick="toggleCollapse('understanding')">
+            <span>Understanding the Results</span>
+            <span class="collapse-icon" id="understanding-icon">&#x25BC;</span>
+        </div>
+        <div class="card-body-collapsible" id="understanding-body">
         <h3 style="margin: 0.5rem 0; color: var(--primary-dark);">What is RRCS?</h3>
         <div class="info-box">
             <p><strong>Residue-Residue Contact Score (RRCS)</strong> measures how strongly two amino acids interact in a
@@ -558,6 +566,7 @@
             High conservation suggests the position is critical for function.</p>
             <p><strong>Allele Frequency:</strong> How often a variant appears in the population.
             Rare variants (low frequency) may be more likely to be harmful.</p>
+        </div>
         </div>
     </div>
 </div>

@@ -19,11 +19,12 @@ from .page_generators.statistics_page import generate_statistics_page
 class SiteGenerator:
     """Orchestrates the complete site generation pipeline."""
 
-    def __init__(self, batch_dir=None, metadata_csv=None, output_dir=None):
+    def __init__(self, batch_dir=None, metadata_csv=None, output_dir=None, limit=None):
         self.base_dir = Path(__file__).resolve().parent.parent
         self.output_dir = Path(output_dir) if output_dir else self.base_dir / 'output'
         self.template_dir = self.base_dir / 'templates'
         self.static_dir = self.base_dir / 'static'
+        self.limit = limit
 
         self.store = GPCRDataStore(batch_dir=batch_dir, metadata_csv=metadata_csv)
         self.analysis_results = {}
@@ -66,8 +67,11 @@ class SiteGenerator:
         print("  Statistics page...")
         generate_statistics_page(env, self.store, self.analysis_results, self.output_dir)
 
-        print("  Individual reports (283 pages)...")
-        generate_all_reports(env, self.store, self.output_dir)
+        if self.limit:
+            print(f"  Individual reports (limit: {self.limit} pages)...")
+        else:
+            print("  Individual reports (283 pages)...")
+        generate_all_reports(env, self.store, self.output_dir, limit=self.limit)
 
         print("\n" + "=" * 60)
         print("Site generation complete!")
