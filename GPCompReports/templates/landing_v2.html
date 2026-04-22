@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" data-color-mode="light" data-light-theme="light" data-dark-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPCRsynth — Comparative Class A GPCR Contact Analysis</title>
+<meta name="description" content="Residue-residue contact analysis of all {{ total_gpcrs }} human Class A GPCRs across active and inactive conformations.">
+
+<script>
+(function() {
+  var root = document.documentElement;
+  var stored = null;
+  try { stored = localStorage.getItem('gpcrsynth-theme'); } catch (e) {}
+  var mode;
+  if (stored === 'light' || stored === 'dark') {
+    mode = stored;
+  } else {
+    mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  root.setAttribute('data-color-mode', mode);
+  root.setAttribute('data-light-theme', 'light');
+  root.setAttribute('data-dark-theme', 'dark');
+  if (!stored) root.setAttribute('data-theme-auto', '');
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/primer/primitives.css">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/primer/primitives-dark.css">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/landing_v2.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="{{ static_prefix }}index_v2.html" class="wordmark" aria-label="GPCRsynth home">
+      <svg class="wordmark-glyph" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+        <circle cx="7"  cy="16" r="2.2" fill="var(--semantic-inactive)"/>
+        <circle cx="17" cy="16" r="2.2" fill="var(--semantic-active)"/>
+        <path d="M7 16 Q 12 4 17 16" fill="none" stroke="var(--brand-primary)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span class="wordmark-text">GPCRsynth</span>
+    </a>
+    <nav class="topnav" aria-label="Primary">
+      <a href="{{ static_prefix }}index_v2.html" aria-current="page">Home</a>
+      <a href="{{ static_prefix }}browse/index.html">Browse</a>
+      <a href="{{ static_prefix }}statistics.html">Statistics</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme" aria-pressed="false" title="Toggle theme (auto / light / dark)">
+      <svg class="icon icon-auto" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9h-9V3z"/></svg>
+      <svg class="icon icon-sun"  viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2"  x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2"  y1="12" x2="5"  y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.5"  y1="4.5"  x2="6.5"  y2="6.5"/><line x1="17.5" y1="17.5" x2="19.5" y2="19.5"/><line x1="4.5"  y1="19.5" x2="6.5"  y2="17.5"/><line x1="17.5" y1="6.5"  x2="19.5" y2="4.5"/></g></svg>
+      <svg class="icon icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M20 15A8 8 0 0 1 9 4a1 1 0 0 0-1.3-1.1A10 10 0 1 0 21.1 16.3 1 1 0 0 0 20 15z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow">Class A GPCR structural atlas</p>
+      <h1 class="hero-title"><span class="hero-title-serif">GPCRsynth</span></h1>
+      <p class="hero-tagline">
+        Comparative residue–residue contact analysis across <strong>{{ total_gpcrs }}</strong>
+        human Class&nbsp;A GPCRs, with active and inactive AlphaFold conformations overlaid with
+        population variants.
+      </p>
+      <div class="hero-ctas">
+        <a href="{{ static_prefix }}browse/index.html" class="btn btn-primary">Browse {{ total_gpcrs }} GPCRs
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8.78 4.22a.75.75 0 0 0-1.06 1.06l2.22 2.22H2.5a.75.75 0 0 0 0 1.5h7.44l-2.22 2.22a.75.75 0 1 0 1.06 1.06l3.5-3.5a.75.75 0 0 0 0-1.06l-3.5-3.5z"/></svg>
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost">How it works</a>
+      </div>
+    </div>
+    <figure class="hero-visual" aria-label="Schematic of residue–residue contact changes between active and inactive GPCR conformations. Blue arcs are active-favoring contacts; red arcs are inactive-favoring.">
+      <svg viewBox="0 0 400 260" class="hero-svg" role="img">
+        <defs>
+          <linearGradient id="arc-a" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stop-color="var(--semantic-active)" stop-opacity="0.1"/>
+            <stop offset="50%"  stop-color="var(--semantic-active)" stop-opacity="1"/>
+            <stop offset="100%" stop-color="var(--semantic-active)" stop-opacity="0.1"/>
+          </linearGradient>
+          <linearGradient id="arc-i" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stop-color="var(--semantic-inactive)" stop-opacity="0.1"/>
+            <stop offset="50%"  stop-color="var(--semantic-inactive)" stop-opacity="1"/>
+            <stop offset="100%" stop-color="var(--semantic-inactive)" stop-opacity="0.1"/>
+          </linearGradient>
+        </defs>
+        <g class="hero-arcs" stroke-linecap="round" fill="none" stroke-width="2">
+          <path class="arc arc-a" style="--i:0" d="M 40 210 Q 110 60 180 210"  stroke="url(#arc-a)"/>
+          <path class="arc arc-i" style="--i:1" d="M 80 210 Q 150 90 220 210"  stroke="url(#arc-i)"/>
+          <path class="arc arc-a" style="--i:2" d="M 120 210 Q 200 30 280 210" stroke="url(#arc-a)"/>
+          <path class="arc arc-i" style="--i:3" d="M 60 210 Q 150 120 240 210" stroke="url(#arc-i)"/>
+          <path class="arc arc-a" style="--i:4" d="M 180 210 Q 260 80 340 210" stroke="url(#arc-a)"/>
+          <path class="arc arc-i" style="--i:5" d="M 220 210 Q 290 110 360 210" stroke="url(#arc-i)"/>
+          <path class="arc arc-a" style="--i:6" d="M 20 210 Q 90 130 160 210"  stroke="url(#arc-a)"/>
+          <path class="arc arc-i" style="--i:7" d="M 260 210 Q 320 50 380 210" stroke="url(#arc-i)"/>
+        </g>
+        <g class="hero-residues">
+          {% for i in range(20) %}
+          <circle cx="{{ 20 + i * 20 }}" cy="210" r="4.5" class="residue" style="--i:{{ i }}"/>
+          {% endfor %}
+        </g>
+      </svg>
+    </figure>
+  </div>
+  <div class="hero-search">
+    <label class="search-box" for="search-input">
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" class="search-icon"><path fill="currentColor" d="M10.68 11.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04zM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0z"/></svg>
+      <input type="text" id="search-input" placeholder="Search {{ total_gpcrs }} GPCRs — try ADRB2, 5HT2A, CXCR4…" autocomplete="off" spellcheck="false" aria-label="Search GPCRs by name, gene, or family" aria-controls="search-results" aria-autocomplete="list">
+      <kbd class="search-kbd" aria-hidden="true">/</kbd>
+    </label>
+    <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+  </div>
+</section>
+
+<section class="stat-band" aria-label="Database overview">
+  <div class="stat-band-inner">
+    <a class="stat" href="{{ static_prefix }}browse/index.html">
+      <span class="stat-num" data-target="{{ total_gpcrs }}">0</span>
+      <span class="stat-label">Class&nbsp;A GPCRs</span>
+    </a>
+    <a class="stat" href="{{ static_prefix }}browse/index.html">
+      <span class="stat-num" data-target="{{ n_families }}">0</span>
+      <span class="stat-label">Receptor families</span>
+    </a>
+    <a class="stat" href="{{ static_prefix }}browse/index.html">
+      <span class="stat-num" data-target="{{ n_ligand_types }}">0</span>
+      <span class="stat-label">Ligand types</span>
+    </a>
+    <a class="stat" href="{{ static_prefix }}statistics.html">
+      <span class="stat-num" data-target="{{ total_contacts_k }}" data-suffix="K">0</span>
+      <span class="stat-label">Contact pairs analyzed</span>
+    </a>
+  </div>
+</section>
+
+<section class="featured" aria-labelledby="featured-heading">
+  <div class="section-inner">
+    <header class="section-head">
+      <h2 id="featured-heading">Largest conformational shifts</h2>
+      <p class="section-sub">GPCRs with the highest summed |ΔRRCS| between active and inactive states. Sparklines show the signed distribution of per-contact changes — <span class="is-active">blue</span> bars are active-favoring, <span class="is-inactive">red</span> are inactive-favoring.</p>
+    </header>
+    <div class="featured-grid">
+      {% for g in top5 %}
+      <a class="feature-card reveal" style="--i:{{ loop.index0 }}" href="{{ static_prefix }}reports/{{ g.gpcr_id }}.html">
+        <div class="feature-card-head">
+          <div>
+            <div class="feature-gene">{{ g.gene_name or g.uniprot_name }}</div>
+            <div class="feature-meta">{{ g.uniprot_name }} · {{ g.receptor_family or '—' }}</div>
+          </div>
+          <div class="feature-delta">
+            <span class="feature-delta-num">{{ "%.1f"|format(g.sum_abs_delta) }}</span>
+            <span class="feature-delta-unit">Σ|Δ|</span>
+          </div>
+        </div>
+        <svg class="sparkline" viewBox="0 0 {{ sparkline_bins * 4 }} 40" preserveAspectRatio="none" aria-hidden="true">
+          {% set bins = g.delta_bins %}
+          {% set max_bin = bins | max or 1 %}
+          {% for count in bins %}
+            {% set h = (count / max_bin * 36) | round(2) %}
+            {% set is_active = loop.index0 >= (sparkline_bins // 2) %}
+            <rect x="{{ loop.index0 * 4 }}" y="{{ 38 - h }}" width="3" height="{{ h if h > 0 else 0.5 }}"
+                  fill="{{ 'var(--semantic-active)' if is_active else 'var(--semantic-inactive)' }}"/>
+          {% endfor %}
+          <line x1="{{ sparkline_bins * 2 }}" y1="0" x2="{{ sparkline_bins * 2 }}" y2="40" stroke="var(--borderColor-muted)" stroke-width="0.5" stroke-dasharray="2,2"/>
+        </svg>
+        <div class="feature-footer">
+          <span class="feature-stat">{{ g.total_contacts }} contacts</span>
+          <span class="feature-stat">{{ g.significant_changes }} significant</span>
+          <span class="feature-open">Open report →</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="how-it-works reveal" id="how-it-works" aria-labelledby="how-heading">
+  <div class="section-inner">
+    <header class="section-head">
+      <h2 id="how-heading">How it works</h2>
+      <p class="section-sub">Four stages from structural models to variant-annotated contact changes.</p>
+    </header>
+    <ol class="steps">
+      <li class="step">
+        <div class="step-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 26 L10 6 L14 26 L18 6 L22 26"/>
+            <path d="M24 26 L28 6" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="step-body">
+          <span class="step-num">01</span>
+          <h3>AlphaFold multistate</h3>
+          <p>Both active and inactive conformations predicted for each receptor.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="10" cy="16" r="3"/>
+            <circle cx="22" cy="16" r="3"/>
+            <path d="M13 16 L19 16" stroke-dasharray="2,2"/>
+          </svg>
+        </div>
+        <div class="step-body">
+          <span class="step-num">02</span>
+          <h3>RRCS per pair</h3>
+          <p>Residue–residue contact score computed for every pair in both states.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke-width="1.6" stroke-linecap="round">
+            <path d="M6 22 L14 10" stroke="var(--semantic-active)"/>
+            <path d="M18 10 L26 22" stroke="var(--semantic-inactive)"/>
+            <path d="M6 22 L26 22" stroke="currentColor" opacity="0.3"/>
+          </svg>
+        </div>
+        <div class="step-body">
+          <span class="step-num">03</span>
+          <h3>Δ analysis</h3>
+          <p>Signed differences surface contacts that gain or lose on activation.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="11" r="3"/>
+            <circle cx="22" cy="11" r="3"/>
+            <path d="M4 26 C 4 20 10 18 10 18 C 10 18 16 20 16 26"/>
+            <path d="M16 26 C 16 20 22 18 22 18 C 22 18 28 20 28 26"/>
+          </svg>
+        </div>
+        <div class="step-body">
+          <span class="step-num">04</span>
+          <h3>Variant overlay</h3>
+          <p>gnomAD allele frequencies and AlphaMissense pathogenicity mapped to Δ-hotspots.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="about reveal" id="methodology" aria-labelledby="about-heading">
+  <div class="section-inner about-inner">
+    <header class="section-head">
+      <h2 id="about-heading">About</h2>
+    </header>
+    <div class="about-prose">
+      <p>
+        GPCRsynth computes <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank" rel="noopener">residue–residue contact scores</a> across both conformational states of every human Class&nbsp;A GPCR, using
+        <a href="https://github.com/huhlim/alphafold-multistate" target="_blank" rel="noopener">AlphaFold multistate</a>
+        predicted structures (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank" rel="noopener">del Alamo et al., 2022</a>).
+        Contacts are mapped to Ballesteros–Weinstein numbering via
+        <a href="https://gpcrdb.org/" target="_blank" rel="noopener">GPCRdb</a>.
+      </p>
+      <p>
+        Signed ΔRRCS values are overlaid with population variant data from
+        <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener">gnomAD&nbsp;v4</a>
+        and pathogenicity predictions from
+        <a href="https://alphamissense.hegelab.org/" target="_blank" rel="noopener">AlphaMissense</a>,
+        enabling identification of Core Functional Residues (CFRs) conserved across the superfamily and
+        exploration of structure–function–variant relationships.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="sources reveal" aria-labelledby="sources-heading">
+  <div class="section-inner">
+    <header class="section-head">
+      <h2 id="sources-heading">Data sources</h2>
+    </header>
+    <ul class="sources-grid">
+      <li class="source-card">
+        <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v10M8 11l4 4 4-4M4 17h16v4H4z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><strong><a href="https://github.com/huhlim/alphafold-multistate" target="_blank" rel="noopener">AlphaFold multistate</a></strong><span>Active / inactive structural models</span></div>
+      </li>
+      <li class="source-card">
+        <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 2-4 4-4s4 2 4 4" stroke-linecap="round"/></svg></div>
+        <div><strong><a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener">gnomAD v4</a></strong><span>Population variant frequencies</span></div>
+      </li>
+      <li class="source-card">
+        <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v6l-4 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-4-9V3"/><path d="M7 3h10"/><path d="M7 13h10"/></svg></div>
+        <div><strong><a href="https://alphamissense.hegelab.org/" target="_blank" rel="noopener">AlphaMissense</a></strong><span>Missense pathogenicity predictions</span></div>
+      </li>
+      <li class="source-card">
+        <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="4"  cy="6"  r="2"/><circle cx="20" cy="6"  r="2"/><circle cx="4"  cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="M6 7l4 4M18 7l-4 4M6 17l4-4M18 17l-4-4" stroke-linecap="round"/></svg></div>
+        <div><strong><a href="https://gpcrdb.org/" target="_blank" rel="noopener">GPCRdb</a></strong><span>TM domains &amp; generic numbering</span></div>
+      </li>
+      <li class="source-card">
+        <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="16" width="18" height="5" rx="1"/><circle cx="7" cy="6.5" r="0.8" fill="currentColor"/><circle cx="7" cy="12.5" r="0.8" fill="currentColor"/><circle cx="7" cy="18.5" r="0.8" fill="currentColor"/></svg></div>
+        <div><strong><a href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt</a> / <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank" rel="noopener">ProtVar</a></strong><span>Conservation &amp; variant annotation</span></div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="section-inner footer-inner">
+    <div class="footer-brand">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="7"  cy="16" r="2.2" fill="var(--semantic-inactive)"/>
+        <circle cx="17" cy="16" r="2.2" fill="var(--semantic-active)"/>
+        <path d="M7 16 Q 12 4 17 16" fill="none" stroke="var(--brand-primary)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span>GPCRsynth · {{ total_gpcrs }} Class A GPCRs</span>
+    </div>
+    <div class="footer-lab">
+      <strong>TGGR Laboratory</strong>
+      <span>Translational Genetics and Genomics Research Lab<br>Genetics Institute, Tel Aviv Sourasky Medical Center</span>
+      <a href="https://github.com/tggr-lab" target="_blank" rel="noopener">github.com/tggr-lab</a>
+    </div>
+  </div>
+</footer>
+
+<script type="application/json" id="gpcr-search-data">{{ search_json | safe }}</script>
+<script src="{{ static_prefix }}static/js/landing_v2.js" defer></script>
+
+</body>
+</html>

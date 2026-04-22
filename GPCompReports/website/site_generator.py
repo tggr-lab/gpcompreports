@@ -11,6 +11,7 @@ from ..analysis.tm_domain_analysis import run_tm_domain_analysis
 from ..analysis.cfr_analysis import run_cfr_analysis
 from ..analysis.variant_correlation import run_variant_analysis
 from .page_generators.landing_page import generate_landing_page
+from .page_generators.landing_page_v2 import generate_landing_page_v2
 from .page_generators.gpcr_index import generate_gpcr_index
 from .page_generators.gpcr_report_page import generate_all_reports
 from .page_generators.statistics_page import generate_statistics_page
@@ -60,6 +61,7 @@ class SiteGenerator:
 
         print("  Landing page...")
         generate_landing_page(env, self.store, self.output_dir)
+        generate_landing_page_v2(env, self.store, self.output_dir)
 
         print("  GPCR browser...")
         generate_gpcr_index(env, self.store, self.output_dir)
