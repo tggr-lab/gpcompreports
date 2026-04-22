@@ -1,4 +1,4 @@
-/* GPCompReports — site_v2.js
+/* GPCompReports — site.js
    Shared runtime for all v2 pages. No framework, no Materialize.
    Public: window.Site = { initBrowse, initTable, initCharts } for page-specific hooks. */
 

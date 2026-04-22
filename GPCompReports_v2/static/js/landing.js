@@ -1,5 +1,5 @@
-// landing_v2.js — landing-only behaviors: stat count-up + search teaser.
-// Theme toggle, tooltips, collapsibles, reveals live in site_v2.js.
+// landing.js — landing-only behaviors: stat count-up + search teaser.
+// Theme toggle, tooltips, collapsibles, reveals live in site.js.
 
 (function() {
   'use strict';

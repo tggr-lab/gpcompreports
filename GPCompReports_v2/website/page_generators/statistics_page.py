@@ -1,9 +1,9 @@
-"""Generate the v2 statistics page.
+"""Generate the statistics page for GPCompReports v2.
 
-Sibling of statistics_page.py. Writes output/statistics_v2.html. Reuses the
-same Plotly figures produced by analysis/* modules; theme overrides are
-applied client-side via Plotly.relayout() driven by the data-chart-layout-*
-attributes on each chart div.
+Writes output/statistics.html. Plotly figures produced by analysis/* modules
+are emitted once; theme overrides are applied client-side via
+Plotly.relayout() driven by the data-chart-layout-* attributes on each
+chart div (see templates/statistics.html + static/js/site.js).
 """
 
 import json
@@ -13,7 +13,7 @@ from jinja2 import Environment
 from ..plotly_theming import theme_overrides
 
 
-def generate_statistics_page_v2(env: Environment, store, analysis_results, output_dir):
+def generate_statistics_page(env: Environment, store, analysis_results, output_dir):
     cross = analysis_results.get('cross_gpcr', {})
     tm = analysis_results.get('tm_domain', {})
     cfr = analysis_results.get('cfr', {})
@@ -57,13 +57,13 @@ def generate_statistics_page_v2(env: Environment, store, analysis_results, outpu
 
     light, dark = theme_overrides()
 
-    template = env.get_template('statistics_v2.html')
+    template = env.get_template('statistics.html')
     html = template.render(
         static_prefix='',
         active_page='statistics',
-        nav_home_url='index_v2.html',
-        nav_browse_url='browse/index_v2.html',
-        nav_stats_url='statistics_v2.html',
+        nav_home_url='index.html',
+        nav_browse_url='browse/index.html',
+        nav_stats_url='statistics.html',
         page_title='Database Statistics · GPCompReports',
         total_gpcrs=len(store.gpcr_ids),
         charts=charts,
@@ -77,6 +77,6 @@ def generate_statistics_page_v2(env: Environment, store, analysis_results, outpu
         layout_dark_json=json.dumps(dark, separators=(',', ':')),
     )
 
-    out_path = output_dir / 'statistics_v2.html'
+    out_path = output_dir / 'statistics.html'
     out_path.write_text(html, encoding='utf-8')
-    print(f"  Generated: statistics_v2.html")
+    print(f"  Generated: statistics.html")

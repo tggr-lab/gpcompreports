@@ -2,7 +2,7 @@
 
 Figures are emitted once as Python/JSON (with the server defaults). The light
 and dark layout overrides defined here are serialized into data-attrs on each
-chart div, and applied by site_v2.js via Plotly.relayout() after the initial
+chart div, and applied by site.js via Plotly.relayout() after the initial
 newPlot(). This keeps analysis code theme-agnostic and avoids duplicating
 figure data.
 

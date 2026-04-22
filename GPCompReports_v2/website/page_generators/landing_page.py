@@ -1,8 +1,4 @@
-"""Generate the v2 landing page (Primer-based design system).
-
-Sibling of landing_page.py. Writes output/index_v2.html without touching
-the original index.html, so both can be opened side-by-side for comparison.
-"""
+"""Generate the landing page for GPCompReports v2."""
 
 import json
 from pathlib import Path
@@ -30,8 +26,8 @@ def bin_signed_delta(values, n_bins=SPARKLINE_BINS, clip=DELTA_CLIP):
     return counts.tolist()
 
 
-def generate_landing_page_v2(env: Environment, store, output_dir: Path):
-    """Render the v2 landing to output/index_v2.html."""
+def generate_landing_page(env: Environment, store, output_dir: Path):
+    """Render the landing to output/index.html."""
     info_df = store.get_all_info_df()
 
     total_gpcrs = len(store.gpcr_ids)
@@ -54,15 +50,15 @@ def generate_landing_page_v2(env: Environment, store, output_dir: Path):
         .to_dict('records')
     )
 
-    template = env.get_template('landing_v2.html')
+    template = env.get_template('landing.html')
     html = template.render(
         static_prefix='',
         active_page='home',
-        nav_home_url='index_v2.html',
-        nav_browse_url='browse/index_v2.html',
+        nav_home_url='index.html',
+        nav_browse_url='browse/index.html',
         nav_stats_url='statistics.html',
         page_title='GPCompReports: Comparative Class A GPCR Contact Analysis',
-        extra_css=['static/css/landing_v2.css'],
+        extra_css=['static/css/landing.css'],
         total_gpcrs=total_gpcrs,
         n_families=n_families,
         n_ligand_types=n_ligand_types,
@@ -73,6 +69,6 @@ def generate_landing_page_v2(env: Environment, store, output_dir: Path):
         delta_clip=DELTA_CLIP,
     )
 
-    out_path = output_dir / 'index_v2.html'
+    out_path = output_dir / 'index.html'
     out_path.write_text(html, encoding='utf-8')
     print(f"  Generated: {out_path.name}")

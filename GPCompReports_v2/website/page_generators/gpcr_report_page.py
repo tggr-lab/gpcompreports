@@ -1,15 +1,10 @@
-"""Generate v2 GPCR report pages (283 pages) alongside the v1 output.
+"""Generate GPCR report pages (283 pages) — v2 design system.
 
-Sibling of gpcr_report_page.py. Reuses every helper from the v1 module for
-data prep (snake plot, charts, tables). Differences:
-  - renders templates/gpcr_report_v2.html
-  - writes output/reports/{gpcr_id}_v2.html
-  - passes base_v2 nav context (active_page, nav_* urls)
-  - injects layout_light_json / layout_dark_json from plotly_theming so the
-    4 per-report charts retint when the user toggles the theme
-  - patches the snake plot's CFR view (which the batch analyzer leaves empty)
-    with the top-CFR generic numbers from the cross-GPCR analysis, mapped
-    to this receptor's residue positions via its annotation map.
+Delegates the pure data-prep helpers (figure building, snake-plot prep,
+table prep, significance threshold) to gpcr_report_helpers, and adds
+v2-only logic: Plotly light/dark layout overrides, snake-plot view
+patches (CFR from cross-GPCR analysis, AlphaMissense categorical buckets,
+ConSurf-palette conservation with per-protein quantile binning).
 """
 
 import json
@@ -19,7 +14,7 @@ import numpy as np
 import pandas as pd
 from jinja2 import Environment
 
-from . import gpcr_report_page as v1
+from . import gpcr_report_helpers as v1
 from ..plotly_theming import theme_overrides
 
 
@@ -300,7 +295,7 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
     return json.dumps(data)
 
 
-def generate_all_reports_v2(env: Environment, store, output_dir, analysis_results=None, limit=None):
+def generate_all_reports(env: Environment, store, output_dir, analysis_results=None, limit=None):
     reports_dir = output_dir / 'reports'
     reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -308,7 +303,7 @@ def generate_all_reports_v2(env: Environment, store, output_dir, analysis_result
     info_df = info_df.sort_values('sum_abs_delta', ascending=False).reset_index(drop=True)
     rank_map = {row['gpcr_id']: idx + 1 for idx, row in info_df.iterrows()}
 
-    template = env.get_template('gpcr_report_v2.html')
+    template = env.get_template('gpcr_report.html')
     total = len(store.gpcr_ids)
     gpcr_ids = store.gpcr_ids[:limit] if limit else store.gpcr_ids
 
@@ -321,7 +316,7 @@ def generate_all_reports_v2(env: Environment, store, output_dir, analysis_result
     gen_total = len(gpcr_ids)
     for i, gid in enumerate(gpcr_ids):
         if (i + 1) % 50 == 0 or i == 0:
-            print(f"  Generating v2 reports: {i + 1}/{gen_total}...")
+            print(f"  Generating reports: {i + 1}/{gen_total}...")
 
         info = store.gpcr_info[gid]
         delta_df = store.delta_data.get(gid, pd.DataFrame())
@@ -374,9 +369,9 @@ def generate_all_reports_v2(env: Environment, store, output_dir, analysis_result
         html = template.render(
             static_prefix='../',
             active_page='report',
-            nav_home_url='../index_v2.html',
-            nav_browse_url='../browse/index_v2.html',
-            nav_stats_url='../statistics_v2.html',
+            nav_home_url='../index.html',
+            nav_browse_url='../browse/index.html',
+            nav_stats_url='../statistics.html',
             page_title=f"{info['uniprot_name']} · GPCompReports",
             total_gpcrs=total,
             uniprot_name=info['uniprot_name'],
@@ -414,7 +409,7 @@ def generate_all_reports_v2(env: Environment, store, output_dir, analysis_result
             layout_dark_json=layout_dark_json,
         )
 
-        out_path = reports_dir / f'{gid}_v2.html'
+        out_path = reports_dir / f'{gid}.html'
         out_path.write_text(html, encoding='utf-8')
 
-    print(f"  Generated: {gen_total} v2 report pages")
+    print(f"  Generated: {gen_total} report pages")

@@ -44,14 +44,15 @@ import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-GPCOMP_ROOT = REPO_ROOT / 'GPCompReports'
+GPCOMP_V2_ROOT = REPO_ROOT / 'GPCompReports_v2'
 BATCH_ROOT = REPO_ROOT / 'The_batch_RRCS_analyzer'
 METADATA_CSV = REPO_ROOT / 'class_A_all.csv'
 
 PROTVAR_BASE = 'https://www.ebi.ac.uk/ProtVar/api'
 UNIPROT_BASE = 'https://rest.uniprot.org/uniprotkb'
 
-DEFAULT_OUT_DIR = GPCOMP_ROOT / 'output' / 'data'
+# The v2 report generator reads this cache directory.
+DEFAULT_OUT_DIR = GPCOMP_V2_ROOT / 'output' / 'data'
 DEFAULT_WORKERS = 6
 REQUEST_TIMEOUT = 15
 MAX_RETRIES = 5
