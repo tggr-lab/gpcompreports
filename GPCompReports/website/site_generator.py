@@ -16,6 +16,7 @@ from .page_generators.gpcr_index import generate_gpcr_index
 from .page_generators.gpcr_index_v2 import generate_gpcr_index_v2
 from .page_generators.gpcr_report_page import generate_all_reports
 from .page_generators.statistics_page import generate_statistics_page
+from .page_generators.statistics_page_v2 import generate_statistics_page_v2
 
 
 class SiteGenerator:
@@ -70,6 +71,7 @@ class SiteGenerator:
 
         print("  Statistics page...")
         generate_statistics_page(env, self.store, self.analysis_results, self.output_dir)
+        generate_statistics_page_v2(env, self.store, self.analysis_results, self.output_dir)
 
         if self.limit:
             print(f"  Individual reports (limit: {self.limit} pages)...")

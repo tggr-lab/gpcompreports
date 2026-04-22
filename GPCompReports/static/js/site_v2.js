@@ -353,11 +353,13 @@
     var id = el.id;
     var payload = (window.CHART_DATA || {})[id];
     if (!payload) return;
-    var theme = currentTheme();
-    var override = readOverride(el, theme) || {};
-    var mergedLayout = Object.assign({}, payload.layout || {}, override);
-    Plotly.newPlot(id, payload.data || [], mergedLayout, Object.assign({ responsive: true, displaylogo: false }, payload.config || {}));
-    el.dataset.chartRendered = '1';
+    var config = Object.assign({ responsive: true, displaylogo: false }, payload.config || {});
+    Plotly.newPlot(id, payload.data || [], payload.layout || {}, config).then(function() {
+      el.dataset.chartRendered = '1';
+      var theme = currentTheme();
+      var override = readOverride(el, theme);
+      if (override) Plotly.relayout(id, override);
+    });
   }
 
   function relayoutCharts(theme) {
