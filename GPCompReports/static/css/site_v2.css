@@ -78,7 +78,10 @@
 html { font-family: var(--font-ui); color-scheme: light dark; }
 body {
   margin: 0;
-  background: var(--bgColor-default);
+  /* Soft off-white page in light mode so cards/surfaces (which use
+     --bgColor-default = pure white) visually lift off the page. Dark mode
+     keeps Primer's canvas color unchanged. */
+  background: #f6f8fa;
   color: var(--fgColor-default);
   font-size: 1rem;
   line-height: 1.6;
@@ -86,6 +89,7 @@ body {
   text-rendering: optimizeLegibility;
   transition: background-color var(--t-base), color var(--t-base);
 }
+[data-color-mode="dark"] body { background: var(--bgColor-default); }
 a { color: var(--fgColor-accent); text-decoration: none; transition: color var(--t-fast); }
 a:hover { color: var(--brand-primary-hover); }
 
@@ -149,10 +153,10 @@ p  { margin: 0 0 var(--s-4); }
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 42px;
+  width: 36px;
   height: 3px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-primary) 60%, var(--brand-accent) 100%);
+  background: var(--brand-primary);
 }
 .section-sub {
   color: var(--fgColor-muted);
@@ -247,9 +251,8 @@ p  { margin: 0 0 var(--s-4); }
 }
 .theme-toggle:hover { background: var(--bgColor-muted); color: var(--fgColor-default); border-color: var(--borderColor-default); }
 .theme-toggle .icon { display: none; }
-[data-theme-auto] .theme-toggle .icon-auto { display: block; }
-[data-color-mode="light"]:not([data-theme-auto]) .theme-toggle .icon-sun { display: block; }
-[data-color-mode="dark"]:not([data-theme-auto]) .theme-toggle .icon-moon { display: block; }
+[data-color-mode="light"] .theme-toggle .icon-sun { display: block; }
+[data-color-mode="dark"] .theme-toggle .icon-moon { display: block; }
 
 .topbar-mobile-toggle {
   display: none;
@@ -717,7 +720,125 @@ p  { margin: 0 0 var(--s-4); }
   .reveal { opacity: 1; transform: none; transition: none; }
 }
 
-/* ----------- 15. Chart containers (Plotly) ----------- */
+/* ----------- 15. Snake plot (GPCRdb-style topology viewer) ----------- */
+
+.snake-plot-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: var(--s-4) 0;
+  align-items: center;
+}
+.snake-btn {
+  padding: 7px 14px;
+  background: var(--bgColor-default);
+  color: var(--fgColor-muted);
+  border: 1px solid var(--borderColor-muted);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: 500 0.85rem/1 var(--font-ui);
+  transition: border-color var(--t-fast), color var(--t-fast), background-color var(--t-fast);
+}
+.snake-btn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.snake-btn.active {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-color: var(--brand-primary);
+}
+.snake-links-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--fgColor-muted);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+.snake-links-toggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--brand-primary);
+}
+#snake-legend {
+  margin: var(--s-3) 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--bgColor-muted);
+  border: 1px solid var(--borderColor-muted);
+  border-radius: var(--r-md);
+  min-height: 40px;
+}
+.snake-legend-title {
+  font-weight: 600;
+  color: var(--fgColor-default);
+  margin-bottom: 3px;
+}
+.snake-legend-desc {
+  font-size: 0.85rem;
+  color: var(--fgColor-muted);
+  margin-bottom: 8px;
+}
+.snake-legend-gradient {
+  height: 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--borderColor-muted);
+}
+.snake-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--fgColor-muted);
+  margin-top: 4px;
+}
+.snake-legend-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.snake-legend-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--fgColor-muted);
+}
+.swatch-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--borderColor-muted);
+}
+/* Snake plot is rendered by ouroboros with baked-in light colors. Always
+   display it on a white plate (even in dark mode) so the SVG ring text +
+   residue outlines stay legible. */
+#snake-plot-container {
+  background: #ffffff;
+  border: 1px solid var(--borderColor-muted);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: auto;
+}
+#snake-plot-container .long { display: none; }
+#snake-plot-container .segment { cursor: pointer; }
+#snake-plot-container svg {
+  width: 100%;
+  height: auto;
+  max-width: 950px;
+  display: block;
+}
+#snake-links path { transition: opacity var(--t-fast), stroke-width var(--t-fast); }
+#snake-links path:hover { opacity: 1; stroke-width: 4; }
+
+/* ----------- 16. Chart containers (Plotly) ----------- */
 
 .v2-chart {
   width: 100%;
@@ -730,7 +851,7 @@ p  { margin: 0 0 var(--s-4); }
 }
 .v2-chart-wide { min-height: 420px; }
 
-/* ----------- 16. Responsive chrome ----------- */
+/* ----------- 17. Responsive chrome ----------- */
 
 @media (max-width: 600px) {
   .topnav { display: none; }

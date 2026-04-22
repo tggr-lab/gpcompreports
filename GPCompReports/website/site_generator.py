@@ -15,6 +15,7 @@ from .page_generators.landing_page_v2 import generate_landing_page_v2
 from .page_generators.gpcr_index import generate_gpcr_index
 from .page_generators.gpcr_index_v2 import generate_gpcr_index_v2
 from .page_generators.gpcr_report_page import generate_all_reports
+from .page_generators.gpcr_report_page_v2 import generate_all_reports_v2
 from .page_generators.statistics_page import generate_statistics_page
 from .page_generators.statistics_page_v2 import generate_statistics_page_v2
 
@@ -78,6 +79,8 @@ class SiteGenerator:
         else:
             print("  Individual reports (283 pages)...")
         generate_all_reports(env, self.store, self.output_dir, limit=self.limit)
+        generate_all_reports_v2(env, self.store, self.output_dir,
+                                analysis_results=self.analysis_results, limit=self.limit)
 
         print("\n" + "=" * 60)
         print("Site generation complete!")

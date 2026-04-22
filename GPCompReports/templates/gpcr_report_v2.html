@@ -1,0 +1,733 @@
+{% extends "base_v2.html" %}
+
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-3.3.1.min.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{{ static_prefix }}index_v2.html">Home</a>
+  <span class="breadcrumbs-sep">/</span>
+  <a href="{{ static_prefix }}browse/index_v2.html">Browse</a>
+  <span class="breadcrumbs-sep">/</span>
+  <span class="breadcrumbs-current">{{ uniprot_name }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="report-page">
+  <div class="section-inner">
+
+    {# -------------- Header -------------- #}
+    <header class="report-header">
+      <div class="report-header-main">
+        <h1 class="report-title">{{ uniprot_name }}</h1>
+        <div class="report-meta">
+          <span class="report-meta-item"><span class="report-meta-label">Gene</span> <strong>{{ gene_name }}</strong></span>
+          <span class="badge badge-teal">{{ receptor_family }}</span>
+          <span class="badge badge-accent">{{ ligand_type }}</span>
+          {% if uniprot_id %}<span class="report-meta-item"><span class="report-meta-label">UniProt</span> <code>{{ uniprot_id }}</code></span>{% endif %}
+        </div>
+      </div>
+      {% if uniprot_id %}
+      <div class="report-db-links">
+        <a class="btn btn-ghost btn-sm" href="https://www.uniprot.org/uniprotkb/{{ uniprot_id }}" target="_blank" rel="noopener" data-tooltip="UniProt protein knowledgebase entry">UniProt ↗</a>
+        <a class="btn btn-ghost btn-sm" href="https://gpcrdb.org/protein/{{ gpcr_id }}/" target="_blank" rel="noopener" data-tooltip="GPCRdb receptor page with generic numbering">GPCRdb ↗</a>
+        <a class="btn btn-ghost btn-sm" href="https://www.ncbi.nlm.nih.gov/gene/?term={{ uniprot_id }}[Accession]" target="_blank" rel="noopener" data-tooltip="NCBI Gene database entry">NCBI Gene ↗</a>
+      </div>
+      {% endif %}
+    </header>
+
+    {# -------------- Summary stats -------------- #}
+    <div class="report-stats">
+      <div class="report-stat" data-tooltip="Residue pairs within 4.5Å in either active or inactive structure">
+        <div class="report-stat-num">{{ total_contacts }}</div>
+        <div class="report-stat-label">Total Contact Pairs</div>
+      </div>
+      <div class="report-stat report-stat-accent" data-tooltip="Contacts where |ΔRRCS| ≥ {{ '%.1f'|format(sig_threshold) }} (mean + 2×std)">
+        <div class="report-stat-num">{{ significant_changes }}</div>
+        <div class="report-stat-label">Significant Changes</div>
+      </div>
+      <div class="report-stat" data-tooltip="Largest positive ΔRRCS: contact strengthened most in active state">
+        <div class="report-stat-num">{{ "%.2f"|format(max_increase) }}</div>
+        <div class="report-stat-label">Max Increase</div>
+      </div>
+      <div class="report-stat report-stat-accent" data-tooltip="Largest negative ΔRRCS: contact weakened most in active state">
+        <div class="report-stat-num">{{ "%.2f"|format(max_decrease) }}</div>
+        <div class="report-stat-label">Max Decrease</div>
+      </div>
+    </div>
+
+    {# -------------- Snake plot -------------- #}
+    {% if has_snake_plot %}
+    <section class="report-section">
+      <header class="report-section-head"><h2>Interactive snake plot</h2></header>
+      <div class="callout">
+        <p>
+          <strong>GPCRdb-style topology.</strong> Click the view buttons to recolor residues by different
+          data layers. Toggle contact links to draw significant residue-residue contacts as arcs.
+          Click loop labels (ICL/ECL) to expand or collapse loop regions.
+        </p>
+        <p>
+          Color convention:
+          <span class="is-active">blue = active-favoring</span>,
+          <span class="is-inactive">red = inactive-favoring</span>.
+        </p>
+      </div>
+
+      <div class="snake-plot-toolbar">
+        <button class="snake-btn active" data-view="delta_rrcs" onclick="switchSnakeView('delta_rrcs')" data-tooltip="Mean ΔRRCS per residue. Blue = active-favoring, Red = inactive-favoring">Delta RRCS</button>
+        <button class="snake-btn" data-view="active_rrcs" onclick="switchSnakeView('active_rrcs')" data-tooltip="RRCS values in the active conformation. Brighter = stronger contacts">Active RRCS</button>
+        <button class="snake-btn" data-view="inactive_rrcs" onclick="switchSnakeView('inactive_rrcs')" data-tooltip="RRCS values in the inactive conformation. Brighter = stronger contacts">Inactive RRCS</button>
+        <button class="snake-btn" data-view="conservation" onclick="switchSnakeView('conservation')" data-tooltip="Sequence conservation across species. Darker teal = more conserved">Conservation</button>
+        <button class="snake-btn" data-view="alphamissense" onclick="switchSnakeView('alphamissense')" data-tooltip="AlphaMissense pathogenicity class per variant position">AlphaMissense</button>
+        <button class="snake-btn" data-view="cfr" onclick="switchSnakeView('cfr')" data-tooltip="Core Functional Residues: positions with conserved activation changes">Core Functional</button>
+        <button class="snake-btn" data-view="aa_properties" onclick="switchSnakeView('aa_properties')" data-tooltip="Amino acid chemical properties: hydrophobic, polar, charged, etc.">AA Properties</button>
+        <label class="snake-links-toggle">
+          <input type="checkbox" id="snake-links-cb" onchange="toggleSnakeLinks(this.checked)">
+          Show contact links
+        </label>
+      </div>
+
+      <div id="snake-legend"></div>
+      <div id="snake-plot-container">
+        {{ snake_plot_svg | safe }}
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- Top 100 conformational changes -------------- #}
+    {% if top_changes %}
+    <section class="report-section">
+      <header class="report-section-head">
+        <h2>Top 100 conformational changes</h2>
+        <p class="section-sub">Residue pairs with the largest RRCS changes between active and inactive states. GPCRdb numbering in parentheses. Highlighted rows exceed the significance threshold.</p>
+      </header>
+      <div class="v2-table-wrap" data-table-auto="top-changes-table" data-page-size="25">
+        <div class="v2-table-toolbar">
+          <input type="text" class="v2-input" data-table-search="top-changes-table" placeholder="Search residues…" aria-label="Search top changes">
+          <button type="button" class="btn btn-ghost btn-sm" data-table-export="top-changes-table" data-filename="{{ gpcr_id }}_top_changes.csv">Export CSV</button>
+        </div>
+        <div class="v2-table-scroll">
+          <table class="v2-table" id="top-changes-table">
+            <thead>
+              <tr>
+                <th data-sort="rank" data-tooltip="Ordered by |ΔRRCS| magnitude">Rank</th>
+                <th data-sort="res1">Residue 1</th>
+                <th data-sort="res2">Residue 2</th>
+                <th data-sort="active" data-tooltip="Contact strength in active conformation (0 = no contact)">Active RRCS</th>
+                <th data-sort="inactive" data-tooltip="Contact strength in inactive conformation">Inactive RRCS</th>
+                <th data-sort="delta" data-tooltip="Active minus Inactive: positive = stronger in active">ΔRRCS</th>
+                <th data-sort="mag">Magnitude</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for row in top_changes %}
+              <tr{% if row.is_significant %} class="significant-row"{% endif %}>
+                <td class="num">{{ row.rank }}</td>
+                <td>{{ row.res1_name }}{{ row.res1 }}{% if row.gpcrdb1 %} <small class="muted">({{ row.gpcrdb1 }})</small>{% endif %}</td>
+                <td>{{ row.res2_name }}{{ row.res2 }}{% if row.gpcrdb2 %} <small class="muted">({{ row.gpcrdb2 }})</small>{% endif %}</td>
+                <td class="num">{{ "%.3f"|format(row.active_rrcs) }}</td>
+                <td class="num">{{ "%.3f"|format(row.inactive_rrcs) }}</td>
+                <td class="num {{ 'positive-delta' if row.delta_rrcs > 0 else 'negative-delta' }}"><strong>{{ "%+.3f"|format(row.delta_rrcs) }}</strong></td>
+                <td><span class="badge badge-{{ 'high' if row.magnitude == 'HIGH' else ('med' if row.magnitude == 'MED' else 'low') }}" data-tooltip="{% if row.magnitude == 'HIGH' %}|ΔRRCS| ≥ 5.0: major structural rearrangement{% elif row.magnitude == 'MED' %}Threshold ≤ |ΔRRCS| < 5.0: moderate change{% else %}|ΔRRCS| below significance threshold{% endif %}">{{ row.magnitude }}</span></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="v2-pagination" data-table-pagination="top-changes-table"></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- TM Domain analysis -------------- #}
+    {% if tm_summary %}
+    <section class="report-section">
+      <header class="report-section-head">
+        <h2>Transmembrane domain analysis</h2>
+      </header>
+      <div class="callout">
+        <p>
+          <span class="is-active">Active-favoring</span> residues form stronger contacts in the active state (positive ΔRRCS).
+          <span class="is-inactive">Inactive-favoring</span> residues form stronger contacts in the inactive state (negative ΔRRCS).
+          Only residues with |ΔRRCS| ≥ 3.0 are shown.
+        </p>
+      </div>
+      <div class="v2-table-wrap">
+        <div class="v2-table-toolbar">
+          <strong>Per-segment summary</strong>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto;" data-table-export="tm-summary-table" data-filename="{{ gpcr_id }}_tm_summary.csv">Export CSV</button>
+        </div>
+        <div class="v2-table-scroll">
+          <table class="v2-table" id="tm-summary-table">
+            <thead>
+              <tr>
+                <th>Segment</th>
+                <th>Range</th>
+                <th>Active-favoring residues</th>
+                <th>Count</th>
+                <th>Inactive-favoring residues</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for dom in tm_summary %}
+              {% if loop.index == 8 %}
+              <tr class="tm-divider">
+                <td colspan="6">Intracellular / Extracellular loops &amp; H8</td>
+              </tr>
+              {% endif %}
+              <tr>
+                <td><strong>{{ dom.domain }}</strong></td>
+                <td class="num">{{ dom.range }}</td>
+                <td class="is-active">
+                  {% if dom.active_residues %}
+                    {% for r in dom.active_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
+                  {% else %}-{% endif %}
+                </td>
+                <td class="num is-active"><strong>{{ dom.total_active }}</strong></td>
+                <td class="is-inactive">
+                  {% if dom.inactive_residues %}
+                    {% for r in dom.inactive_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
+                  {% else %}-{% endif %}
+                </td>
+                <td class="num is-inactive"><strong>{{ dom.total_inactive }}</strong></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- Plotly charts -------------- #}
+    {% if has_delta_chart %}
+    <section class="report-section">
+      <header class="report-section-head"><h2>Interactive visualizations</h2></header>
+
+      <h3 class="report-chart-head">ΔRRCS distribution</h3>
+      <div class="v2-chart" id="delta-chart"
+           data-chart-layout-light='{{ layout_light_json }}'
+           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+
+      {% if has_scatter_chart %}
+      <h3 class="report-chart-head">Active vs inactive comparison</h3>
+      <div class="v2-chart" id="scatter-chart"
+           data-chart-layout-light='{{ layout_light_json }}'
+           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+      {% endif %}
+
+      {% if has_residue_chart %}
+      <h3 class="report-chart-head">Residue-wise changes</h3>
+      <div class="v2-chart" id="residue-chart"
+           data-chart-layout-light='{{ layout_light_json }}'
+           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+      {% endif %}
+
+      {% if has_tm_chart %}
+      <h3 class="report-chart-head">TM domain breakdown</h3>
+      <div class="v2-chart" id="tm-breakdown-chart"
+           data-chart-layout-light='{{ layout_light_json }}'
+           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {# -------------- Variants of interest -------------- #}
+    {% if variants %}
+    <section class="report-section">
+      <header class="report-section-head">
+        <h2>Variants of interest</h2>
+        <p class="section-sub">{{ total_variants }} variants mapped to contact positions, sorted by |ΔRRCS| impact.</p>
+      </header>
+      <div class="v2-table-wrap" data-table-auto="variants-table" data-page-size="25">
+        <div class="v2-table-toolbar">
+          <input type="text" class="v2-input" data-table-search="variants-table" placeholder="Search variants…" aria-label="Search variants">
+          <button type="button" class="btn btn-ghost btn-sm" data-table-export="variants-table" data-filename="{{ gpcr_id }}_variants.csv">Export CSV</button>
+        </div>
+        <div class="v2-table-scroll">
+          <table class="v2-table" id="variants-table">
+            <thead>
+              <tr>
+                <th data-sort="pos">Position</th>
+                <th data-sort="hgvsp">Protein change</th>
+                <th data-sort="hgvsc">DNA change</th>
+                <th data-sort="af" data-tooltip="Population frequency from gnomAD v4: lower = rarer variant">Allele freq</th>
+                <th>Het / Hom</th>
+                <th data-sort="delta" data-tooltip="Max |ΔRRCS| at this position">ΔRRCS</th>
+                <th data-sort="am" data-tooltip="AlphaMissense pathogenicity score: 0 = benign, 1 = pathogenic">AM score</th>
+                <th data-sort="path">Pathogenicity</th>
+                <th data-sort="cons" data-tooltip="Sequence conservation: 0 = variable, 1 = conserved">Conservation</th>
+                <th>dbSNP</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for v in variants %}
+              <tr>
+                <td class="num"><strong>{{ v.position }}</strong></td>
+                <td>{{ v.hgvsp }}</td>
+                <td class="mono">{{ v.hgvsc }}</td>
+                <td class="num">{{ v.af_display }}</td>
+                <td class="num">{{ v.het }} / {{ v.hom }}</td>
+                <td class="num"><strong>{{ "%.2f"|format(v.delta_rrcs) }}</strong></td>
+                <td class="num">{{ v.am_score_display }}</td>
+                <td>{% if v.am_badge %}<span class="badge badge-{{ v.am_badge }}">{{ v.am_class }}</span>{% else %}{{ v.am_class }}{% endif %}</td>
+                <td class="num">{{ v.conservation_display }}</td>
+                <td class="mono">{{ v.rsids }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="v2-pagination" data-table-pagination="variants-table"></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- Complete RRCS (top 1000) -------------- #}
+    {% if complete_rrcs %}
+    <section class="report-section">
+      <header class="report-section-head">
+        <h2>Complete RRCS results</h2>
+        <p class="section-sub">Top 1000 contact pairs by |ΔRRCS|. Significance threshold: |ΔRRCS| ≥ {{ "%.2f"|format(sig_threshold) }} (mean + 2×std). Highlighted rows indicate significant changes.</p>
+      </header>
+      <div class="v2-table-wrap" data-table-auto="rrcs-table" data-page-size="25">
+        <div class="v2-table-toolbar">
+          <input type="text" class="v2-input" data-table-search="rrcs-table" placeholder="Search residues, amino acids…" aria-label="Search RRCS table">
+          <button type="button" class="btn btn-ghost btn-sm" data-table-export="rrcs-table" data-filename="{{ gpcr_id }}_complete_rrcs.csv">Export CSV</button>
+        </div>
+        <div class="v2-table-scroll">
+          <table class="v2-table" id="rrcs-table">
+            <thead>
+              <tr>
+                <th data-sort="r1">Res1</th>
+                <th>AA1</th>
+                <th data-sort="r2">Res2</th>
+                <th>AA2</th>
+                <th data-sort="a">Active RRCS</th>
+                <th data-sort="i">Inactive RRCS</th>
+                <th data-sort="d">ΔRRCS</th>
+                <th data-sort="ad">|ΔRRCS|</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for row in complete_rrcs %}
+              <tr{% if row.is_significant %} class="significant-row"{% endif %}>
+                <td class="num"><strong>{{ row.res1 }}</strong></td>
+                <td>{{ row.res1_name }}</td>
+                <td class="num"><strong>{{ row.res2 }}</strong></td>
+                <td>{{ row.res2_name }}</td>
+                <td class="num">{{ "%.3f"|format(row.active_rrcs) }}</td>
+                <td class="num">{{ "%.3f"|format(row.inactive_rrcs) }}</td>
+                <td class="num {{ 'positive-delta' if row.delta_rrcs > 0 else 'negative-delta' }}"><strong>{{ "%.3f"|format(row.delta_rrcs) }}</strong></td>
+                <td class="num">{{ "%.3f"|format(row.abs_delta) }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="v2-pagination" data-table-pagination="rrcs-table"></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- RRCS statistics -------------- #}
+    {% if rrcs_stats %}
+    <section class="report-section">
+      <header class="report-section-head"><h2>RRCS change distribution</h2></header>
+      <div class="report-stats">
+        <div class="report-stat"><div class="report-stat-num">{{ "%.2f"|format(rrcs_stats.mean) }}</div><div class="report-stat-label">Mean ΔRRCS</div></div>
+        <div class="report-stat report-stat-accent"><div class="report-stat-num">{{ "%.2f"|format(rrcs_stats.std) }}</div><div class="report-stat-label">Std Dev</div></div>
+        <div class="report-stat"><div class="report-stat-num">{{ "%.2f"|format(rrcs_stats.median) }}</div><div class="report-stat-label">Median</div></div>
+      </div>
+
+      <h3 class="report-chart-head" style="margin-top: var(--s-5);">Magnitude classification</h3>
+      <div class="report-stats">
+        <div class="report-stat"><div class="report-stat-num">{{ rrcs_stats.high_count }}</div><div class="report-stat-label">High (|Δ| ≥ 5.0)</div></div>
+        <div class="report-stat report-stat-accent"><div class="report-stat-num">{{ rrcs_stats.med_count }}</div><div class="report-stat-label">Medium ({{ "%.1f"|format(sig_threshold) }} ≤ |Δ| &lt; 5.0)</div></div>
+        <div class="report-stat"><div class="report-stat-num">{{ rrcs_stats.low_count }}</div><div class="report-stat-label">Low (|Δ| &lt; {{ "%.1f"|format(sig_threshold) }})</div></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# -------------- Methods -------------- #}
+    <section class="report-section">
+      <header class="report-section-head"><h2>Methods</h2></header>
+      <div class="callout">
+        <p>
+          <strong>RRCS analysis.</strong>
+          <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank" rel="noopener">Residue-Residue Contact Scores (RRCS)</a>
+          were calculated for each conformational state based on inter-atomic distances. Changes (ΔRRCS) were computed
+          by comparing active and inactive structures predicted by
+          <a href="https://github.com/huhlim/alphafold-multistate" target="_blank" rel="noopener">AlphaFold multistate</a>
+          (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank" rel="noopener">del Alamo et al., 2022</a>).
+        </p>
+        <p>
+          <strong>Significance threshold.</strong> |ΔRRCS| ≥ {{ "%.1f"|format(sig_threshold) }} (mean + 2×std of |ΔRRCS|).
+        </p>
+        <p>
+          <strong>Variant data.</strong> Population frequencies from
+          <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener">gnomAD v4</a>;
+          pathogenicity predictions from
+          <a href="https://alphamissense.hegelab.org/" target="_blank" rel="noopener">AlphaMissense</a>;
+          conservation from
+          <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank" rel="noopener">ProtVar</a> /
+          <a href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt</a>.
+        </p>
+        <p>
+          <strong>Structural annotation.</strong> TM domain boundaries and generic numbering from
+          <a href="https://gpcrdb.org/" target="_blank" rel="noopener">GPCRdb</a>.
+        </p>
+      </div>
+    </section>
+
+    {# -------------- Understanding the results (collapsible) -------------- #}
+    <section class="report-section">
+      <div class="collapsible">
+        <button type="button" class="collapsible-head" aria-expanded="false">
+          <span>Understanding the results</span>
+          <span class="collapsible-icon" aria-hidden="true">▶</span>
+        </button>
+        <div class="collapsible-body">
+          <h3 class="report-chart-head">What is RRCS?</h3>
+          <p>
+            Residue-Residue Contact Score (RRCS) measures how strongly two amino acids interact in a protein structure.
+            When a protein changes shape (from inactive to active), these contact strengths change.
+          </p>
+          <p>ΔRRCS (Delta RRCS) shows the difference in contact strength between states:</p>
+          <ul>
+            <li><strong class="is-active">Positive ΔRRCS.</strong> Contact is stronger in the active state.</li>
+            <li><strong class="is-inactive">Negative ΔRRCS.</strong> Contact is stronger in the inactive state.</li>
+            <li><strong>Large |ΔRRCS|.</strong> Significant structural rearrangement.</li>
+          </ul>
+          <p>
+            Residues with large RRCS changes are critical for protein function. Mutations at these positions may disrupt
+            the protein's ability to change shape properly.
+          </p>
+
+          <h3 class="report-chart-head">Pathogenicity predictions</h3>
+          <p>AlphaMissense predicts whether a mutation harms protein function:</p>
+          <ul>
+            <li><span class="badge badge-pathogenic">Pathogenic</span> (score ≥ 0.564): mutation likely damages function.</li>
+            <li><span class="badge badge-ambiguous">Ambiguous</span> (0.34–0.563): effect uncertain.</li>
+            <li><span class="badge badge-benign">Benign</span> (&lt; 0.34): mutation likely tolerated.</li>
+          </ul>
+
+          <h3 class="report-chart-head">Conservation &amp; population data</h3>
+          <p>
+            <strong>Conservation score.</strong> How well-preserved a position is across species (0 = variable, 1 = conserved).
+            High conservation suggests the position is critical for function.
+          </p>
+          <p>
+            <strong>Allele frequency.</strong> How often a variant appears in the population. Rare variants (low frequency)
+            may be more likely to be harmful.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {# -------------- Credits condensed -------------- #}
+    <p class="report-refs">
+      Sources:
+      <a href="https://github.com/huhlim/alphafold-multistate" target="_blank" rel="noopener">AlphaFold multistate</a> ·
+      <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank" rel="noopener">RRCS</a> ·
+      <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener">gnomAD v4</a> ·
+      <a href="https://alphamissense.hegelab.org/" target="_blank" rel="noopener">AlphaMissense</a> ·
+      <a href="https://gpcrdb.org/" target="_blank" rel="noopener">GPCRdb</a> ·
+      <a href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt</a> /
+      <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank" rel="noopener">ProtVar</a>
+    </p>
+
+  </div>
+
+  <style>
+    .report-page { padding: var(--s-5) 0 var(--s-8); }
+    .report-header {
+      position: relative;
+      display: flex;
+      gap: var(--s-4);
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: var(--s-5) var(--s-6);
+      margin-bottom: var(--s-5);
+      background: var(--bgColor-default);
+      border: 1px solid var(--borderColor-muted);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+    .report-header::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--brand-primary);
+    }
+    .report-header-main { min-width: 0; }
+    .report-title {
+      font-family: var(--font-serif);
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 var(--s-3);
+      color: var(--fgColor-default);
+    }
+    .report-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--s-3);
+      align-items: center;
+    }
+    .report-meta-item { color: var(--fgColor-muted); font-size: 0.9rem; }
+    .report-meta-item strong { color: var(--fgColor-default); font-weight: 600; }
+    .report-meta-item code { font-family: var(--font-mono); font-size: 0.85rem; background: var(--bgColor-muted); padding: 1px 6px; border-radius: var(--r-sm); }
+    .report-meta-label { color: var(--fgColor-muted); }
+    .report-db-links { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+    .report-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--s-3);
+      margin-bottom: var(--s-6);
+    }
+    .report-stat {
+      padding: var(--s-4) var(--s-5);
+      background: var(--bgColor-default);
+      border: 1px solid var(--borderColor-muted);
+      border-left: 3px solid var(--brand-primary);
+      border-radius: var(--r-md);
+    }
+    .report-stat-accent { border-left-color: var(--brand-accent); }
+    .report-stat-num {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 2.4vw, 2rem);
+      font-weight: 600;
+      color: var(--brand-primary);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .report-stat-accent .report-stat-num { color: var(--brand-accent); }
+    .report-stat-label {
+      margin-top: var(--s-2);
+      font-size: 0.82rem;
+      color: var(--fgColor-muted);
+    }
+
+    .report-section { margin-bottom: var(--s-7); }
+    .report-section-head { margin-bottom: var(--s-4); }
+    .report-section-head h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.25rem, 1.9vw, 1.55rem);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin: 0 0 var(--s-2);
+      position: relative;
+      padding-bottom: var(--s-2);
+    }
+    .report-section-head h2::after {
+      content: "";
+      position: absolute;
+      left: 0; bottom: 0;
+      width: 28px; height: 2px;
+      border-radius: 2px;
+      background: var(--brand-primary);
+    }
+
+    .report-chart-head {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: var(--s-5) 0 var(--s-2);
+      color: var(--fgColor-default);
+    }
+
+    /* Stats page table-toolbar styling (reused). */
+    .v2-table-toolbar strong {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--fgColor-default);
+    }
+
+    .tm-divider td {
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--fgColor-muted);
+      background: var(--bgColor-inset);
+      padding: var(--s-2);
+    }
+
+    .v2-table .mono { font-family: var(--font-mono); font-size: 0.85rem; }
+    .v2-table .muted { color: var(--fgColor-muted); }
+
+    .report-refs {
+      margin: var(--s-6) 0 0;
+      padding: var(--s-4) var(--s-5);
+      background: var(--bgColor-muted);
+      border: 1px solid var(--borderColor-muted);
+      border-radius: var(--r-md);
+      color: var(--fgColor-muted);
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+    .report-refs a { color: var(--brand-primary); white-space: nowrap; }
+
+    /* Plot containers bare on this page (shadow, no border). */
+    .report-section .v2-chart {
+      border: 0;
+      padding: 0;
+      min-height: auto;
+      background: var(--bgColor-default);
+      border-radius: var(--r-md);
+      box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+      overflow: hidden;
+    }
+    [data-color-mode="dark"] .report-section .v2-chart {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    }
+
+    @media (max-width: 600px) {
+      .report-header { padding: var(--s-4); }
+      .report-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.CHART_DATA = window.CHART_DATA || {};
+{% if has_delta_chart %}window.CHART_DATA['delta-chart'] = {{ fig_delta_json | safe }};{% endif %}
+{% if has_scatter_chart %}window.CHART_DATA['scatter-chart'] = {{ fig_scatter_json | safe }};{% endif %}
+{% if has_residue_chart %}window.CHART_DATA['residue-chart'] = {{ fig_residue_json | safe }};{% endif %}
+{% if has_tm_chart %}window.CHART_DATA['tm-breakdown-chart'] = {{ fig_tm_json | safe }};{% endif %}
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.Site && Site.initCharts) Site.initCharts();
+});
+</script>
+
+{% if has_snake_plot %}
+<script type="application/json" id="snake-plot-data">{{ snake_plot_json | safe }}</script>
+<script>
+(function() {
+  var snakeData = JSON.parse(document.getElementById('snake-plot-data').textContent);
+  var views = snakeData.views;
+  var links = snakeData.contact_links;
+  var positions = snakeData.positions;
+  var linksDrawn = false;
+
+  function textColorForFill(hex) {
+    try {
+      var r = parseInt(hex.substr(1, 2), 16);
+      var g = parseInt(hex.substr(3, 2), 16);
+      var b = parseInt(hex.substr(5, 2), 16);
+      var brightness = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return brightness > 128 ? '#000000' : '#FFFFFF';
+    } catch (e) {
+      return '#000000';
+    }
+  }
+
+  function switchSnakeView(viewName) {
+    var view = views[viewName];
+    if (!view) return;
+    var colors = view.colors;
+    var container = document.getElementById('snake-plot-container');
+    var circles = container.querySelectorAll('circle');
+    circles.forEach(function(circle) {
+      var id = circle.getAttribute('id');
+      if (!id || !/^\d+$/.test(id)) return;
+      var color = colors[id] || '#FFFFFF';
+      circle.setAttribute('fill', color);
+      var textEl = document.getElementById(id + 't');
+      if (textEl) textEl.setAttribute('fill', textColorForFill(color));
+    });
+    var buttons = document.querySelectorAll('.snake-btn');
+    buttons.forEach(function(btn) { btn.classList.remove('active'); });
+    var activeBtn = document.querySelector('[data-view="' + viewName + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
+    updateLegend(view);
+  }
+
+  function updateLegend(view) {
+    var el = document.getElementById('snake-legend');
+    var html = '<div class="snake-legend-title">' + view.label + '</div>';
+    html += '<div class="snake-legend-desc">' + view.description + '</div>';
+    if (view.legend_type === 'diverging' || view.legend_type === 'sequential') {
+      var cols = view.legend_colors;
+      var labs = view.legend_labels;
+      html += '<div class="snake-legend-gradient" style="background:linear-gradient(to right,' + cols.join(',') + ');"></div>';
+      html += '<div class="snake-legend-labels">';
+      for (var i = 0; i < labs.length; i++) html += '<span>' + labs[i] + '</span>';
+      html += '</div>';
+    } else if (view.legend_type === 'categorical') {
+      var items = view.legend_items || [];
+      html += '<div class="snake-legend-swatches">';
+      for (var i = 0; i < items.length; i++) {
+        html += '<span class="snake-legend-swatch"><span class="swatch-dot" style="background:' + items[i].color + ';"></span>' + items[i].label + '</span>';
+      }
+      html += '</div>';
+    }
+    if (Object.keys(view.colors).length === 0 && view.legend_type !== 'categorical') {
+      html += '<div style="color:var(--fgColor-muted); font-size:0.85em; margin-top:6px;">No data available for this view.</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function toggleSnakeLinks(show) {
+    var container = document.getElementById('snake-plot-container');
+    var snakeGroup = container.querySelector('#snake');
+    if (!snakeGroup) return;
+    if (!linksDrawn && show) {
+      var ns = 'http://www.w3.org/2000/svg';
+      var g = document.createElementNS(ns, 'g');
+      g.setAttribute('id', 'snake-links');
+      links.forEach(function(link) {
+        var p1 = positions[String(link.from_seq)];
+        var p2 = positions[String(link.to_seq)];
+        if (!p1 || !p2) return;
+        var midX = (p1[0] + p2[0]) / 2;
+        var midY = (p1[1] + p2[1]) / 2;
+        var dist = Math.abs(link.to_seq - link.from_seq);
+        var arcH = 30 + dist * 0.5;
+        var direction = dist < 20 ? -1 : 1;
+        var ctrlY = midY + direction * arcH;
+        var path = document.createElementNS(ns, 'path');
+        path.setAttribute('d', 'M ' + p1[0] + ',' + p1[1] + ' Q' + midX + ',' + ctrlY + ' ' + p2[0] + ',' + p2[1]);
+        path.setAttribute('stroke', link.color);
+        path.setAttribute('stroke-width', String(link.width));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('opacity', '0.6');
+        var title = document.createElementNS(ns, 'title');
+        title.textContent = 'Res ' + link.from_seq + ' ↔ ' + link.to_seq + ' | ΔRRCS: ' + link.delta;
+        path.appendChild(title);
+        g.appendChild(path);
+      });
+      snakeGroup.appendChild(g);
+      linksDrawn = true;
+    }
+    var linksGroup = document.getElementById('snake-links');
+    if (linksGroup) linksGroup.style.display = show ? '' : 'none';
+  }
+
+  function toggleLoop(selector, currentMode, expanded, element) {
+    var container = document.getElementById('snake-plot-container');
+    var otherMode = currentMode === 'short' ? 'long' : 'short';
+    container.querySelectorAll(selector + '.' + currentMode).forEach(function(el) { el.style.display = 'none'; });
+    container.querySelectorAll(selector + '.' + otherMode).forEach(function(el) { el.style.display = 'inline'; });
+  }
+
+  window.switchSnakeView = switchSnakeView;
+  window.toggleSnakeLinks = toggleSnakeLinks;
+  window.toggleLoop = toggleLoop;
+  switchSnakeView('delta_rrcs');
+})();
+</script>
+{% endif %}
+{% endblock %}

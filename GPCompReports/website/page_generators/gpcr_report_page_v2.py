@@ -1,0 +1,420 @@
+"""Generate v2 GPCR report pages (283 pages) alongside the v1 output.
+
+Sibling of gpcr_report_page.py. Reuses every helper from the v1 module for
+data prep (snake plot, charts, tables). Differences:
+  - renders templates/gpcr_report_v2.html
+  - writes output/reports/{gpcr_id}_v2.html
+  - passes base_v2 nav context (active_page, nav_* urls)
+  - injects layout_light_json / layout_dark_json from plotly_theming so the
+    4 per-report charts retint when the user toggles the theme
+  - patches the snake plot's CFR view (which the batch analyzer leaves empty)
+    with the top-CFR generic numbers from the cross-GPCR analysis, mapped
+    to this receptor's residue positions via its annotation map.
+"""
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from jinja2 import Environment
+
+from . import gpcr_report_page as v1
+from ..plotly_theming import theme_overrides
+
+
+def _load_conservation_cache(gpcr_id, output_dir):
+    """Load the per-GPCR conservation cache written by
+    `scripts/fetch_conservation.py`, if it exists.
+
+    Returns {position_int: conservation_score_float} for positions where a
+    numeric score is available. Empty dict if no cache.
+    """
+    if output_dir is None:
+        return {}
+    cache = Path(output_dir) / 'data' / f'conservation_{gpcr_id}.json'
+    if not cache.exists():
+        return {}
+    try:
+        obj = json.loads(cache.read_text())
+    except (ValueError, OSError):
+        return {}
+    scores = obj.get('scores', {}) or {}
+    result = {}
+    for k, v in scores.items():
+        if v is None:
+            continue
+        try:
+            result[int(k)] = float(v)
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
+CFR_COLOR = '#FF8F00'  # orange accent, matches ouroboros' legend swatch
+
+# AlphaMissense classification thresholds (the values AlphaMissense ships with)
+AM_PATHOGENIC_CUTOFF = 0.564
+AM_BENIGN_CUTOFF = 0.34
+AM_PATHOGENIC_COLOR = '#D32F2F'
+AM_AMBIGUOUS_COLOR = '#F57C00'
+AM_BENIGN_COLOR = '#388E3C'
+
+# Conservation: ConSurf-inspired diverging palette, but rebalanced so each of
+# the 9 grades reads as a distinct step. The canonical ConSurf scale has four
+# near-whites clustered at 2-4 and 6-7, which renders as a washed-out gradient
+# in a CSS legend; this palette keeps the same teal-variable / burgundy-conserved
+# identity but with HSL-smoothed saturation + lightness progression.
+CONSURF_GRADE_COLORS = [
+    '#0E7F86',  # 1: most variable (deep teal)
+    '#3DA8AE',  # 2
+    '#7CC6CB',  # 3
+    '#B8E0E3',  # 4
+    '#F5F3F0',  # 5: neutral (warm off-white)
+    '#EEBFD0',  # 6
+    '#D87A9F',  # 7
+    '#A83468',  # 8
+    '#6B1441',  # 9: most conserved (burgundy)
+]
+
+
+def _consurf_grade(score):
+    """Bucket a continuous conservation score [0, 1] into grades 1..9 by
+    linear mapping. Kept as a fallback for the legacy variant-only path
+    (when a full-residue cache isn't available). Per-protein quantile
+    binning (_quantile_grades) is preferred and matches ConSurf semantics.
+
+    Convention: score = 0 → grade 1 (variable), score = 1 → grade 9 (conserved).
+    """
+    try:
+        s = float(score)
+    except (TypeError, ValueError):
+        return None
+    if s != s:  # NaN
+        return None
+    if s <= 0.0:
+        return 1
+    if s >= 1.0:
+        return 9
+    return min(9, max(1, int(s * 9) + 1))
+
+
+def _quantile_grades(scores_by_pos):
+    """ConSurf-style 9-quantile binning, computed per protein.
+
+    Splits the receptor's own conservation scores into 9 equal-sized bins
+    from most-variable (grade 1) to most-conserved (grade 9). This ensures
+    every receptor uses the full palette regardless of the absolute score
+    range (ProtVar CONSERV scores cluster 0.25-1.0 for GPCRs, so a fixed
+    [0, 1] linear scale never lights up grades 1-2).
+
+    scores_by_pos: {position_int: float}
+    Returns:       {position_int: grade_int in 1..9}
+    """
+    if not scores_by_pos:
+        return {}
+    values = np.array(list(scores_by_pos.values()), dtype=float)
+    if len(values) < 9:
+        return {pos: (_consurf_grade(s) or 5) for pos, s in scores_by_pos.items()}
+    # 10 quantile boundaries define 9 bins. Use the 8 interior boundaries
+    # with searchsorted so each score falls into exactly one bin in [0, 8].
+    interior = np.quantile(values, np.linspace(0.0, 1.0, 10))[1:-1]
+    grades = {}
+    for pos, s in scores_by_pos.items():
+        try:
+            s_f = float(s)
+        except (TypeError, ValueError):
+            continue
+        if s_f != s_f:  # NaN
+            continue
+        idx = int(np.searchsorted(interior, s_f, side='right'))  # 0..8
+        grades[pos] = max(1, min(9, idx + 1))
+    return grades
+
+
+def _cfr_generic_numbers(analysis_results, top_n=30):
+    """Extract the top-N CFR generic numbers (strings like '3.50') from the
+    cross-GPCR analysis. Returns an empty set if unavailable."""
+    cfr_block = (analysis_results or {}).get('cfr', {})
+    cfr_table = cfr_block.get('cfr_table')
+    if cfr_table is None or getattr(cfr_table, 'empty', True):
+        return set()
+    top = cfr_table.head(top_n)
+    return set(str(x) for x in top['generic_number'].tolist() if x)
+
+
+def _am_bucket_color(score):
+    """Return the categorical AlphaMissense color for a score, or None."""
+    if score is None:
+        return None
+    try:
+        s = float(score)
+    except (TypeError, ValueError):
+        return None
+    if s != s:  # NaN
+        return None
+    if s >= AM_PATHOGENIC_CUTOFF:
+        return AM_PATHOGENIC_COLOR
+    if s >= AM_BENIGN_CUTOFF:
+        return AM_AMBIGUOUS_COLOR
+    return AM_BENIGN_COLOR
+
+
+def _lerp_hex(frac, lo_hex, hi_hex):
+    """Linearly interpolate between two hex colors at fraction [0, 1]."""
+    frac = max(0.0, min(1.0, float(frac)))
+    def _parse(h):
+        h = h.lstrip('#')
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    lr, lg, lb = _parse(lo_hex)
+    hr, hg, hb = _parse(hi_hex)
+    r = round(lr + (hr - lr) * frac)
+    g = round(lg + (hg - lg) * frac)
+    b = round(lb + (hb - lb) * frac)
+    return f'#{r:02X}{g:02X}{b:02X}'
+
+
+def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, conservation_cache=None):
+    """Patch the snake plot JSON's view data:
+      - CFR view: populate with per-GPCR residue positions (builder stubs empty)
+      - AlphaMissense view: switch to categorical (benign/ambiguous/pathogenic)
+      - Conservation view: swap purple gradient for white->teal
+      - Variants view: remove (we don't expose it in v2)
+    """
+    if not snake_json_str or snake_json_str == '{}':
+        return snake_json_str
+    try:
+        data = json.loads(snake_json_str)
+    except (ValueError, TypeError):
+        return snake_json_str
+    views = data.setdefault('views', {})
+
+    # --- CFR ---
+    cfr_colors = {}
+    if cfr_generic_numbers:
+        for pos, annot in (annot_map or {}).items():
+            gn = (annot.get('generic_number') or annot.get('display_number') or '').strip()
+            if gn and gn in cfr_generic_numbers:
+                cfr_colors[str(pos)] = CFR_COLOR
+    cfr_view = views.setdefault('cfr', {})
+    cfr_view['colors'] = cfr_colors
+    cfr_view['label'] = 'Core Functional'
+    cfr_view['legend_type'] = 'categorical'
+    cfr_view['legend_items'] = [{'color': CFR_COLOR, 'label': 'CFR position'}]
+    cfr_view['description'] = (
+        f'Top cross-GPCR Core Functional Residues ({len(cfr_colors)} mapped to this receptor)'
+        if cfr_colors else 'No top CFRs mapped to this receptor'
+    )
+
+    # --- AlphaMissense (categorical) ---
+    am_colors = {}
+    am_counts = {'pathogenic': 0, 'ambiguous': 0, 'benign': 0}
+    if var_df is not None and not var_df.empty and 'am_score' in var_df.columns:
+        # Use the max am_score per position, matching the batch analyzer's logic
+        for pos, group in var_df.groupby('protein_position'):
+            scores = group['am_score'].dropna()
+            if scores.empty:
+                continue
+            try:
+                pos_int = int(pos)
+            except (TypeError, ValueError):
+                continue
+            color = _am_bucket_color(scores.max())
+            if color is None:
+                continue
+            am_colors[str(pos_int)] = color
+            if color == AM_PATHOGENIC_COLOR:
+                am_counts['pathogenic'] += 1
+            elif color == AM_AMBIGUOUS_COLOR:
+                am_counts['ambiguous'] += 1
+            else:
+                am_counts['benign'] += 1
+    am_view = views.setdefault('alphamissense', {})
+    am_view['colors'] = am_colors
+    am_view['label'] = 'AlphaMissense'
+    am_view['legend_type'] = 'categorical'
+    am_view['legend_items'] = [
+        {'color': AM_PATHOGENIC_COLOR, 'label': f"Pathogenic (≥ {AM_PATHOGENIC_CUTOFF})"},
+        {'color': AM_AMBIGUOUS_COLOR,  'label': f"Ambiguous ({AM_BENIGN_CUTOFF}-{AM_PATHOGENIC_CUTOFF})"},
+        {'color': AM_BENIGN_COLOR,     'label': f"Benign (< {AM_BENIGN_CUTOFF})"},
+    ]
+    if am_colors:
+        am_view['description'] = (
+            f"AlphaMissense classification at variant positions: "
+            f"{am_counts['pathogenic']} pathogenic, "
+            f"{am_counts['ambiguous']} ambiguous, "
+            f"{am_counts['benign']} benign."
+        )
+    else:
+        am_view['description'] = 'No AlphaMissense data for this receptor'
+
+    # --- Conservation: ConSurf 9-grade diverging palette ---
+    # Prefer the full-residue ProtVar cache written by scripts/fetch_conservation.py.
+    # Fall back to the variant-only column we already have.
+    cons_colors = {}
+    cache_hit = False
+    if conservation_cache:
+        cache_hit = True
+        # Per-protein quantile binning — matches ConSurf semantics and makes every
+        # receptor span grades 1-9 regardless of absolute ProtVar range.
+        grades = _quantile_grades(conservation_cache)
+        for pos_int, grade in grades.items():
+            cons_colors[str(pos_int)] = CONSURF_GRADE_COLORS[grade - 1]
+    elif var_df is not None and not var_df.empty and 'conservation' in var_df.columns:
+        for pos, group in var_df.groupby('protein_position'):
+            vals = group['conservation'].dropna()
+            if vals.empty:
+                continue
+            try:
+                pos_int = int(pos)
+            except (TypeError, ValueError):
+                continue
+            grade = _consurf_grade(float(vals.iloc[0]))
+            if grade is None:
+                continue
+            cons_colors[str(pos_int)] = CONSURF_GRADE_COLORS[grade - 1]
+    cons_view = views.setdefault('conservation', {})
+    cons_view['colors'] = cons_colors
+    cons_view['label'] = 'Conservation'
+    cons_view['legend_type'] = 'sequential'
+    cons_view['legend_colors'] = list(CONSURF_GRADE_COLORS)
+    cons_view['legend_labels'] = ['1 variable', '5', '9 conserved']
+    if cons_colors and cache_hit:
+        cons_view['description'] = (
+            f'Per-residue conservation (ProtVar CONSERV), binned into 9 grades by '
+            f'this receptor\'s own score quantiles (ConSurf-style). '
+            f'{len(cons_colors)} positions covered; grade 1 = most variable in this '
+            f'receptor, grade 9 = most conserved.'
+        )
+    elif cons_colors:
+        cons_view['description'] = (
+            'Sequence conservation (ProtVar) at variant positions only, rendered on the '
+            'ConSurf 9-grade palette. Run scripts/fetch_conservation.py to populate all residues.'
+        )
+    else:
+        cons_view['description'] = 'No conservation data for this receptor'
+
+    # --- Variants: drop entirely (button also removed from template) ---
+    views.pop('variants', None)
+
+    return json.dumps(data)
+
+
+def generate_all_reports_v2(env: Environment, store, output_dir, analysis_results=None, limit=None):
+    reports_dir = output_dir / 'reports'
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    info_df = store.get_all_info_df()
+    info_df = info_df.sort_values('sum_abs_delta', ascending=False).reset_index(drop=True)
+    rank_map = {row['gpcr_id']: idx + 1 for idx, row in info_df.iterrows()}
+
+    template = env.get_template('gpcr_report_v2.html')
+    total = len(store.gpcr_ids)
+    gpcr_ids = store.gpcr_ids[:limit] if limit else store.gpcr_ids
+
+    light, dark = theme_overrides()
+    layout_light_json = json.dumps(light, separators=(',', ':'))
+    layout_dark_json = json.dumps(dark, separators=(',', ':'))
+
+    cfr_generics = _cfr_generic_numbers(analysis_results)
+
+    gen_total = len(gpcr_ids)
+    for i, gid in enumerate(gpcr_ids):
+        if (i + 1) % 50 == 0 or i == 0:
+            print(f"  Generating v2 reports: {i + 1}/{gen_total}...")
+
+        info = store.gpcr_info[gid]
+        delta_df = store.delta_data.get(gid, pd.DataFrame())
+        var_df = store.variant_data.get(gid, pd.DataFrame())
+        annot_map = store.get_annotation_map(gid)
+
+        sig_threshold = v1._calc_significance_threshold(delta_df)
+
+        fig_delta_json = '{}'
+        fig_scatter_json = '{}'
+        fig_residue_json = '{}'
+        fig_tm_json = '{}'
+        has_delta_chart = has_scatter_chart = has_residue_chart = has_tm_chart = False
+
+        if not delta_df.empty:
+            fig = v1._make_delta_distribution(delta_df, info['uniprot_name'])
+            fig_delta_json = fig.to_json()
+            has_delta_chart = True
+
+            fig = v1._make_scatter_plot(delta_df, info['uniprot_name'])
+            fig_scatter_json = fig.to_json()
+            has_scatter_chart = True
+
+            fig = v1._make_residue_changes(delta_df, annot_map, info['uniprot_name'])
+            fig_residue_json = fig.to_json()
+            has_residue_chart = True
+
+            if annot_map:
+                fig = v1._make_tm_breakdown(delta_df, annot_map, info['uniprot_name'])
+                fig_tm_json = fig.to_json()
+                has_tm_chart = True
+
+        top_changes = v1._get_top_changes(delta_df, annot_map, sig_threshold, n=100)
+        tm_summary = v1._build_tm_summary(delta_df, annot_map)
+        variants = v1._prepare_variants_full(var_df, delta_df)
+        complete_rrcs = v1._get_complete_rrcs(delta_df, sig_threshold, n=1000)
+        rrcs_stats = v1._calc_rrcs_stats(delta_df, sig_threshold)
+
+        snake_svg, snake_json = v1._prepare_snake_plot(gid, delta_df, var_df, sig_threshold)
+        has_snake_plot = snake_svg is not None
+        if has_snake_plot:
+            cons_cache = _load_conservation_cache(gid, output_dir)
+            snake_json = _patch_snake_views(
+                snake_json, annot_map, cfr_generics, var_df, conservation_cache=cons_cache,
+            )
+
+        max_increase = float(delta_df['delta_rrcs'].max()) if not delta_df.empty else 0.0
+        max_decrease = float(delta_df['delta_rrcs'].min()) if not delta_df.empty else 0.0
+
+        html = template.render(
+            static_prefix='../',
+            active_page='report',
+            nav_home_url='../index_v2.html',
+            nav_browse_url='../browse/index_v2.html',
+            nav_stats_url='../statistics_v2.html',
+            page_title=f"{info['uniprot_name']} · GPCompReports",
+            total_gpcrs=total,
+            uniprot_name=info['uniprot_name'],
+            gene_name=info['gene_name'],
+            receptor_family=info['receptor_family'],
+            ligand_type=info['ligand_type'],
+            uniprot_id=info['uniprot_id'],
+            gpcr_id=gid,
+            rank=rank_map.get(gid, '?'),
+            total_contacts=info['total_contacts'],
+            significant_changes=info['significant_changes'],
+            sum_abs_delta=info['sum_abs_delta'],
+            variants_found=info['variants_found'],
+            max_increase=max_increase,
+            max_decrease=max_decrease,
+            sig_threshold=sig_threshold,
+            has_delta_chart=has_delta_chart,
+            fig_delta_json=fig_delta_json,
+            has_scatter_chart=has_scatter_chart,
+            fig_scatter_json=fig_scatter_json,
+            has_residue_chart=has_residue_chart,
+            fig_residue_json=fig_residue_json,
+            has_tm_chart=has_tm_chart,
+            fig_tm_json=fig_tm_json,
+            has_snake_plot=has_snake_plot,
+            snake_plot_svg=snake_svg or '',
+            snake_plot_json=snake_json or '{}',
+            top_changes=top_changes,
+            tm_summary=tm_summary,
+            variants=variants,
+            total_variants=len(var_df),
+            complete_rrcs=complete_rrcs,
+            rrcs_stats=rrcs_stats,
+            layout_light_json=layout_light_json,
+            layout_dark_json=layout_dark_json,
+        )
+
+        out_path = reports_dir / f'{gid}_v2.html'
+        out_path.write_text(html, encoding='utf-8')
+
+    print(f"  Generated: {gen_total} v2 report pages")

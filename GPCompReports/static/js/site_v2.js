@@ -31,17 +31,19 @@
     document.dispatchEvent(new CustomEvent('gpcrsynth-theme-change', { detail: { mode: mode, stored: stored } }));
     var toggle = document.getElementById('theme-toggle');
     if (toggle) {
-      toggle.setAttribute('aria-pressed', stored ? 'true' : 'false');
-      toggle.title = stored ? ('Theme: ' + stored + ' (click to cycle)') : 'Theme: auto (click to cycle)';
+      toggle.title = mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
     }
   }
   function initThemeToggle() {
     applyThemeMode(readStoredTheme());
     var toggle = document.getElementById('theme-toggle');
     if (!toggle) return;
+    // 2-state flip: always invert the currently-rendered mode. Initial auto
+    // behavior still applies on first page load when nothing is stored, but
+    // clicks always produce a visible change.
     toggle.addEventListener('click', function() {
-      var cur = readStoredTheme();
-      var next = cur === null ? 'light' : (cur === 'light' ? 'dark' : null);
+      var cur = root.getAttribute('data-color-mode');
+      var next = cur === 'dark' ? 'light' : 'dark';
       writeStoredTheme(next);
       applyThemeMode(next);
     });
