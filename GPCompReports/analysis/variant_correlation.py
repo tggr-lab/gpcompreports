@@ -1,4 +1,4 @@
-"""Variant correlation analysis: CFR vs gnomAD variant frequency and pathogenicity."""
+"""Variant correlation analysis: CFR vs pathogenicity and conservation."""
 
 import numpy as np
 import pandas as pd
@@ -13,10 +13,6 @@ def run_variant_analysis(store, cfr_table):
 
     cfr_positions = _get_cfr_position_map(store, cfr_table)
     results['cfr_positions'] = cfr_positions
-
-    freq_result = compare_allele_frequencies(store, cfr_positions)
-    results['freq_comparison'] = freq_result
-    results['fig_variant_violin'] = make_variant_violin(freq_result)
 
     path_result = pathogenicity_enrichment(store, cfr_positions)
     results['pathogenicity'] = path_result
@@ -54,102 +50,6 @@ def _get_cfr_position_map(store, cfr_table):
             result[gid] = cfr_pos
 
     return result
-
-
-def compare_allele_frequencies(store, cfr_positions):
-    """Compare mean allele frequency at CFR positions vs non-CFR (Mann-Whitney U)."""
-    cfr_afs = []
-    non_cfr_afs = []
-
-    for gid in store.gpcr_ids:
-        var_df = store.variant_data.get(gid, pd.DataFrame())
-        if var_df.empty:
-            continue
-
-        cfr_pos = cfr_positions.get(gid, set())
-        for _, row in var_df.iterrows():
-            af = row.get('af', None)
-            if af is None or pd.isna(af):
-                continue
-            try:
-                af = float(af)
-            except (ValueError, TypeError):
-                continue
-
-            protein_pos = int(row['protein_position']) if pd.notna(row.get('protein_position')) else None
-            if protein_pos is None:
-                continue
-
-            if protein_pos in cfr_pos:
-                cfr_afs.append(af)
-            else:
-                non_cfr_afs.append(af)
-
-    # Mann-Whitney U test
-    stat_result = {}
-    if len(cfr_afs) >= 5 and len(non_cfr_afs) >= 5:
-        u_stat, p_value = stats.mannwhitneyu(cfr_afs, non_cfr_afs, alternative='two-sided')
-        stat_result = {
-            'test': 'Mann-Whitney U',
-            'u_statistic': float(u_stat),
-            'p_value': float(p_value),
-            'cfr_median_af': float(np.median(cfr_afs)),
-            'non_cfr_median_af': float(np.median(non_cfr_afs)),
-            'cfr_n': len(cfr_afs),
-            'non_cfr_n': len(non_cfr_afs),
-        }
-
-    return {
-        'cfr_afs': cfr_afs,
-        'non_cfr_afs': non_cfr_afs,
-        'stats': stat_result,
-    }
-
-
-def make_variant_violin(freq_result):
-    """Violin plot: allele frequency at CFR vs non-CFR positions."""
-    cfr_afs = freq_result.get('cfr_afs', [])
-    non_cfr_afs = freq_result.get('non_cfr_afs', [])
-
-    if not cfr_afs and not non_cfr_afs:
-        return go.Figure()
-
-    # Sample non-CFR to prevent rendering issues (keep all CFR)
-    if len(non_cfr_afs) > 5000:
-        rng = np.random.RandomState(42)
-        non_cfr_sample = rng.choice(non_cfr_afs, 5000, replace=False).tolist()
-    else:
-        non_cfr_sample = non_cfr_afs
-
-    df = pd.DataFrame([
-        {'Allele Frequency': af, 'Position Type': 'CFR'} for af in cfr_afs
-    ] + [
-        {'Allele Frequency': af, 'Position Type': 'Non-CFR'} for af in non_cfr_sample
-    ])
-
-    # Log transform for better visualization
-    df['Log10 Allele Frequency'] = np.log10(df['Allele Frequency'].clip(lower=1e-10))
-
-    fig = px.violin(
-        df, x='Position Type', y='Log10 Allele Frequency',
-        color='Position Type',
-        box=True, points='outliers',
-        title='Variant Allele Frequency: CFR vs Non-CFR Positions',
-        color_discrete_map={'CFR': '#008080', 'Non-CFR': '#E8820C'},
-    )
-
-    stat = freq_result.get('stats', {})
-    if stat:
-        fig.add_annotation(
-            x=0.5, y=1.08, xref='paper', yref='paper',
-            text=f"Mann-Whitney U p = {stat['p_value']:.2e} | "
-                 f"CFR median AF: {stat['cfr_median_af']:.2e} | "
-                 f"Non-CFR median AF: {stat['non_cfr_median_af']:.2e}",
-            showarrow=False, font=dict(size=11),
-        )
-
-    fig.update_layout(height=500, showlegend=False)
-    return fig
 
 
 def pathogenicity_enrichment(store, cfr_positions):
@@ -238,7 +138,7 @@ def make_pathogenicity_bar(path_result):
     stat = path_result.get('stats', {})
     title = 'AlphaMissense Pathogenicity: CFR vs Non-CFR Positions'
     if stat:
-        title += f" (χ² p = {stat['p_value']:.2e})"
+        title += f" (chi-squared p = {stat['p_value']:.2e})"
 
     fig.update_layout(
         barmode='stack', title=title,
@@ -293,7 +193,7 @@ def conservation_vs_delta(store):
 
 
 def make_conservation_scatter(conservation_data):
-    """Scatter: conservation vs delta_rrcs."""
+    """Scatter: conservation vs delta_rrcs with Spearman correlation."""
     if conservation_data.empty:
         return go.Figure()
 
@@ -313,6 +213,27 @@ def make_conservation_scatter(conservation_data):
         color_discrete_sequence=['#008080'],
     )
     fig.update_traces(marker_size=4)
+
+    # Add Spearman correlation + trendline
+    valid = df.dropna(subset=['conservation', 'max_abs_delta'])
+    if len(valid) >= 10:
+        r, p = stats.spearmanr(valid['conservation'], valid['max_abs_delta'])
+        fig.add_annotation(
+            x=0.02, y=0.98, xref='paper', yref='paper',
+            text=f"Spearman r = {r:.3f}, p = {p:.2e}",
+            showarrow=False, font=dict(size=11),
+            xanchor='left', yanchor='top',
+        )
+
+        # OLS trendline
+        m, b = np.polyfit(valid['conservation'], valid['max_abs_delta'], 1)
+        x_range = np.linspace(valid['conservation'].min(), valid['conservation'].max(), 50)
+        fig.add_trace(go.Scatter(
+            x=x_range, y=m * x_range + b,
+            mode='lines', line=dict(color='gray', dash='dash', width=1.5),
+            showlegend=False, hoverinfo='skip',
+        ))
+
     fig.update_layout(height=500)
     return fig
 

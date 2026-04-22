@@ -222,7 +222,7 @@ def _make_delta_distribution(delta_df, name):
         opacity=0.8,
     ))
     fig.update_layout(
-        title=f'ΔRRCS Distribution — {name}',
+        title=f'ΔRRCS Distribution: {name}',
         xaxis_title='ΔRRCS (Active − Inactive)',
         yaxis_title='Count',
         height=350,
@@ -234,9 +234,8 @@ def _make_delta_distribution(delta_df, name):
 
 def _make_scatter_plot(delta_df, name):
     """Active vs Inactive RRCS scatter with hover info."""
-    # Build hover text: "RES1_NAME RES1 — RES2_NAME RES2 | ΔRRCS: ±X.XX"
     hover = [
-        f"{r['res1_name']}{int(r['res1'])} — {r['res2_name']}{int(r['res2'])}<br>"
+        f"{r['res1_name']}{int(r['res1'])} - {r['res2_name']}{int(r['res2'])}<br>"
         f"Active: {r['active_rrcs']:.2f} | Inactive: {r['inactive_rrcs']:.2f}<br>"
         f"ΔRRCS: {r['delta_rrcs']:+.2f}"
         for _, r in delta_df.iterrows()
@@ -262,7 +261,7 @@ def _make_scatter_plot(delta_df, name):
     fig.add_shape(type='line', x0=mn, y0=mn, x1=mx, y1=mx,
                   line=dict(color='gray', dash='dash', width=1))
     fig.update_layout(
-        title=f'Active vs Inactive RRCS — {name}',
+        title=f'Active vs Inactive RRCS: {name}',
         xaxis_title='Inactive RRCS',
         yaxis_title='Active RRCS',
         height=400,
@@ -330,7 +329,7 @@ def _make_residue_changes(delta_df, annot_map, name):
         hovertemplate='%{text}<extra></extra>',
     ))
     fig.update_layout(
-        title=f'Residue-wise RRCS Changes — {name}',
+        title=f'Residue-wise RRCS Changes: {name}',
         xaxis_title='Residue Position',
         yaxis_title='Mean ΔRRCS',
         height=400,
@@ -377,7 +376,7 @@ def _make_tm_breakdown(delta_df, annot_map, name):
             name='Loops / H8',
         ))
     fig.update_layout(
-        title=f'Mean |ΔRRCS| by Segment — {name}',
+        title=f'Mean |ΔRRCS| by Segment: {name}',
         xaxis_title='Protein Segment',
         yaxis_title='Mean |ΔRRCS|',
         height=380,

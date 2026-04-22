@@ -1,12 +1,10 @@
-"""Cross-GPCR comparison: rankings, distributions, clustering, family comparisons."""
+"""Cross-GPCR comparison: rankings, distributions, family comparisons."""
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy.cluster.hierarchy import linkage, dendrogram
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from scipy import stats
 
 
 def run_cross_gpcr_analysis(store):
@@ -19,11 +17,6 @@ def run_cross_gpcr_analysis(store):
     results['fig_delta_histogram'] = make_delta_histogram(store)
     results['fig_box_ligand'] = make_box_by_ligand(info_df)
     results['fig_box_family'] = make_box_by_family(info_df)
-
-    pca_result = run_pca_analysis(store)
-    results['pca_data'] = pca_result['data']
-    results['fig_pca'] = pca_result['fig']
-    results['pca_variance'] = pca_result['variance_explained']
 
     return results
 
@@ -51,7 +44,7 @@ def make_ranking_bar(info_df):
     fig = px.bar(
         top30, x='sum_abs_delta', y='uniprot_name',
         color='ligand_type', orientation='h',
-        title='Top 30 GPCRs by Total Conformational Change (Σ|ΔRRCS|)',
+        title='Top 30 GPCRs by Total Conformational Change',
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'uniprot_name': 'GPCR',
                 'ligand_type': 'Ligand Type'},
         color_discrete_sequence=px.colors.qualitative.Set2,
@@ -80,7 +73,7 @@ def make_delta_histogram(store):
     ))
     fig.update_layout(
         title='Global Distribution of ΔRRCS Values Across All GPCRs',
-        xaxis_title='ΔRRCS (Active − Inactive)',
+        xaxis_title='ΔRRCS (Active - Inactive)',
         yaxis_title='Count',
         height=450,
     )
@@ -88,7 +81,7 @@ def make_delta_histogram(store):
 
 
 def make_box_by_ligand(info_df):
-    """Box plots of sum |delta| by ligand type."""
+    """Box plots of sum |delta| by ligand type with Kruskal-Wallis test."""
     fig = px.box(
         info_df, x='ligand_type', y='sum_abs_delta',
         color='ligand_type',
@@ -96,16 +89,27 @@ def make_box_by_ligand(info_df):
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'ligand_type': 'Ligand Type'},
         color_discrete_sequence=px.colors.qualitative.Set2,
     )
+
+    # Kruskal-Wallis test across ligand types
+    groups = [g['sum_abs_delta'].dropna().values for _, g in info_df.groupby('ligand_type') if len(g) >= 3]
+    if len(groups) >= 2:
+        h_stat, p_value = stats.kruskal(*groups)
+        fig.add_annotation(
+            x=0.5, y=1.08, xref='paper', yref='paper',
+            text=f"Kruskal-Wallis H = {h_stat:.1f}, p = {p_value:.2e}",
+            showarrow=False, font=dict(size=11),
+        )
+
     fig.update_layout(
         height=500, showlegend=False,
         xaxis_tickangle=-45,
-        margin=dict(b=120),
+        margin=dict(b=120, t=80),
     )
     return fig
 
 
 def make_box_by_family(info_df):
-    """Box plots by receptor family (top 15 by count)."""
+    """Box plots by receptor family (top 15 by count) with Kruskal-Wallis test."""
     top_families = info_df['receptor_family'].value_counts().head(15).index.tolist()
     subset = info_df[info_df['receptor_family'].isin(top_families)]
 
@@ -116,85 +120,20 @@ def make_box_by_family(info_df):
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'receptor_family': 'Receptor Family'},
         color_discrete_sequence=px.colors.qualitative.Pastel,
     )
+
+    # Kruskal-Wallis test across families
+    groups = [g['sum_abs_delta'].dropna().values for _, g in subset.groupby('receptor_family') if len(g) >= 3]
+    if len(groups) >= 2:
+        h_stat, p_value = stats.kruskal(*groups)
+        fig.add_annotation(
+            x=0.5, y=1.08, xref='paper', yref='paper',
+            text=f"Kruskal-Wallis H = {h_stat:.1f}, p = {p_value:.2e}",
+            showarrow=False, font=dict(size=11),
+        )
+
     fig.update_layout(
         height=550, showlegend=False,
         xaxis_tickangle=-45,
-        margin=dict(b=150),
+        margin=dict(b=150, t=80),
     )
     return fig
-
-
-def run_pca_analysis(store):
-    """PCA on per-GPCR TM-domain feature vectors, colored by family."""
-    # Build feature matrix: for each GPCR, get per-TM-domain mean abs_delta
-    tm_labels = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7',
-                 'H8', 'ICL1', 'ICL2', 'ICL3', 'ECL1', 'ECL2', 'ECL3']
-    rows = []
-    gpcr_ids = []
-    families = []
-    info = store.gpcr_info
-
-    for gid in store.gpcr_ids:
-        annot_map = store.get_annotation_map(gid)
-        delta_df = store.delta_data.get(gid, pd.DataFrame())
-        if delta_df.empty or not annot_map:
-            continue
-
-        # Map residues to segments
-        tm_deltas = {tm: [] for tm in tm_labels}
-        for _, row in delta_df.iterrows():
-            for res_col in ['res1', 'res2']:
-                pos = int(row[res_col])
-                seg = annot_map.get(pos, {}).get('protein_segment', '')
-                if seg in tm_deltas:
-                    tm_deltas[seg].append(abs(row['delta_rrcs']))
-
-        feature = [np.mean(tm_deltas[tm]) if tm_deltas[tm] else 0 for tm in tm_labels]
-        rows.append(feature)
-        gpcr_ids.append(gid)
-        families.append(info.get(gid, {}).get('receptor_family', 'Unknown'))
-
-    if len(rows) < 5:
-        return {'data': None, 'fig': go.Figure(), 'variance_explained': []}
-
-    X = np.array(rows)
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    pca = PCA(n_components=min(3, X_scaled.shape[1]))
-    X_pca = pca.fit_transform(X_scaled)
-
-    pca_df = pd.DataFrame({
-        'PC1': X_pca[:, 0],
-        'PC2': X_pca[:, 1],
-        'gpcr_id': gpcr_ids,
-        'receptor_family': families,
-    })
-
-    # Limit legend to top 10 families for readability
-    top10 = pca_df['receptor_family'].value_counts().head(10).index.tolist()
-    pca_df['family_display'] = pca_df['receptor_family'].apply(
-        lambda x: x if x in top10 else 'Other'
-    )
-
-    var_explained = pca.explained_variance_ratio_
-
-    fig = px.scatter(
-        pca_df, x='PC1', y='PC2',
-        color='family_display',
-        hover_data=['gpcr_id'],
-        title='PCA of GPCR Conformational Change Profiles',
-        labels={
-            'PC1': f'PC1 ({var_explained[0]:.1%} variance)',
-            'PC2': f'PC2 ({var_explained[1]:.1%} variance)',
-            'family_display': 'Receptor Family',
-        },
-        color_discrete_sequence=px.colors.qualitative.Set3,
-    )
-    fig.update_layout(height=600)
-
-    return {
-        'data': pca_df,
-        'fig': fig,
-        'variance_explained': var_explained.tolist(),
-    }

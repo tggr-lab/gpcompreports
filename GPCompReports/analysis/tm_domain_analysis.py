@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from scipy import stats
 
 
 TM_SEGMENTS = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']
@@ -47,11 +48,11 @@ def compute_domain_stats(store):
                 if seg in domain_deltas:
                     domain_deltas[seg].append(abs(row['delta_rrcs']))
 
-    stats = []
+    stats_list = []
     for seg in ALL_SEGMENTS:
         vals = domain_deltas[seg]
         if vals:
-            stats.append({
+            stats_list.append({
                 'segment': seg,
                 'mean_abs_delta': np.mean(vals),
                 'median_abs_delta': np.median(vals),
@@ -60,40 +61,40 @@ def compute_domain_stats(store):
                 'std_abs_delta': np.std(vals),
             })
         else:
-            stats.append({
+            stats_list.append({
                 'segment': seg, 'mean_abs_delta': 0, 'median_abs_delta': 0,
                 'total_abs_delta': 0, 'count': 0, 'std_abs_delta': 0,
             })
 
-    return pd.DataFrame(stats)
+    return pd.DataFrame(stats_list)
 
 
 def make_tm_bar(domain_stats):
-    """Bar chart of per-TM-domain mean |delta|."""
-    df = domain_stats.sort_values('mean_abs_delta', ascending=True)
-    colors = ['#008080' if s.startswith('TM') else '#E8820C' for s in df['segment']]
+    """Bar chart of per-TM-domain mean |delta| (TM1-7 only)."""
+    df = domain_stats[domain_stats['segment'].isin(TM_SEGMENTS)].copy()
+    df = df.sort_values('mean_abs_delta', ascending=True)
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df['mean_abs_delta'], y=df['segment'],
         orientation='h',
-        marker_color=colors,
+        marker_color='#008080',
         text=[f'{v:.2f}' for v in df['mean_abs_delta']],
         textposition='outside',
     ))
     fig.update_layout(
-        title='Mean Conformational Change by Protein Segment',
+        title='Mean Conformational Change by TM Helix',
         xaxis_title='Mean |ΔRRCS|',
         yaxis_title='Segment',
-        height=500,
+        height=400,
         margin=dict(l=80, r=80),
     )
     return fig
 
 
 def compute_domain_interactions(store):
-    """Compute domain-domain interaction change matrix."""
-    seg_list = ALL_SEGMENTS
+    """Compute domain-domain interaction change matrix (TM1-7 only)."""
+    seg_list = TM_SEGMENTS
     seg_idx = {s: i for i, s in enumerate(seg_list)}
     n = len(seg_list)
     matrix = np.zeros((n, n))
@@ -132,12 +133,12 @@ def make_interaction_heatmap(interaction_matrix):
         colorscale=[[0, '#F5F7FA'], [0.5, '#008080'], [1, '#E8820C']],
         text=np.round(interaction_matrix.values, 2),
         texttemplate='%{text}',
-        textfont=dict(size=9),
-        hovertemplate='%{y} ↔ %{x}<br>Mean |ΔRRCS|: %{z:.2f}<extra></extra>',
+        textfont=dict(size=10),
+        hovertemplate='%{y} - %{x}<br>Mean |ΔRRCS|: %{z:.2f}<extra></extra>',
     ))
     fig.update_layout(
-        title='Domain-Domain Interaction Change Heatmap',
-        height=600, width=700,
+        title='TM Helix Interaction Change Heatmap',
+        height=500, width=550,
         xaxis_title='Segment', yaxis_title='Segment',
         yaxis_autorange='reversed',
     )
@@ -170,10 +171,16 @@ def compute_generic_number_variation(store):
                         gn_values[gn] = []
                     gn_values[gn].append(abs(row['delta_rrcs']))
 
-    # Compute stats per generic number
+    # Compute stats per generic number, filter to TM1-7 only
+    tm_segment_ids = {'1', '2', '3', '4', '5', '6', '7'}
     rows = []
     for gn, vals in gn_values.items():
         if len(vals) >= 5:  # Need enough data points
+            # Extract segment number from generic number (e.g., "3.50x50" -> "3")
+            seg_id = gn.split('.')[0].replace('x', '') if '.' in gn else ''
+            if seg_id not in tm_segment_ids:
+                continue
+
             mean_val = np.mean(vals)
             std_val = np.std(vals)
             cv = std_val / mean_val if mean_val > 0 else 0
@@ -183,14 +190,14 @@ def compute_generic_number_variation(store):
                 'std_abs_delta': std_val,
                 'cv': cv,
                 'n_observations': len(vals),
-                'segment': gn.split('.')[0].replace('x', '') if '.' in gn else '',
+                'segment': f'TM{seg_id}',
             })
 
     return pd.DataFrame(rows)
 
 
 def make_conserved_variable_scatter(cv_data):
-    """Scatter plot: mean_delta vs CV for each generic number position."""
+    """Scatter plot: mean_delta vs CV for each generic number position (TM1-7 only)."""
     if cv_data.empty:
         return go.Figure()
 
@@ -206,12 +213,31 @@ def make_conserved_variable_scatter(cv_data):
         },
         color_discrete_sequence=px.colors.qualitative.Set2,
     )
+
+    # Add Spearman correlation + trendline
+    r, p = stats.spearmanr(cv_data['mean_abs_delta'], cv_data['cv'])
+    fig.add_annotation(
+        x=0.02, y=0.98, xref='paper', yref='paper',
+        text=f"Spearman r = {r:.3f}, p = {p:.2e}",
+        showarrow=False, font=dict(size=11),
+        xanchor='left', yanchor='top',
+    )
+
+    # Add OLS trendline
+    m, b = np.polyfit(cv_data['mean_abs_delta'], cv_data['cv'], 1)
+    x_range = np.linspace(cv_data['mean_abs_delta'].min(), cv_data['mean_abs_delta'].max(), 50)
+    fig.add_trace(go.Scatter(
+        x=x_range, y=m * x_range + b,
+        mode='lines', line=dict(color='gray', dash='dash', width=1.5),
+        showlegend=False, hoverinfo='skip',
+    ))
+
     fig.update_layout(height=550)
     # Annotate quadrants
     fig.add_annotation(x=0.95, y=0.05, xref='paper', yref='paper',
-                       text='High Δ, Low CV → Conserved functional', showarrow=False,
+                       text='High Δ, Low CV: Conserved functional', showarrow=False,
                        font=dict(size=10, color='#008080'))
     fig.add_annotation(x=0.95, y=0.95, xref='paper', yref='paper',
-                       text='High Δ, High CV → Variable functional', showarrow=False,
+                       text='High Δ, High CV: Variable functional', showarrow=False,
                        font=dict(size=10, color='#E8820C'))
     return fig

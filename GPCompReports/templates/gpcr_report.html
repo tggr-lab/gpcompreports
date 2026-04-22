@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ uniprot_name }} — GPCompReports{% endblock %}
+{% block title %}{{ uniprot_name }} - GPCompReports{% endblock %}
 
 {% block head %}
 {% if has_snake_plot %}
@@ -129,9 +129,7 @@
     <!-- Header with metadata + external links                              -->
     <!-- ================================================================== -->
     <div class="report-header">
-        <h1>{{ uniprot_name }}
-            <span class="rank-badge">Rank #{{ rank }} of {{ total_gpcrs }}</span>
-        </h1>
+        <h1>{{ uniprot_name }}</h1>
         <div class="meta-info">
             <div class="meta-item"><strong>Gene:</strong> {{ gene_name }}</div>
             <div class="meta-item"><strong>Family:</strong> {{ receptor_family }}</div>
@@ -159,34 +157,13 @@
             <div class="stat-number">{{ significant_changes }}</div>
             <div class="stat-label">Significant Changes</div>
         </div>
-        <div class="stat-card" data-tooltip="Largest positive ΔRRCS — contact strengthened most in active state">
+        <div class="stat-card" data-tooltip="Largest positive ΔRRCS: contact strengthened most in active state">
             <div class="stat-number">{{ "%.2f"|format(max_increase) }}</div>
             <div class="stat-label">Max Increase</div>
         </div>
-        <div class="stat-card accent" data-tooltip="Largest negative ΔRRCS — contact weakened most in active state">
+        <div class="stat-card accent" data-tooltip="Largest negative ΔRRCS: contact weakened most in active state">
             <div class="stat-number">{{ "%.2f"|format(max_decrease) }}</div>
             <div class="stat-label">Max Decrease</div>
-        </div>
-    </div>
-
-    <!-- ================================================================== -->
-    <!-- Methods                                                            -->
-    <!-- ================================================================== -->
-    <div class="card">
-        <div class="card-header card-header-collapsible" onclick="toggleCollapse('methods')">
-            <span>Methods</span>
-            <span class="collapse-icon" id="methods-icon">&#x25BC;</span>
-        </div>
-        <div class="card-body-collapsible" id="methods-body">
-            <div class="info-box" style="margin-top:0;">
-                <p><strong>RRCS Analysis:</strong> Residue-Residue Contact Scores were calculated for each conformational
-                state based on inter-atomic distances. Changes (ΔRRCS) were computed by comparing active and inactive
-                AlphaFold-predicted structures.</p>
-                <p><strong>Significance Threshold:</strong> |ΔRRCS| &ge; {{ "%.1f"|format(sig_threshold) }}
-                (mean + 2&times;std of |ΔRRCS|)</p>
-                <p><strong>Data Sources:</strong> Structures from AlphaFold multistate models; variants from gnomAD v4;
-                pathogenicity from AlphaMissense; conservation from ProtVar/UniProt; TM domains from GPCRdb.</p>
-            </div>
         </div>
     </div>
 
@@ -317,13 +294,13 @@
                     <td class="active-residues">
                         {% if dom.active_residues %}
                             {% for r in dom.active_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
-                        {% else %}&mdash;{% endif %}
+                        {% else %}-{% endif %}
                     </td>
                     <td class="active-residues"><strong>{{ dom.total_active }}</strong></td>
                     <td class="inactive-residues">
                         {% if dom.inactive_residues %}
                             {% for r in dom.inactive_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
-                        {% else %}&mdash;{% endif %}
+                        {% else %}-{% endif %}
                     </td>
                     <td class="inactive-residues"><strong>{{ dom.total_inactive }}</strong></td>
                 </tr>
@@ -395,6 +372,7 @@
             <button class="btn" onclick="exportTableToCSV('variants-table', '{{ gpcr_id }}_variants.csv')">Export CSV</button>
         </div>
 
+        <div class="table-scroll">
         <table id="variants-table" class="data-table">
             <thead>
                 <tr>
@@ -427,6 +405,7 @@
             {% endfor %}
             </tbody>
         </table>
+        </div>
         <div id="pagination-variants-table"></div>
         <p style="margin-top:0.75rem; color: var(--text-muted); font-size:0.85rem;">
             Total variants found: {{ total_variants }}
@@ -528,6 +507,32 @@
     {% endif %}
 
     <!-- ================================================================== -->
+    <!-- Methods                                                            -->
+    <!-- ================================================================== -->
+    <div class="card">
+        <div class="card-header">Methods</div>
+        <div class="info-box" style="margin-top:0;">
+            <p><strong>RRCS Analysis:</strong>
+            <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank">Residue-Residue Contact Scores (RRCS)</a>
+            were calculated for each conformational state based on inter-atomic distances. Changes (ΔRRCS) were computed
+            by comparing active and inactive structures predicted by
+            <a href="https://github.com/huhlim/alphafold-multistate" target="_blank">AlphaFold multistate</a>
+            (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank">del Alamo et al., 2022</a>).</p>
+            <p><strong>Significance Threshold:</strong> |ΔRRCS| &ge; {{ "%.1f"|format(sig_threshold) }}
+            (mean + 2&times;std of |ΔRRCS|)</p>
+            <p><strong>Variant Data:</strong> Population frequencies from
+            <a href="https://gnomad.broadinstitute.org/" target="_blank">gnomAD v4</a>;
+            pathogenicity predictions from
+            <a href="https://alphamissense.hegelab.org/" target="_blank">AlphaMissense</a>;
+            conservation scores from
+            <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank">ProtVar</a> /
+            <a href="https://www.uniprot.org/" target="_blank">UniProt</a>.</p>
+            <p><strong>Structural Annotation:</strong> Transmembrane domain boundaries and generic numbering from
+            <a href="https://gpcrdb.org/" target="_blank">GPCRdb</a>.</p>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
     <!-- Understanding the Results                                          -->
     <!-- ================================================================== -->
     <div class="card">
@@ -552,10 +557,10 @@
 
         <h3 style="margin: 1.5rem 0 0.5rem; color: var(--primary-dark);">Pathogenicity Predictions</h3>
         <div class="info-box">
-            <p><strong>AlphaMissense</strong> uses AI to predict whether a mutation harms protein function:</p>
+            <p><strong>AlphaMissense</strong> predicts whether a mutation harms protein function:</p>
             <ul>
                 <li><span class="pathogenic"><strong>Pathogenic (score &ge; 0.564):</strong></span> Mutation likely damages function</li>
-                <li><span class="ambiguous"><strong>Ambiguous (0.34&ndash;0.563):</strong></span> Effect uncertain</li>
+                <li><span class="ambiguous"><strong>Ambiguous (0.34-0.563):</strong></span> Effect uncertain</li>
                 <li><span class="benign"><strong>Benign (< 0.34):</strong></span> Mutation likely tolerated</li>
             </ul>
         </div>
@@ -567,6 +572,24 @@
             <p><strong>Allele Frequency:</strong> How often a variant appears in the population.
             Rare variants (low frequency) may be more likely to be harmful.</p>
         </div>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Credits and Data Sources                                           -->
+    <!-- ================================================================== -->
+    <div class="card">
+        <div class="card-header">Credits and Data Sources</div>
+        <div class="info-box" style="margin-top:0;">
+            <ul>
+                <li><strong>Structural models:</strong> <a href="https://github.com/huhlim/alphafold-multistate" target="_blank">AlphaFold multistate</a>
+                    (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank">del Alamo et al., 2022</a>)</li>
+                <li><strong>Contact scoring:</strong> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank">RRCS method</a></li>
+                <li><strong>Population variants:</strong> <a href="https://gnomad.broadinstitute.org/" target="_blank">gnomAD v4</a></li>
+                <li><strong>Pathogenicity:</strong> <a href="https://alphamissense.hegelab.org/" target="_blank">AlphaMissense</a></li>
+                <li><strong>Conservation:</strong> <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank">ProtVar</a> / <a href="https://www.uniprot.org/" target="_blank">UniProt</a></li>
+                <li><strong>Receptor annotation:</strong> <a href="https://gpcrdb.org/" target="_blank">GPCRdb</a></li>
+            </ul>
         </div>
     </div>
 </div>

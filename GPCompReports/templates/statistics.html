@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Database Statistics — GPCompReports{% endblock %}
+{% block title %}Database Statistics - GPCompReports{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
@@ -12,15 +12,9 @@
 <div class="container">
     <h1 class="section-header">Cross-GPCR Database Statistics</h1>
     <p class="section-subheader">
-        Comprehensive statistical analysis across {{ total_gpcrs }} Class A GPCRs, including rankings,
+        Statistical analysis across {{ total_gpcrs }} Class A GPCRs, including rankings,
         TM domain patterns, Core Functional Residues, and variant correlations.
     </p>
-
-    <div class="info-box" style="margin-bottom:2rem;">
-        <p><strong>Data Sources:</strong> Structures from AlphaFold multistate models; variants from gnomAD v4;
-        pathogenicity from AlphaMissense; conservation from ProtVar/UniProt; TM domain annotations and generic
-        numbering from GPCRdb.</p>
-    </div>
 
     <!-- Section A: Cross-GPCR Comparison -->
     <div class="analysis-section">
@@ -41,24 +35,11 @@
         <div class="chart-container">
             <div id="chart-box-family"></div>
         </div>
-
-        <div class="chart-container">
-            <div id="chart-pca"></div>
-        </div>
-
-        {% if pca_variance %}
-        <div class="stat-result">
-            <strong>PCA Variance Explained:</strong>
-            PC1 = {{ "%.1f"|format(pca_variance[0] * 100) }}%,
-            PC2 = {{ "%.1f"|format(pca_variance[1] * 100) }}%
-            {% if pca_variance|length > 2 %}, PC3 = {{ "%.1f"|format(pca_variance[2] * 100) }}%{% endif %}
-        </div>
-        {% endif %}
     </div>
 
     <!-- Section B: TM Domain Patterns -->
     <div class="analysis-section">
-        <h2 class="section-header" data-tooltip="How conformational changes distribute across TM1-7, ICL/ECL loops, and H8">B. Transmembrane Domain Patterns</h2>
+        <h2 class="section-header" data-tooltip="How conformational changes distribute across TM1-7">B. Transmembrane Domain Patterns</h2>
 
         <div class="chart-container">
             <div id="chart-tm-bar"></div>
@@ -83,7 +64,7 @@
         <div class="info-box">
             <p><strong>What are Core Functional Residues (CFRs)?</strong> Using Ballesteros-Weinstein generic numbering,
             we mapped each residue to its conserved position across all {{ total_gpcrs }} GPCRs. A position is identified
-            as a CFR if it appears in the significant changes list of many GPCRs &mdash; meaning that residue
+            as a CFR if it appears in the significant changes list of many GPCRs, meaning that residue
             consistently undergoes conformational change during activation across the receptor superfamily.</p>
 
             <p style="margin-top: 10px;">Positions are ranked by a composite score of (1) how many GPCRs show significant change there
@@ -107,7 +88,7 @@
                         <th data-tooltip="Number of GPCRs showing significant change at this position">Frequency</th>
                         <th data-tooltip="Percentage of all analyzed GPCRs">% of GPCRs</th>
                         <th data-tooltip="Average |ΔRRCS| across GPCRs that show significant change">Mean |Δ|</th>
-                        <th data-tooltip="Composite score: frequency × mean |ΔRRCS| — higher = more conserved activation role">CFR Score</th>
+                        <th data-tooltip="Composite score: frequency x mean |ΔRRCS|">CFR Score</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -153,29 +134,13 @@
         <h2 class="section-header" data-tooltip="How genetic variants correlate with conformational change and pathogenicity at CFR vs non-CFR positions">D. Variant Correlation</h2>
 
         <div class="chart-container">
-            <div id="chart-variant-violin"></div>
-        </div>
-
-        {% if freq_stats %}
-        <div class="stat-result">
-            <strong>Allele Frequency Comparison (CFR vs Non-CFR):</strong>
-            {{ freq_stats.test }} test —
-            U = {{ "%.0f"|format(freq_stats.u_statistic) }},
-            <span class="p-value">p = {{ "%.2e"|format(freq_stats.p_value) }}</span> |
-            CFR median AF: {{ "%.2e"|format(freq_stats.cfr_median_af) }},
-            Non-CFR median AF: {{ "%.2e"|format(freq_stats.non_cfr_median_af) }} |
-            n(CFR) = {{ freq_stats.cfr_n }}, n(Non-CFR) = {{ freq_stats.non_cfr_n }}
-        </div>
-        {% endif %}
-
-        <div class="chart-container">
             <div id="chart-pathogenicity"></div>
         </div>
 
         {% if path_stats %}
         <div class="stat-result">
             <strong>Pathogenicity Enrichment at CFRs:</strong>
-            {{ path_stats.test }} test —
+            {{ path_stats.test }} test:
             &chi;&sup2; = {{ "%.2f"|format(path_stats.chi2) }},
             <span class="p-value">p = {{ "%.2e"|format(path_stats.p_value) }}</span> |
             CFR pathogenic: {{ "%.1f"|format(cfr_pathogenic_pct) }}%,
@@ -193,7 +158,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>GPCR</th><th>Position</th><th>Ref → Alt</th>
+                        <th>GPCR</th><th>Position</th><th>Ref / Alt</th>
                         <th>Allele Freq</th><th>AM Score</th><th>Conservation</th>
                     </tr>
                 </thead>
@@ -202,7 +167,7 @@
                     <tr>
                         <td><a href="{{ static_prefix }}reports/{{ v.gpcr_id }}.html">{{ v.uniprot_name }}</a></td>
                         <td>{{ v.position }}</td>
-                        <td>{{ v.ref_aa }} → {{ v.alt_aa }}</td>
+                        <td>{{ v.ref_aa }} / {{ v.alt_aa }}</td>
                         <td>{{ v.allele_frequency }}</td>
                         <td>{{ v.am_score }}</td>
                         <td>{{ v.conservation }}</td>
@@ -212,6 +177,45 @@
             </table>
         </div>
         {% endif %}
+    </div>
+
+    <!-- Data Sources -->
+    <div class="analysis-section">
+        <h2 class="section-header">Data Sources and References</h2>
+        <div class="card">
+            <div class="data-sources-grid">
+                <div class="data-source-item">
+                    <i class="material-icons">cloud_download</i>
+                    <div><strong><a href="https://github.com/huhlim/alphafold-multistate" target="_blank">AlphaFold multistate</a></strong><br>
+                    <small>Active/inactive structural models (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank">del Alamo et al., 2022</a>)</small></div>
+                </div>
+                <div class="data-source-item">
+                    <i class="material-icons">analytics</i>
+                    <div><strong><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank">RRCS Method</a></strong><br>
+                    <small>Residue-Residue Contact Scores</small></div>
+                </div>
+                <div class="data-source-item">
+                    <i class="material-icons">people</i>
+                    <div><strong><a href="https://gnomad.broadinstitute.org/" target="_blank">gnomAD v4</a></strong><br>
+                    <small>Population variant frequencies</small></div>
+                </div>
+                <div class="data-source-item">
+                    <i class="material-icons">science</i>
+                    <div><strong><a href="https://alphamissense.hegelab.org/" target="_blank">AlphaMissense</a></strong><br>
+                    <small>Pathogenicity predictions</small></div>
+                </div>
+                <div class="data-source-item">
+                    <i class="material-icons">hub</i>
+                    <div><strong><a href="https://gpcrdb.org/" target="_blank">GPCRdb</a></strong><br>
+                    <small>TM domains &amp; generic numbering</small></div>
+                </div>
+                <div class="data-source-item">
+                    <i class="material-icons">storage</i>
+                    <div><strong><a href="https://www.uniprot.org/" target="_blank">UniProt</a> / <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank">ProtVar</a></strong><br>
+                    <small>Conservation &amp; variant annotation</small></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
