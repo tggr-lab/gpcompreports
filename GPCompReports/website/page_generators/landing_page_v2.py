@@ -57,6 +57,12 @@ def generate_landing_page_v2(env: Environment, store, output_dir: Path):
     template = env.get_template('landing_v2.html')
     html = template.render(
         static_prefix='',
+        active_page='home',
+        nav_home_url='index_v2.html',
+        nav_browse_url='browse/index_v2.html',
+        nav_stats_url='statistics.html',
+        page_title='GPCompReports: Comparative Class A GPCR Contact Analysis',
+        extra_css=['static/css/landing_v2.css'],
         total_gpcrs=total_gpcrs,
         n_families=n_families,
         n_ligand_types=n_ligand_types,

@@ -1,0 +1,78 @@
+{% extends "base_v2.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{{ static_prefix }}index_v2.html">Home</a>
+  <span class="breadcrumbs-sep">/</span>
+  <span class="breadcrumbs-current">Browse GPCRs</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="browse-section">
+  <div class="section-inner-wide">
+    <header class="section-head">
+      <h1>Browse Class A GPCRs</h1>
+      <p class="section-sub">Search, filter, and explore all {{ total_gpcrs }} GPCR reports. Click any receptor to view its full analysis.</p>
+    </header>
+
+    <div class="filter-bar">
+      <input type="text" id="search-input" class="v2-input" placeholder="Search by name, gene, or family…" aria-label="Search GPCRs">
+      <select id="filter-ligand" class="v2-select" aria-label="Filter by ligand type">
+        <option value="">All ligand types</option>
+      </select>
+      <select id="filter-family" class="v2-select" aria-label="Filter by receptor family">
+        <option value="">All receptor families</option>
+      </select>
+      <select id="per-page" class="v2-select" aria-label="Results per page">
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <span id="result-count" class="v2-pagination-info"></span>
+    </div>
+
+    <div class="v2-table-wrap">
+      <div class="v2-table-scroll">
+        <table class="v2-table" id="gpcr-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-sort="uniprot_name">GPCR</th>
+              <th data-sort="gene_name">Gene</th>
+              <th data-sort="receptor_family">Family</th>
+              <th data-sort="ligand_type">Ligand type</th>
+              <th data-sort="total_contacts" data-tooltip="Total residue-residue contact pairs detected">Contacts</th>
+              <th data-sort="significant_changes" data-tooltip="Contacts with |ΔRRCS| above significance threshold (mean + 2×std)">Significant</th>
+              <th data-sort="sum_abs_delta" data-tooltip="Sum of |ΔRRCS| across all contacts. Higher means more conformational change.">Σ|Δ|</th>
+              <th data-sort="variants_found" data-tooltip="gnomAD missense variants found at contact positions">Variants</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--fgColor-muted);">Loading GPCR data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="v2-pagination" data-table-pagination="gpcr-table"></div>
+    </div>
+
+    <style>
+      .browse-section { padding: var(--s-6) 0 var(--s-8); }
+      .v2-table tbody tr.clickable-row { cursor: pointer; }
+    </style>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.GPCR_DATA = {{ gpcr_json | safe }};
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.Site && Site.initBrowse) {
+    Site.initBrowse({ reportPathPrefix: '../reports/', reportPathSuffix: '.html' });
+  }
+});
+</script>
+{% endblock %}

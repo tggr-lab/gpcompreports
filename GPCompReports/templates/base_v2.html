@@ -1,0 +1,76 @@
+{#
+  Shared v2 chrome parent. All v2 pages extend this.
+
+  Required context:
+    static_prefix    — '' at site root, '../' for /reports/
+    active_page      — 'home' | 'browse' | 'statistics' | 'report'
+    total_gpcrs      — int (used by footer)
+    nav_home_url, nav_browse_url, nav_stats_url — absolute-from-static_prefix strings
+
+  Optional context:
+    page_title       — string inserted into <title>
+    page_description — string for <meta name="description">
+    extra_css        — list of extra CSS paths (relative to static_prefix) to load
+
+  Blocks child templates may override:
+    head        — inject extra tags into <head> (e.g. Plotly CDN)
+    breadcrumbs — trail above the main content
+    content     — main payload
+    scripts     — per-page scripts (after site_v2.js is loaded)
+#}
+<!DOCTYPE html>
+<html lang="en" data-color-mode="light" data-light-theme="light" data-dark-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title or 'GPCompReports: Comparative Class A GPCR Contact Analysis' }}</title>
+<meta name="description" content="{{ page_description or 'Residue-residue contact analysis of all ' ~ total_gpcrs ~ ' human Class A GPCRs across active and inactive conformations.' }}">
+
+<script>
+(function() {
+  var root = document.documentElement;
+  var stored = null;
+  try { stored = localStorage.getItem('gpcrsynth-theme'); } catch (e) {}
+  var mode;
+  if (stored === 'light' || stored === 'dark') {
+    mode = stored;
+  } else {
+    mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  root.setAttribute('data-color-mode', mode);
+  root.setAttribute('data-light-theme', 'light');
+  root.setAttribute('data-dark-theme', 'dark');
+  if (!stored) root.setAttribute('data-theme-auto', '');
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/primer/primitives.css">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/primer/primitives-dark.css">
+<link rel="stylesheet" href="{{ static_prefix }}static/css/site_v2.css">
+{% for css in (extra_css or []) %}
+<link rel="stylesheet" href="{{ static_prefix }}{{ css }}">
+{% endfor %}
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+{% include "_partials/topbar_v2.html" %}
+
+{% block breadcrumbs %}{% endblock %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+{% include "_partials/footer_v2.html" %}
+
+<script src="{{ static_prefix }}static/js/site_v2.js" defer></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

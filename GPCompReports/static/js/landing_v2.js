@@ -1,67 +1,12 @@
-// landing_v2.js — theme toggle, stat count-up, search teaser, scroll reveals.
-// No frameworks. Runs on page load after initial theme boot (in <head>).
+// landing_v2.js — landing-only behaviors: stat count-up + search teaser.
+// Theme toggle, tooltips, collapsibles, reveals live in site_v2.js.
 
 (function() {
   'use strict';
 
-  var root = document.documentElement;
   var reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ------------------------------------------------------------------
-  // Theme toggle — cycles auto -> light -> dark -> auto
-  // ------------------------------------------------------------------
-  var toggle = document.getElementById('theme-toggle');
-  if (toggle) {
-    function readStored() {
-      try { return localStorage.getItem('gpcrsynth-theme'); }
-      catch (e) { return null; }
-    }
-    function writeStored(v) {
-      try {
-        if (v) localStorage.setItem('gpcrsynth-theme', v);
-        else   localStorage.removeItem('gpcrsynth-theme');
-      } catch (e) {}
-    }
-    function applyMode(storedValue) {
-      if (storedValue === 'light' || storedValue === 'dark') {
-        root.setAttribute('data-color-mode', storedValue);
-        root.removeAttribute('data-theme-auto');
-      } else {
-        var sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-color-mode', sysDark ? 'dark' : 'light');
-        root.setAttribute('data-theme-auto', '');
-      }
-      // aria-pressed reflects "is theme overridden from auto"
-      toggle.setAttribute('aria-pressed', storedValue ? 'true' : 'false');
-      toggle.title = storedValue
-        ? 'Theme: ' + storedValue + ' (click to cycle)'
-        : 'Theme: auto (click to cycle)';
-    }
-
-    // Sync to whatever boot script established
-    applyMode(readStored());
-
-    toggle.addEventListener('click', function() {
-      var current = readStored();  // null | 'light' | 'dark'
-      var next;
-      if (current === null)       next = 'light';
-      else if (current === 'light') next = 'dark';
-      else                         next = null;  // back to auto
-      writeStored(next);
-      applyMode(next);
-    });
-
-    // Follow system changes while in auto mode
-    try {
-      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-        if (readStored() === null) applyMode(null);
-      });
-    } catch (e) { /* older Safari */ }
-  }
-
-  // ------------------------------------------------------------------
-  // Stat count-up on scroll-into-view
-  // ------------------------------------------------------------------
+  // ------------------ Stat count-up on scroll-into-view ------------------
   var statNums = document.querySelectorAll('.stat-num[data-target]');
   function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
   function animateCount(el) {
@@ -95,27 +40,7 @@
     });
   }
 
-  // ------------------------------------------------------------------
-  // Scroll reveals
-  // ------------------------------------------------------------------
-  var reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window && reveals.length && !reduceMotion) {
-    var revealObs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          revealObs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-    reveals.forEach(function(el) { revealObs.observe(el); });
-  } else {
-    reveals.forEach(function(el) { el.classList.add('is-visible'); });
-  }
-
-  // ------------------------------------------------------------------
-  // Search teaser
-  // ------------------------------------------------------------------
+  // ------------------ Search teaser ------------------
   var input = document.getElementById('search-input');
   var resultsList = document.getElementById('search-results');
   var dataScript = document.getElementById('gpcr-search-data');
@@ -212,14 +137,12 @@
     });
 
     input.addEventListener('blur', function() {
-      // Small delay so mousedown on a result can fire first
       setTimeout(function() { resultsList.hidden = true; }, 120);
     });
     input.addEventListener('focus', function() {
       if (currentMatches.length) resultsList.hidden = false;
     });
 
-    // "/" focuses search (unless user is already typing in a field)
     document.addEventListener('keydown', function(e) {
       if (e.key !== '/') return;
       var tag = (document.activeElement && document.activeElement.tagName) || '';
