@@ -104,7 +104,7 @@ def generate_all_reports(env: Environment, store, output_dir, limit=None):
         var_df = store.variant_data.get(gid, pd.DataFrame())
         annot_map = store.get_annotation_map(gid)
 
-        # Significance threshold: mean + 2*std
+        # Per-receptor significance threshold: max(mean(|Δ|) + σ, 0.2)
         sig_threshold = _calc_significance_threshold(delta_df)
 
         # ---- Charts (4 interactive Plotly) ----
@@ -140,7 +140,7 @@ def generate_all_reports(env: Environment, store, output_dir, limit=None):
         top_changes = _get_top_changes(delta_df, annot_map, sig_threshold, n=100)
 
         # ---- TM Domain active/inactive analysis ----
-        tm_summary = _build_tm_summary(delta_df, annot_map)
+        tm_summary = _build_tm_summary(delta_df, annot_map, sig_threshold)
 
         # ---- Full variant table (10 cols) ----
         variants = _prepare_variants_full(var_df, delta_df)
@@ -210,12 +210,20 @@ def generate_all_reports(env: Environment, store, output_dir, limit=None):
 # ---------------------------------------------------------------------------
 
 def _calc_significance_threshold(delta_df):
-    """Calculate significance threshold: mean + 2*std of |delta|, min 1.0."""
+    """Per-receptor significance threshold: max(mean(|Δ|) + σ, 0.2).
+
+    The 0.2 floor follows Zhou et al. 2019 (eLife 8:e50279), the original
+    RRCS noise floor (≈ one heavy-atom contact pair). The mean+σ term is
+    the z=1 "above-typical" cutoff used by the frustratometer (Ferreiro &
+    Wolynes) for structurally-informative residue selection from heavy-
+    tailed distributions; |ΔRRCS| distributions are heavy-tailed so z=1
+    corresponds to ~upper 10% of contact-pair changes per receptor.
+    """
     if delta_df.empty:
-        return 1.0
+        return 0.2
     abs_deltas = delta_df['delta_rrcs'].abs()
-    threshold = abs_deltas.mean() + 2 * abs_deltas.std()
-    return max(threshold, 1.0)
+    threshold = abs_deltas.mean() + abs_deltas.std()
+    return max(threshold, 0.2)
 
 
 # ---------------------------------------------------------------------------
@@ -459,8 +467,11 @@ def _get_top_changes(delta_df, annot_map, sig_threshold, n=100):
 # TM Domain active/inactive summary
 # ---------------------------------------------------------------------------
 
-def _build_tm_summary(delta_df, annot_map):
+def _build_tm_summary(delta_df, annot_map, sig_threshold):
     """Build TM domain active-favoring vs inactive-favoring analysis.
+
+    Uses the same per-receptor significance threshold as the rest of the
+    report (max(mean+σ, 0.2) — see _calc_significance_threshold).
 
     Returns a dict with 'tm_helices' (TM1-7) and 'loops' (ICL/ECL/H8) lists.
     """
@@ -474,8 +485,8 @@ def _build_tm_summary(delta_df, annot_map):
         if seg:
             pos_to_seg[pos] = seg
 
-    # Collect per-segment significant residues
-    threshold = 3.0
+    # Collect per-segment significant residues (using unified threshold)
+    threshold = sig_threshold
     seg_active = {s: [] for s in ALL_SEGMENTS}
     seg_inactive = {s: [] for s in ALL_SEGMENTS}
     seen = set()

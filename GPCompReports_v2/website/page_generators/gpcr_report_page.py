@@ -350,7 +350,7 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
                 has_tm_chart = True
 
         top_changes = v1._get_top_changes(delta_df, annot_map, sig_threshold, n=100)
-        tm_summary = v1._build_tm_summary(delta_df, annot_map)
+        tm_summary = v1._build_tm_summary(delta_df, annot_map, sig_threshold)
         variants = v1._prepare_variants_full(var_df, delta_df)
         complete_rrcs = v1._get_complete_rrcs(delta_df, sig_threshold, n=1000)
         rrcs_stats = v1._calc_rrcs_stats(delta_df, sig_threshold)
