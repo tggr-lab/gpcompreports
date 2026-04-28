@@ -11,6 +11,7 @@ if ever needed.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -46,6 +47,31 @@ LOOP_SEGMENTS = ['ICL1', 'ICL2', 'ICL3', 'ECL1', 'ECL2', 'ECL3', 'H8']
 ALL_SEGMENTS = TM_HELICES + LOOP_SEGMENTS
 
 
+_RCIRCLE_TITLE_RE = re.compile(
+    r"(<circle\s+[^/]*?rcircle[^/]*?)\s+title='([^']*)'([^/]*?)/>",
+    re.DOTALL,
+)
+_RTEXT_TITLE_RE = re.compile(
+    r"(<text\s+[^>]*?rtext[^>]*?)\s+title='([^']*)'([^>]*?)>",
+    re.DOTALL,
+)
+
+
+def _inject_svg_tooltips(svg: str) -> str:
+    """Convert ouroboros' title='...' attributes on residue elements into
+    SVG <title> child elements so browsers render native tooltips on hover.
+
+    Browsers do not show tooltips for SVG elements' title="..." attribute,
+    only for a child <title>...</title> element. Ouroboros emits the
+    attribute form, so we post-process the SVG to add the child form.
+    The original_title='...' attribute is preserved so ouroboros' own
+    JS (if any) keeps working.
+    """
+    svg = _RCIRCLE_TITLE_RE.sub(r"\1\3><title>\2</title></circle>", svg)
+    svg = _RTEXT_TITLE_RE.sub(r"\1\3><title>\2</title>", svg)
+    return svg
+
+
 def _prepare_snake_plot(gpcr_id, delta_df, var_df, sig_threshold):
     """Prepare snake plot SVG and interactive view JSON for one GPCR.
 
@@ -61,6 +87,8 @@ def _prepare_snake_plot(gpcr_id, delta_df, var_df, sig_threshold):
         renderer = SnakePlotRenderer(config=RenderConfig())
         svg = renderer.render(protein_data)
         positions = renderer._extract_positions(svg)
+
+        svg = _inject_svg_tooltips(svg)
 
         builder = SnakePlotDataBuilder(
             delta_matrix=delta_df,
