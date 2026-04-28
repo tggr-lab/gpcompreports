@@ -238,14 +238,22 @@
   function searchTable(id, query) {
     var table = document.getElementById(id);
     if (!table) return;
-    var q = (query || '').toLowerCase().trim();
+    var raw = (query || '').trim();
+    var q = raw.toLowerCase();
+    // Digit-only queries use a non-digit boundary regex so e.g. "5" matches
+    // a residue numbered 5 but NOT 55, 501, or any RRCS value containing 5.
+    // Non-digit queries fall through to substring match (so "P45L" still works).
+    var digitRe = /^\d+$/.test(raw) ? new RegExp('(?:^|\\D)' + raw + '(?:\\D|$)') : null;
     var rows = Array.from(table.tBodies[0].rows);
     rows.forEach(function(r) {
-      var text = r.textContent.toLowerCase();
-      if (q === '' || text.indexOf(q) !== -1) r.removeAttribute('data-search-hidden');
+      var hit;
+      if (q === '') hit = true;
+      else if (digitRe) hit = digitRe.test(r.textContent);
+      else hit = r.textContent.toLowerCase().indexOf(q) !== -1;
+      if (hit) r.removeAttribute('data-search-hidden');
       else r.setAttribute('data-search-hidden', '');
     });
-    tableState[id].page = 1;
+    if (tableState[id]) tableState[id].page = 1;
     paginateTable(id);
   }
 
