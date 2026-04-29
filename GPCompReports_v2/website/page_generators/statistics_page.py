@@ -49,6 +49,10 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
 
     path_result = variant.get('pathogenicity', {})
     path_stats = path_result.get('stats', {})
+    cfr_pathogenic_n = path_result.get('cfr_counts', {}).get('pathogenic', 0)
+    non_cfr_pathogenic_n = path_result.get('non_cfr_counts', {}).get('pathogenic', 0)
+    cfr_total_n = path_result.get('cfr_total', 0)
+    non_cfr_total_n = path_result.get('non_cfr_total', 0)
 
     hi_variants = variant.get('high_impact_variants')
     hi_variant_data = []
@@ -72,6 +76,10 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         path_stats=path_stats if path_stats else None,
         cfr_pathogenic_pct=path_result.get('cfr_pathogenic_pct', 0),
         non_cfr_pathogenic_pct=path_result.get('non_cfr_pathogenic_pct', 0),
+        cfr_pathogenic_n=cfr_pathogenic_n,
+        non_cfr_pathogenic_n=non_cfr_pathogenic_n,
+        cfr_total_n=cfr_total_n,
+        non_cfr_total_n=non_cfr_total_n,
         high_impact_variants=hi_variant_data,
         layout_light_json=json.dumps(light, separators=(',', ':')),
         layout_dark_json=json.dumps(dark, separators=(',', ':')),
