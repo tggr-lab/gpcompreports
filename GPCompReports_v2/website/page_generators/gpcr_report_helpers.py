@@ -21,6 +21,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 from jinja2 import Environment
 
+from ..format_helpers import MISSING, fmt_sci, fmt_decimal
+
 # Optional ouroboros import for snake plot generation
 try:
     from ouroboros import fetch_protein_data, SnakePlotRenderer, RenderConfig
@@ -604,33 +606,21 @@ def _prepare_variants_full(var_df, delta_df):
         except (ValueError, TypeError):
             position = str(position)
 
-        hgvsp = str(row.get('hgvsp', '')) if pd.notna(row.get('hgvsp', None)) else '-'
-        hgvsc = str(row.get('hgvsc', '')) if pd.notna(row.get('hgvsc', None)) else '-'
+        hgvsp = str(row.get('hgvsp', '')) if pd.notna(row.get('hgvsp', None)) else MISSING
+        hgvsc = str(row.get('hgvsc', '')) if pd.notna(row.get('hgvsc', None)) else MISSING
 
-        af = row.get('af', '')
-        try:
-            af_display = f"{float(af):.2e}" if pd.notna(af) and af != '' else '-'
-        except (ValueError, TypeError):
-            af_display = '-'
+        af_display = fmt_sci(row.get('af', ''), digits=2)
 
-        het = row.get('het_count', 0)
+        het_raw = row.get('het_count', 0)
         try:
-            het = int(het) if pd.notna(het) else 0
+            het = int(het_raw) if pd.notna(het_raw) else 0
         except (ValueError, TypeError):
             het = 0
-        hom = row.get('ac_hom', 0)
-        try:
-            hom = int(hom) if pd.notna(hom) else 0
-        except (ValueError, TypeError):
-            hom = 0
 
-        delta_rrcs = float(row.get('max_delta_rrcs', 0))
+        delta_rrcs_value = float(row.get('max_delta_rrcs', 0))
+        delta_rrcs_display = fmt_decimal(delta_rrcs_value, digits=2)
 
-        am_score = row.get('am_score', '')
-        try:
-            am_score_display = f"{float(am_score):.3f}" if pd.notna(am_score) and am_score != '' else '-'
-        except (ValueError, TypeError):
-            am_score_display = '-'
+        am_score_display = fmt_decimal(row.get('am_score', ''), digits=3)
 
         am_class = str(row.get('am_class', '')).strip()
         if am_class.upper() == 'PATHOGENIC':
@@ -642,17 +632,15 @@ def _prepare_variants_full(var_df, delta_df):
         else:
             am_badge = ''
 
-        conservation = row.get('conservation', '')
-        try:
-            conservation_display = f"{float(conservation):.2f}" if pd.notna(conservation) and conservation != '' else '-'
-        except (ValueError, TypeError):
-            conservation_display = '-'
+        conservation_display = fmt_decimal(row.get('conservation', ''), digits=2)
 
-        rsids = row.get('rsids', '')
-        if pd.notna(rsids) and rsids != '':
-            rsids_str = str(rsids).strip("[]'\" ")
+        rsids_raw = row.get('rsids', '')
+        if pd.notna(rsids_raw) and str(rsids_raw).strip() not in ('', '[]'):
+            rsids_str = str(rsids_raw).strip("[]'\" ")
+            if not rsids_str:
+                rsids_str = MISSING
         else:
-            rsids_str = '-'
+            rsids_str = MISSING
 
         rows.append({
             'position': position,
@@ -660,8 +648,8 @@ def _prepare_variants_full(var_df, delta_df):
             'hgvsc': hgvsc,
             'af_display': af_display,
             'het': het,
-            'hom': hom,
-            'delta_rrcs': delta_rrcs,
+            'delta_rrcs': delta_rrcs_value,
+            'delta_rrcs_display': delta_rrcs_display,
             'am_score_display': am_score_display,
             'am_class': am_class,
             'am_badge': am_badge,

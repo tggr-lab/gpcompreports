@@ -6,6 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy import stats
 
+from ..website.format_helpers import fmt_sci, fmt_decimal
+
 
 def run_variant_analysis(store, cfr_table):
     """Run variant correlation analyses against CFR positions."""
@@ -266,13 +268,16 @@ def find_high_impact_variants(store, cfr_positions):
                 'position': protein_pos,
                 'ref_aa': row.get('ref_aa', ''),
                 'alt_aa': row.get('alt_aa', ''),
-                'allele_frequency': row.get('af', ''),
-                'am_score': row.get('am_score', ''),
+                'am_score_sort': row.get('am_score', ''),
+                'allele_frequency': fmt_sci(row.get('af', ''), digits=2),
+                'am_score': fmt_decimal(row.get('am_score', ''), digits=3),
                 'am_class': row.get('am_class', ''),
-                'conservation': row.get('conservation', ''),
+                'conservation': fmt_decimal(row.get('conservation', ''), digits=2),
             })
 
     df = pd.DataFrame(rows) if rows else pd.DataFrame()
     if not df.empty:
-        df = df.sort_values('am_score', ascending=False).head(100)
+        df['am_score_sort'] = pd.to_numeric(df['am_score_sort'], errors='coerce')
+        df = df.sort_values('am_score_sort', ascending=False).head(100)
+        df = df.drop(columns=['am_score_sort'])
     return df
