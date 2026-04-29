@@ -104,8 +104,8 @@
         <h1 class="report-title">FPR3</h1>
         <div class="report-meta">
           <span class="report-meta-item"><span class="report-meta-label">Gene</span> <strong>FPR3</strong></span>
-          <span class="badge badge-teal">Formylpeptide receptors</span>
-          <span class="badge badge-accent">Peptide receptors</span>
+          <span class="report-meta-item"><span class="report-meta-label">Family</span> <strong>Formylpeptide receptors</strong></span>
+          <span class="report-meta-item"><span class="report-meta-label">Ligand type</span> <strong>Peptide receptors</strong></span>
           <span class="report-meta-item"><span class="report-meta-label">UniProt</span> <code>P25089</code></span>
         </div>
       </div>
@@ -126,7 +126,7 @@
       </div>
       <div class="report-stat report-stat-accent" data-tooltip="Contacts where |ΔRRCS| ≥ 2.38. Threshold = max(mean(|Δ|) + σ, 0.2).">
         <div class="report-stat-num">86</div>
-        <div class="report-stat-label">Significant Changes</div>
+        <div class="report-stat-label">Above-threshold changes</div>
       </div>
       <div class="report-stat" data-tooltip="Largest positive ΔRRCS: contact strengthened most in active state">
         <div class="report-stat-num">6.82</div>
@@ -144,14 +144,13 @@
       <header class="report-section-head"><h2>Interactive snake plot</h2></header>
       <div class="callout">
         <p>
-          <strong>GPCRdb-style topology.</strong> Click the view buttons to recolor residues by different
-          data layers. Toggle contact links to draw significant residue-residue contacts as arcs.
-          Click loop labels (ICL/ECL) to expand or collapse loop regions.
+          <strong>GPCRdb-style topology.</strong> Use the view buttons to recolor residues by data layer.
+          Toggle contact links to overlay above-threshold residue-residue contacts. Click ICL or ECL
+          labels to expand or collapse loop regions.
         </p>
         <p>
-          Color convention:
-          <span class="is-active">blue = active-favoring</span>,
-          <span class="is-inactive">red = inactive-favoring</span>.
+          <span class="is-active">Blue:</span> stronger in active.
+          <span class="is-inactive">Red:</span> stronger in inactive.
         </p>
       </div>
 
@@ -170,9 +169,27 @@
         </label>
       </div>
 
+      <div class="snake-filter-panel" id="snake-filter-panel" hidden>
+        <div class="snake-filter-group" data-tooltip="Drag to filter contact arcs by |ΔRRCS| magnitude">
+          <span class="snake-filter-label">|ΔRRCS|</span>
+          <input type="range" id="snake-mag-min" step="0.01" aria-label="Minimum |ΔRRCS|">
+          <span id="snake-mag-min-val" class="snake-filter-num">0.00</span>
+          <span class="snake-filter-sep">–</span>
+          <input type="range" id="snake-mag-max" step="0.01" aria-label="Maximum |ΔRRCS|">
+          <span id="snake-mag-max-val" class="snake-filter-num">0.00</span>
+        </div>
+        <div class="snake-filter-group" role="radiogroup" aria-label="Direction filter">
+          <button type="button" class="snake-dir-btn active" data-dir="both">Both</button>
+          <button type="button" class="snake-dir-btn dir-active" data-dir="active">Active-favoring</button>
+          <button type="button" class="snake-dir-btn dir-inactive" data-dir="inactive">Inactive-favoring</button>
+        </div>
+        <button type="button" class="snake-filter-reset" id="snake-filter-reset">Reset filters</button>
+        <span id="snake-filter-summary" class="snake-filter-summary"></span>
+      </div>
+
       <div id="snake-legend"></div>
       <div id="snake-plot-container">
-        <svg id="snakeplot" xmlns="http://www.w3.org/2000/svg" version="1.1" width="813" height="780.3892005356347" style='stroke-width: 0px; background-color: white;'>
+        <svg id="snakeplot" xmlns="http://www.w3.org/2000/svg" version="1.1" width="813" height="780.3892005356347" style='stroke-width: 0px; background-color: white;' viewBox='0 0 813 780.3892005356347'>
 <g id='snake' transform='translate(0, 222.9791514759678)'><path d='M 652 321 Q622 352 695 352' stroke='black' fill='none' stroke-width='2' /><path class='ICL1 short' d='M 62 347 Q102.5 477 143 295' stroke='black' fill='none' stroke-width='2' /><rect onclick='toggleLoop(".ICL1","short",false,this);' class='ICL1 short segment' x='84.5' y='386.0' rx='5' ry='5' width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/><text  onclick='toggleLoop(".ICL1","short",false,this);' class='ICL1 short segment' x='102.5' y='399.0' text-anchor='middle' font-size='12' font-family='helvetica'>ICL1</text><path id='path_ICL1' class='ICL1 long' d='M 62,347 C61.999617515856016,397.000382484144 143.00038248414398,397.000382484144 143,295' stroke='black' fill='none' stroke-width='2' />
             <circle class='ICL1 long rcircle' cx='109' cy='375' r='11' stroke='black' stroke-width='2' fill='white'
             fill-opacity='1' id='56' original_title='T56 ' original_cx='109' original_cy='375'><title>T56 </title></circle>
@@ -1947,8 +1964,8 @@
     
     <section class="report-section">
       <header class="report-section-head">
-        <h2>Top 100 conformational changes</h2>
-        <p class="section-sub">Residue pairs with the largest RRCS changes between active and inactive states. GPCRdb numbering in parentheses. Highlighted rows exceed the significance threshold.</p>
+        <h2>Largest active-inactive contact-score changes</h2>
+        <p class="section-sub">Residue pairs ranked by |ΔRRCS| between the active and inactive models. GPCRdb generic numbers are shown in parentheses when available. Highlighted rows exceed the receptor-specific ΔRRCS threshold.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="top-changes-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -1960,12 +1977,12 @@
             <thead>
               <tr>
                 <th data-sort="rank" data-tooltip="Ordered by |ΔRRCS| magnitude">Rank</th>
-                <th data-sort="res1">Residue 1</th>
-                <th data-sort="res2">Residue 2</th>
+                <th data-sort="res1" data-tooltip="First residue in the contact pair">Residue 1</th>
+                <th data-sort="res2" data-tooltip="Second residue in the contact pair">Residue 2</th>
                 <th data-sort="active" data-tooltip="Contact strength in active conformation (0 = no contact)">Active RRCS</th>
                 <th data-sort="inactive" data-tooltip="Contact strength in inactive conformation">Inactive RRCS</th>
-                <th data-sort="delta" data-tooltip="Active minus Inactive: positive = stronger in active">ΔRRCS</th>
-                <th data-sort="mag">Magnitude</th>
+                <th data-sort="delta" data-tooltip="Active minus inactive: positive = stronger in active">ΔRRCS</th>
+                <th data-sort="mag" data-tooltip="Magnitude class (HIGH / MED / LOW) based on |ΔRRCS|">Magnitude</th>
               </tr>
             </thead>
             <tbody>
@@ -2837,7 +2854,7 @@
                 <td class="num">1.737</td>
                 <td class="num">4.097</td>
                 <td class="num negative-delta"><strong>-2.359</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2847,7 +2864,7 @@
                 <td class="num">2.343</td>
                 <td class="num">0.000</td>
                 <td class="num positive-delta"><strong>+2.343</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2857,7 +2874,7 @@
                 <td class="num">1.668</td>
                 <td class="num">3.983</td>
                 <td class="num negative-delta"><strong>-2.315</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2867,7 +2884,7 @@
                 <td class="num">2.575</td>
                 <td class="num">0.299</td>
                 <td class="num positive-delta"><strong>+2.275</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2877,7 +2894,7 @@
                 <td class="num">4.553</td>
                 <td class="num">6.780</td>
                 <td class="num negative-delta"><strong>-2.227</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2887,7 +2904,7 @@
                 <td class="num">0.000</td>
                 <td class="num">2.225</td>
                 <td class="num negative-delta"><strong>-2.225</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2897,7 +2914,7 @@
                 <td class="num">3.859</td>
                 <td class="num">1.661</td>
                 <td class="num positive-delta"><strong>+2.199</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2907,7 +2924,7 @@
                 <td class="num">2.667</td>
                 <td class="num">4.854</td>
                 <td class="num negative-delta"><strong>-2.187</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2917,7 +2934,7 @@
                 <td class="num">5.543</td>
                 <td class="num">7.721</td>
                 <td class="num negative-delta"><strong>-2.179</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2927,7 +2944,7 @@
                 <td class="num">2.656</td>
                 <td class="num">0.511</td>
                 <td class="num positive-delta"><strong>+2.145</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2937,7 +2954,7 @@
                 <td class="num">2.524</td>
                 <td class="num">0.406</td>
                 <td class="num positive-delta"><strong>+2.118</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2947,7 +2964,7 @@
                 <td class="num">2.460</td>
                 <td class="num">0.375</td>
                 <td class="num positive-delta"><strong>+2.085</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2957,7 +2974,7 @@
                 <td class="num">4.167</td>
                 <td class="num">2.084</td>
                 <td class="num positive-delta"><strong>+2.083</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
               <tr>
@@ -2967,7 +2984,7 @@
                 <td class="num">2.601</td>
                 <td class="num">0.519</td>
                 <td class="num positive-delta"><strong>+2.082</strong></td>
-                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below significance threshold">LOW</span></td>
+                <td><span class="badge badge-low" data-tooltip="|ΔRRCS| below the receptor-specific ΔRRCS threshold">LOW</span></td>
               </tr>
             
             </tbody>
@@ -2986,9 +3003,10 @@
       </header>
       <div class="callout">
         <p>
-          <span class="is-active">Active-favoring</span> residues form stronger contacts in the active state (positive ΔRRCS).
-          <span class="is-inactive">Inactive-favoring</span> residues form stronger contacts in the inactive state (negative ΔRRCS).
-          Only residues with |ΔRRCS| ≥ 2.38 are shown (per-receptor significance threshold = max(mean(|Δ|) + σ, 0.2)).
+          Residues are grouped by segment according to whether their contact pairs are stronger in the
+          <span class="is-active">active model</span> (positive ΔRRCS) or the
+          <span class="is-inactive">inactive model</span> (negative ΔRRCS). Only residues linked to
+          contact-pair changes above the receptor-specific ΔRRCS threshold (|ΔRRCS| ≥ 2.38, computed as max(mean(|Δ|) + σ, 0.2)) are shown.
         </p>
       </div>
       <div class="v2-table-wrap" data-table-auto="tm-summary-table" data-page-size="50">
@@ -3000,12 +3018,12 @@
           <table class="v2-table" id="tm-summary-table">
             <thead>
               <tr>
-                <th>Segment</th>
-                <th>Range</th>
-                <th>Active-favoring residues</th>
-                <th>Count</th>
-                <th>Inactive-favoring residues</th>
-                <th>Count</th>
+                <th data-tooltip="Transmembrane helix or loop">Segment</th>
+                <th data-tooltip="Residue range covered by this segment">Range</th>
+                <th data-tooltip="Residues with positive ΔRRCS (stronger in active)">Active-favoring residues</th>
+                <th data-tooltip="Number of active-favoring residues in this segment">Count</th>
+                <th data-tooltip="Residues with negative ΔRRCS (stronger in inactive)">Inactive-favoring residues</th>
+                <th data-tooltip="Number of inactive-favoring residues in this segment">Count</th>
               </tr>
             </thead>
             <tbody>
@@ -3306,8 +3324,8 @@
     
     <section class="report-section">
       <header class="report-section-head">
-        <h2>Variants of interest</h2>
-        <p class="section-sub">97 variants mapped to contact positions, sorted by |ΔRRCS| impact.</p>
+        <h2>Contact-site missense variants</h2>
+        <p class="section-sub">97 gnomAD missense variants located at contact-forming residues, sorted by the ΔRRCS magnitude of the corresponding position.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="variants-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -3318,16 +3336,16 @@
           <table class="v2-table" id="variants-table">
             <thead>
               <tr>
-                <th data-sort="pos">Position</th>
-                <th data-sort="hgvsp">Protein change</th>
-                <th data-sort="hgvsc">DNA change</th>
+                <th data-sort="pos" data-tooltip="Residue position in the protein">Position</th>
+                <th data-sort="hgvsp" data-tooltip="HGVS protein-level annotation">Protein change</th>
+                <th data-sort="hgvsc" data-tooltip="HGVS coding-DNA annotation">DNA change</th>
                 <th data-sort="af" data-tooltip="Population frequency from gnomAD v4: lower = rarer variant">Allele freq</th>
-                <th>Het / Hom</th>
+                <th data-tooltip="Heterozygote allele count from gnomAD v4">Het count</th>
                 <th data-sort="delta" data-tooltip="Max |ΔRRCS| at this position">ΔRRCS</th>
-                <th data-sort="am" data-tooltip="AlphaMissense pathogenicity score: 0 = benign, 1 = pathogenic">AM score</th>
-                <th data-sort="path">Pathogenicity</th>
+                <th data-sort="am" data-tooltip="AlphaMissense score: 0 = benign-like, 1 = pathogenic-like">AM score</th>
+                <th data-sort="path" data-tooltip="AlphaMissense pathogenicity class">Pathogenicity</th>
                 <th data-sort="cons" data-tooltip="Sequence conservation: 0 = variable, 1 = conserved">Conservation</th>
-                <th>dbSNP</th>
+                <th data-tooltip="dbSNP rsID identifier">dbSNP</th>
               </tr>
             </thead>
             <tbody>
@@ -3337,7 +3355,7 @@
                 <td>p.Arg315Cys</td>
                 <td class="mono">c.943C>T</td>
                 <td class="num">3.15e-05</td>
-                <td class="num">46 / 0</td>
+                <td class="num">46</td>
                 <td class="num"><strong>16.13</strong></td>
                 <td class="num">0.144</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3350,12 +3368,12 @@
                 <td>p.Arg315Pro</td>
                 <td class="mono">c.944G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>16.13</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3363,10 +3381,10 @@
                 <td>p.Arg315His</td>
                 <td class="mono">c.944G>A</td>
                 <td class="num">1.23e-05</td>
-                <td class="num">18 / 0</td>
+                <td class="num">18</td>
                 <td class="num"><strong>16.13</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs781059093</td>
               </tr>
@@ -3376,7 +3394,7 @@
                 <td>p.Arg238Cys</td>
                 <td class="mono">c.712C>T</td>
                 <td class="num">3.28e-05</td>
-                <td class="num">48 / 0</td>
+                <td class="num">48</td>
                 <td class="num"><strong>9.35</strong></td>
                 <td class="num">0.345</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -3389,10 +3407,10 @@
                 <td>p.Arg238His</td>
                 <td class="mono">c.713G>A</td>
                 <td class="num">1.92e-05</td>
-                <td class="num">28 / 0</td>
+                <td class="num">28</td>
                 <td class="num"><strong>9.35</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs764805147</td>
               </tr>
@@ -3402,7 +3420,7 @@
                 <td>p.Trp164Arg</td>
                 <td class="mono">c.490T>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>9.14</strong></td>
                 <td class="num">0.512</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -3415,7 +3433,7 @@
                 <td>p.His102Arg</td>
                 <td class="mono">c.305A>G</td>
                 <td class="num">2.05e-06</td>
-                <td class="num">3 / 0</td>
+                <td class="num">3</td>
                 <td class="num"><strong>9.14</strong></td>
                 <td class="num">0.326</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3428,7 +3446,7 @@
                 <td>p.Leu325Pro</td>
                 <td class="mono">c.974T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>7.40</strong></td>
                 <td class="num">0.759</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3441,7 +3459,7 @@
                 <td>p.Trp254Ser</td>
                 <td class="mono">c.761G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.93</strong></td>
                 <td class="num">0.617</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3454,7 +3472,7 @@
                 <td>p.Trp132Arg</td>
                 <td class="mono">c.394T>C</td>
                 <td class="num">9.58e-06</td>
-                <td class="num">12 / 1</td>
+                <td class="num">12</td>
                 <td class="num"><strong>6.85</strong></td>
                 <td class="num">0.772</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3467,7 +3485,7 @@
                 <td>p.His136Asp</td>
                 <td class="mono">c.406C>G</td>
                 <td class="num">3.42e-06</td>
-                <td class="num">5 / 0</td>
+                <td class="num">5</td>
                 <td class="num"><strong>6.85</strong></td>
                 <td class="num">0.588</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3480,12 +3498,12 @@
                 <td>p.His136Leu</td>
                 <td class="mono">c.407A>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.85</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3493,12 +3511,12 @@
                 <td>p.Pro299Leu</td>
                 <td class="mono">c.896C>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.82</strong></td>
                 <td class="num">0.867</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">1.00</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3506,12 +3524,12 @@
                 <td>p.Phe5Ile</td>
                 <td class="mono">c.13T>A</td>
                 <td class="num">6.98e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">0.130</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.46</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3519,7 +3537,7 @@
                 <td>p.Arg190Lys</td>
                 <td class="mono">c.569G>A</td>
                 <td class="num">1.03e-05</td>
-                <td class="num">15 / 0</td>
+                <td class="num">15</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">0.122</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3532,12 +3550,12 @@
                 <td>p.Phe5Leu</td>
                 <td class="mono">c.15C>A</td>
                 <td class="num">6.95e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3545,12 +3563,12 @@
                 <td>p.Arg190Thr</td>
                 <td class="mono">c.569G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3558,7 +3576,7 @@
                 <td>p.Val303Ile</td>
                 <td class="mono">c.907G>A</td>
                 <td class="num">2.74e-05</td>
-                <td class="num">40 / 0</td>
+                <td class="num">40</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">0.163</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3571,10 +3589,10 @@
                 <td>p.Val303Phe</td>
                 <td class="mono">c.907G>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.69</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs374026779</td>
               </tr>
@@ -3584,7 +3602,7 @@
                 <td>p.Arg81Gln</td>
                 <td class="mono">c.242G>A</td>
                 <td class="num">2.94e-05</td>
-                <td class="num">43 / 0</td>
+                <td class="num">43</td>
                 <td class="num"><strong>6.57</strong></td>
                 <td class="num">0.228</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3597,7 +3615,7 @@
                 <td>p.Glu89Gln</td>
                 <td class="mono">c.265G>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>6.57</strong></td>
                 <td class="num">0.172</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3610,12 +3628,12 @@
                 <td>p.Arg81Leu</td>
                 <td class="mono">c.242G>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.57</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3623,10 +3641,10 @@
                 <td>p.Glu89Gly</td>
                 <td class="mono">c.266A>G</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>6.57</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs1215367237</td>
               </tr>
@@ -3636,12 +3654,12 @@
                 <td>p.Glu311Gly</td>
                 <td class="mono">c.932A>G</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>6.37</strong></td>
                 <td class="num">0.135</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.71</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3649,7 +3667,7 @@
                 <td>p.Arg137Cys</td>
                 <td class="mono">c.409C>T</td>
                 <td class="num">6.84e-06</td>
-                <td class="num">10 / 0</td>
+                <td class="num">10</td>
                 <td class="num"><strong>6.23</strong></td>
                 <td class="num">0.502</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -3662,10 +3680,10 @@
                 <td>p.Arg137Gly</td>
                 <td class="mono">c.409C>G</td>
                 <td class="num">9.58e-06</td>
-                <td class="num">14 / 0</td>
+                <td class="num">14</td>
                 <td class="num"><strong>6.23</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs748290067</td>
               </tr>
@@ -3675,10 +3693,10 @@
                 <td>p.Arg137His</td>
                 <td class="mono">c.410G>A</td>
                 <td class="num">2.74e-06</td>
-                <td class="num">4 / 0</td>
+                <td class="num">4</td>
                 <td class="num"><strong>6.23</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs770018978</td>
               </tr>
@@ -3688,12 +3706,12 @@
                 <td>p.Phe161Leu</td>
                 <td class="mono">c.483C>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>6.12</strong></td>
                 <td class="num">0.582</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.61</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3701,7 +3719,7 @@
                 <td>p.Val103Phe</td>
                 <td class="mono">c.307G>T</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>6.12</strong></td>
                 <td class="num">0.175</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3714,7 +3732,7 @@
                 <td>p.Arg323Lys</td>
                 <td class="mono">c.968G>A</td>
                 <td class="num">3.08e-05</td>
-                <td class="num">43 / 1</td>
+                <td class="num">43</td>
                 <td class="num"><strong>5.61</strong></td>
                 <td class="num">0.100</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3727,12 +3745,12 @@
                 <td>p.Ser316Phe</td>
                 <td class="mono">c.947C>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>5.53</strong></td>
                 <td class="num">0.401</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
                 <td class="num">0.98</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3740,7 +3758,7 @@
                 <td>p.Lys99Arg</td>
                 <td class="mono">c.296A>G</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>5.52</strong></td>
                 <td class="num">0.151</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3753,7 +3771,7 @@
                 <td>p.Phe206Leu</td>
                 <td class="mono">c.616T>C</td>
                 <td class="num">6.84e-06</td>
-                <td class="num">10 / 0</td>
+                <td class="num">10</td>
                 <td class="num"><strong>5.14</strong></td>
                 <td class="num">0.825</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3766,7 +3784,7 @@
                 <td>p.Ile262Leu</td>
                 <td class="mono">c.784A>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>5.14</strong></td>
                 <td class="num">0.082</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3779,12 +3797,12 @@
                 <td>p.Phe206Val</td>
                 <td class="mono">c.616T>G</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>5.14</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3792,10 +3810,10 @@
                 <td>p.Ile262Thr</td>
                 <td class="mono">c.785T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>5.14</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs1323789281</td>
               </tr>
@@ -3805,12 +3823,12 @@
                 <td>p.Gln310Arg</td>
                 <td class="mono">c.929A>G</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.67</strong></td>
                 <td class="num">0.062</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.75</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3818,7 +3836,7 @@
                 <td>p.Met55Thr</td>
                 <td class="mono">c.164T>C</td>
                 <td class="num">4.10e-06</td>
-                <td class="num">6 / 0</td>
+                <td class="num">6</td>
                 <td class="num"><strong>4.64</strong></td>
                 <td class="num">0.821</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -3831,7 +3849,7 @@
                 <td>p.Arg88Thr</td>
                 <td class="mono">c.263G>C</td>
                 <td class="num">3.90e-05</td>
-                <td class="num">57 / 0</td>
+                <td class="num">57</td>
                 <td class="num"><strong>4.60</strong></td>
                 <td class="num">0.273</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3844,7 +3862,7 @@
                 <td>p.Glu18Lys</td>
                 <td class="mono">c.52G>A</td>
                 <td class="num">6.85e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.60</strong></td>
                 <td class="num">0.149</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3857,10 +3875,10 @@
                 <td>p.Arg88Lys</td>
                 <td class="mono">c.263G>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.60</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs1288549525</td>
               </tr>
@@ -3870,7 +3888,7 @@
                 <td>p.Gln351Arg</td>
                 <td class="mono">c.1052A>G</td>
                 <td class="num">6.87e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.55</strong></td>
                 <td class="num">0.075</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3883,12 +3901,12 @@
                 <td>p.Gln351Leu</td>
                 <td class="mono">c.1052A>T</td>
                 <td class="num">6.87e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.55</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3896,12 +3914,12 @@
                 <td>p.Glu322Ala</td>
                 <td class="mono">c.965A>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>4.46</strong></td>
                 <td class="num">0.325</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.99</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3909,7 +3927,7 @@
                 <td>p.Glu270Gln</td>
                 <td class="mono">c.808G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.40</strong></td>
                 <td class="num">0.180</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3922,7 +3940,7 @@
                 <td>p.Arg123Cys</td>
                 <td class="mono">c.367C>T</td>
                 <td class="num">6.84e-06</td>
-                <td class="num">10 / 0</td>
+                <td class="num">10</td>
                 <td class="num"><strong>4.37</strong></td>
                 <td class="num">0.561</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -3935,10 +3953,10 @@
                 <td>p.Arg123Leu</td>
                 <td class="mono">c.368G>T</td>
                 <td class="num">6.57e-06</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.37</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs779342164</td>
               </tr>
@@ -3948,10 +3966,10 @@
                 <td>p.Arg123His</td>
                 <td class="mono">c.368G>A</td>
                 <td class="num">4.58e-05</td>
-                <td class="num">67 / 0</td>
+                <td class="num">67</td>
                 <td class="num"><strong>4.37</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs779342164</td>
               </tr>
@@ -3961,12 +3979,12 @@
                 <td>p.Trp183Arg</td>
                 <td class="mono">c.547T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.33</strong></td>
                 <td class="num">0.601</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.58</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -3974,7 +3992,7 @@
                 <td>p.Val193Met</td>
                 <td class="mono">c.577G>A</td>
                 <td class="num">4.93e-05</td>
-                <td class="num">72 / 0</td>
+                <td class="num">72</td>
                 <td class="num"><strong>4.33</strong></td>
                 <td class="num">0.194</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -3987,10 +4005,10 @@
                 <td>p.Val193Ala</td>
                 <td class="mono">c.578T>C</td>
                 <td class="num">2.74e-06</td>
-                <td class="num">4 / 0</td>
+                <td class="num">4</td>
                 <td class="num"><strong>4.33</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs866353243</td>
               </tr>
@@ -4000,7 +4018,7 @@
                 <td>p.Phe243Leu</td>
                 <td class="mono">c.729C>A</td>
                 <td class="num">6.57e-06</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.28</strong></td>
                 <td class="num">0.630</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -4013,12 +4031,12 @@
                 <td>p.Phe180Tyr</td>
                 <td class="mono">c.539T>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.22</strong></td>
                 <td class="num">0.172</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.82</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4026,12 +4044,12 @@
                 <td>p.Phe180Ser</td>
                 <td class="mono">c.539T>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>4.22</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4039,7 +4057,7 @@
                 <td>p.Val113Ile</td>
                 <td class="mono">c.337G>A</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>4.20</strong></td>
                 <td class="num">0.104</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4052,12 +4070,12 @@
                 <td>p.Val113Asp</td>
                 <td class="mono">c.338T>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.20</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4065,12 +4083,12 @@
                 <td>p.Arg57Gly</td>
                 <td class="mono">c.169C>G</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">0.316</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.67</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4078,7 +4096,7 @@
                 <td>p.Gly52Ala</td>
                 <td class="mono">c.155G>C</td>
                 <td class="num">6.57e-06</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">0.198</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4091,12 +4109,12 @@
                 <td>p.Arg57Ser</td>
                 <td class="mono">c.169C>A</td>
                 <td class="num">2.05e-06</td>
-                <td class="num">3 / 0</td>
+                <td class="num">3</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4104,10 +4122,10 @@
                 <td>p.Arg57Cys</td>
                 <td class="mono">c.169C>T</td>
                 <td class="num">3.49e-05</td>
-                <td class="num">51 / 0</td>
+                <td class="num">51</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs182683513</td>
               </tr>
@@ -4117,10 +4135,10 @@
                 <td>p.Arg57Pro</td>
                 <td class="mono">c.170G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs143231858</td>
               </tr>
@@ -4130,10 +4148,10 @@
                 <td>p.Arg57His</td>
                 <td class="mono">c.170G>A</td>
                 <td class="num">1.37e-05</td>
-                <td class="num">20 / 0</td>
+                <td class="num">20</td>
                 <td class="num"><strong>4.07</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs143231858</td>
               </tr>
@@ -4143,12 +4161,12 @@
                 <td>p.Val50Met</td>
                 <td class="mono">c.148G>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>4.05</strong></td>
                 <td class="num">0.464</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
                 <td class="num">0.90</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4156,7 +4174,7 @@
                 <td>p.His33Tyr</td>
                 <td class="mono">c.97C>T</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>4.04</strong></td>
                 <td class="num">0.133</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4169,12 +4187,12 @@
                 <td>p.Trp150Arg</td>
                 <td class="mono">c.448T>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.91</strong></td>
                 <td class="num">0.967</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.99</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4182,7 +4200,7 @@
                 <td>p.Val111Leu</td>
                 <td class="mono">c.331G>C</td>
                 <td class="num">4.10e-06</td>
-                <td class="num">6 / 0</td>
+                <td class="num">6</td>
                 <td class="num"><strong>3.91</strong></td>
                 <td class="num">0.267</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4195,12 +4213,12 @@
                 <td>p.Phe251Ser</td>
                 <td class="mono">c.752T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.91</strong></td>
                 <td class="num">0.566</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.92</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4208,7 +4226,7 @@
                 <td>p.Phe255Ser</td>
                 <td class="mono">c.764T>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.91</strong></td>
                 <td class="num">0.444</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -4221,12 +4239,12 @@
                 <td>p.Thr337Ile</td>
                 <td class="mono">c.1010C>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.86</strong></td>
                 <td class="num">0.136</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.70</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4234,7 +4252,7 @@
                 <td>p.Asp106Ala</td>
                 <td class="mono">c.317A>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.82</strong></td>
                 <td class="num">0.394</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -4247,7 +4265,7 @@
                 <td>p.His205Gln</td>
                 <td class="mono">c.615C>G</td>
                 <td class="num">6.16e-06</td>
-                <td class="num">9 / 0</td>
+                <td class="num">9</td>
                 <td class="num"><strong>3.82</strong></td>
                 <td class="num">0.277</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4260,12 +4278,12 @@
                 <td>p.Asp106Glu</td>
                 <td class="mono">c.318C>A</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.82</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4273,12 +4291,12 @@
                 <td>p.Ile116Thr</td>
                 <td class="mono">c.347T>C</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.80</strong></td>
                 <td class="num">0.708</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.78</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4286,12 +4304,12 @@
                 <td>p.Phe93Ser</td>
                 <td class="mono">c.278T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.59</strong></td>
                 <td class="num">0.876</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
                 <td class="num">0.91</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4299,7 +4317,7 @@
                 <td>p.Phe80Leu</td>
                 <td class="mono">c.238T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.59</strong></td>
                 <td class="num">0.791</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -4312,12 +4330,12 @@
                 <td>p.Phe80Leu</td>
                 <td class="mono">c.240C>G</td>
                 <td class="num">7.53e-06</td>
-                <td class="num">11 / 0</td>
+                <td class="num">11</td>
                 <td class="num"><strong>3.59</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4325,12 +4343,12 @@
                 <td>p.Asp185Val</td>
                 <td class="mono">c.554A>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.34</strong></td>
                 <td class="num">0.159</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.51</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4338,10 +4356,10 @@
                 <td>p.Asp185Glu</td>
                 <td class="mono">c.555C>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.34</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs2084214141</td>
               </tr>
@@ -4351,12 +4369,12 @@
                 <td>p.Met305Leu</td>
                 <td class="mono">c.913A>T</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.33</strong></td>
                 <td class="num">0.161</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.67</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4364,12 +4382,12 @@
                 <td>p.Met305Thr</td>
                 <td class="mono">c.914T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.33</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4377,12 +4395,12 @@
                 <td>p.Met305Ile</td>
                 <td class="mono">c.915G>A</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.33</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4390,7 +4408,7 @@
                 <td>p.Ile300Val</td>
                 <td class="mono">c.898A>G</td>
                 <td class="num">2.33e-05</td>
-                <td class="num">34 / 0</td>
+                <td class="num">34</td>
                 <td class="num"><strong>3.32</strong></td>
                 <td class="num">0.098</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4403,7 +4421,7 @@
                 <td>p.Tyr221Cys</td>
                 <td class="mono">c.662A>G</td>
                 <td class="num">4.10e-06</td>
-                <td class="num">6 / 0</td>
+                <td class="num">6</td>
                 <td class="num"><strong>3.31</strong></td>
                 <td class="num">0.242</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4416,7 +4434,7 @@
                 <td>p.Ala70Thr</td>
                 <td class="mono">c.208G>A</td>
                 <td class="num">1.31e-05</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.23</strong></td>
                 <td class="num">0.338</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4429,12 +4447,12 @@
                 <td>p.Ala70Pro</td>
                 <td class="mono">c.208G>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.23</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4442,12 +4460,12 @@
                 <td>p.Asn60Ile</td>
                 <td class="mono">c.179A>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.23</strong></td>
                 <td class="num">0.384</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
                 <td class="num">0.68</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4455,12 +4473,12 @@
                 <td>p.Asn60Ser</td>
                 <td class="mono">c.179A>G</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.23</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4468,10 +4486,10 @@
                 <td>p.Asn60Lys</td>
                 <td class="mono">c.180C>A</td>
                 <td class="num">6.57e-06</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.23</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs1477884089</td>
               </tr>
@@ -4481,7 +4499,7 @@
                 <td>p.Ile228Thr</td>
                 <td class="mono">c.683T>C</td>
                 <td class="num">2.05e-06</td>
-                <td class="num">3 / 0</td>
+                <td class="num">3</td>
                 <td class="num"><strong>3.19</strong></td>
                 <td class="num">0.517</td>
                 <td><span class="badge badge-ambiguous">AMBIGUOUS</span></td>
@@ -4494,7 +4512,7 @@
                 <td>p.Met233Val</td>
                 <td class="mono">c.697A>G</td>
                 <td class="num">1.37e-06</td>
-                <td class="num">2 / 0</td>
+                <td class="num">2</td>
                 <td class="num"><strong>3.19</strong></td>
                 <td class="num">0.077</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
@@ -4507,10 +4525,10 @@
                 <td>p.Met233Thr</td>
                 <td class="mono">c.698T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.19</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs768258940</td>
               </tr>
@@ -4520,12 +4538,12 @@
                 <td>p.Met233Lys</td>
                 <td class="mono">c.698T>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.19</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4533,7 +4551,7 @@
                 <td>p.Cys176Arg</td>
                 <td class="mono">c.526T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.06</strong></td>
                 <td class="num">0.949</td>
                 <td><span class="badge badge-pathogenic">PATHOGENIC</span></td>
@@ -4546,12 +4564,12 @@
                 <td>p.Cys176Tyr</td>
                 <td class="mono">c.527G>A</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.06</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4559,10 +4577,10 @@
                 <td>p.Cys176Phe</td>
                 <td class="mono">c.527G>T</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.06</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs2122499160</td>
               </tr>
@@ -4572,12 +4590,12 @@
                 <td>p.Ile234Thr</td>
                 <td class="mono">c.701T>C</td>
                 <td class="num">6.84e-07</td>
-                <td class="num">1 / 0</td>
+                <td class="num">1</td>
                 <td class="num"><strong>3.03</strong></td>
                 <td class="num">0.221</td>
                 <td><span class="badge badge-benign">BENIGN</span></td>
                 <td class="num">0.55</td>
-                <td class="mono"></td>
+                <td class="mono">-</td>
               </tr>
             
               <tr>
@@ -4585,10 +4603,10 @@
                 <td>p.Ile234Ser</td>
                 <td class="mono">c.701T>G</td>
                 <td class="num">1.30e-05</td>
-                <td class="num">19 / 0</td>
+                <td class="num">19</td>
                 <td class="num"><strong>3.03</strong></td>
                 <td class="num">-</td>
-                <td>nan</td>
+                <td>-</td>
                 <td class="num">-</td>
                 <td class="mono">rs776189722</td>
               </tr>
@@ -4606,7 +4624,7 @@
     <section class="report-section">
       <header class="report-section-head">
         <h2>Complete RRCS results</h2>
-        <p class="section-sub">Top 1000 contact pairs by |ΔRRCS|. Significance threshold: |ΔRRCS| ≥ 2.38, computed as max(mean(|Δ|) + σ, 0.2). Highlighted rows indicate significant changes.</p>
+        <p class="section-sub">Top 1000 contact pairs ranked by |ΔRRCS|. Rows above the receptor-specific ΔRRCS threshold (|ΔRRCS| ≥ 2.38, computed as max(mean(|Δ|) + σ, 0.2)) are highlighted.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="rrcs-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -4617,14 +4635,14 @@
           <table class="v2-table" id="rrcs-table">
             <thead>
               <tr>
-                <th data-sort="r1">Res1</th>
-                <th>AA1</th>
-                <th data-sort="r2">Res2</th>
-                <th>AA2</th>
-                <th data-sort="a">Active RRCS</th>
-                <th data-sort="i">Inactive RRCS</th>
-                <th data-sort="d">ΔRRCS</th>
-                <th data-sort="ad">|ΔRRCS|</th>
+                <th data-sort="r1" data-tooltip="First residue position">Res1</th>
+                <th data-tooltip="First residue amino acid">AA1</th>
+                <th data-sort="r2" data-tooltip="Second residue position">Res2</th>
+                <th data-tooltip="Second residue amino acid">AA2</th>
+                <th data-sort="a" data-tooltip="Contact strength in active conformation">Active RRCS</th>
+                <th data-sort="i" data-tooltip="Contact strength in inactive conformation">Inactive RRCS</th>
+                <th data-sort="d" data-tooltip="Active minus inactive: positive = stronger in active">ΔRRCS</th>
+                <th data-sort="ad" data-tooltip="Magnitude of the active-inactive change">|ΔRRCS|</th>
               </tr>
             </thead>
             <tbody>
@@ -13331,13 +13349,14 @@
         <p>
           <strong>RRCS analysis.</strong>
           <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6954041/" target="_blank" rel="noopener">Residue-Residue Contact Scores (RRCS)</a>
-          were calculated for each conformational state based on inter-atomic distances. Changes (ΔRRCS) were computed
-          by comparing active and inactive structures predicted by
+          quantify pairwise residue contact strength from inter-atomic distances; comparing active and
+          inactive structures predicted by
           <a href="https://github.com/huhlim/alphafold-multistate" target="_blank" rel="noopener">AlphaFold multistate</a>
-          (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank" rel="noopener">del Alamo et al., 2022</a>).
+          (<a href="https://onlinelibrary.wiley.com/doi/10.1002/prot.26382" target="_blank" rel="noopener">del Alamo et al., 2022</a>)
+          gives a per-pair ΔRRCS.
         </p>
         <p>
-          <strong>Significance threshold.</strong> |ΔRRCS| ≥ 2.38, computed as max(mean(|Δ|) + σ, 0.2). The 0.2 floor ensures receptors with very small overall change still surface their largest contacts.
+          <strong>Receptor-specific ΔRRCS threshold.</strong> |ΔRRCS| ≥ 2.38, computed as max(mean(|Δ|) + σ, 0.2). The 0.2 floor ensures receptors with very small overall change still surface their largest contacts.
         </p>
         <p>
           <strong>Variant data.</strong> Population frequencies from
@@ -13347,6 +13366,7 @@
           conservation from
           <a href="https://www.ebi.ac.uk/ProtVar/" target="_blank" rel="noopener">ProtVar</a> /
           <a href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt</a>.
+          The Het count column shows heterozygote allele counts; homozygote counts are uniformly zero across these rare missense variants in the current gnomAD v4 snapshot and are omitted.
         </p>
         <p>
           <strong>Structural annotation.</strong> TM domain boundaries and generic numbering from
@@ -13372,29 +13392,33 @@
           <ul>
             <li><strong class="is-active">Positive ΔRRCS.</strong> Contact is stronger in the active state.</li>
             <li><strong class="is-inactive">Negative ΔRRCS.</strong> Contact is stronger in the inactive state.</li>
-            <li><strong>Large |ΔRRCS|.</strong> Significant structural rearrangement.</li>
+            <li><strong>Large |ΔRRCS|.</strong> Notable contact-score difference between the active and inactive models.</li>
           </ul>
           <p>
-            Residues with large RRCS changes are critical for protein function. Mutations at these positions may disrupt
-            the protein's ability to change shape properly.
+            Residues with large ΔRRCS values mark positions whose contact environment differs between the
+            active and inactive models. These positions may be useful candidates for structural interpretation
+            or follow-up variant analysis, but they should not be interpreted as functional proof on their own.
           </p>
 
           <h3 class="report-chart-head">Pathogenicity predictions</h3>
-          <p>AlphaMissense predicts whether a mutation harms protein function:</p>
+          <p>
+            AlphaMissense scores estimate the likelihood that a missense substitution disrupts function,
+            based on structural and evolutionary features. The published score thresholds bin each variant as:
+          </p>
           <ul>
-            <li><span class="badge badge-pathogenic">Pathogenic</span> (score ≥ 0.564): mutation likely damages function.</li>
-            <li><span class="badge badge-ambiguous">Ambiguous</span> (0.34–0.563): effect uncertain.</li>
-            <li><span class="badge badge-benign">Benign</span> (&lt; 0.34): mutation likely tolerated.</li>
+            <li><span class="badge badge-pathogenic">Pathogenic</span> (score ≥ 0.564): consistent with disruptive substitutions in known disease genes.</li>
+            <li><span class="badge badge-ambiguous">Ambiguous</span> (0.34–0.563): score does not clearly favor either class.</li>
+            <li><span class="badge badge-benign">Benign</span> (&lt; 0.34): consistent with tolerated substitutions.</li>
           </ul>
 
           <h3 class="report-chart-head">Conservation &amp; population data</h3>
           <p>
             <strong>Conservation score.</strong> How well-preserved a position is across species (0 = variable, 1 = conserved).
-            High conservation suggests the position is critical for function.
+            Highly conserved positions are often functionally important, but conservation alone is not proof of function.
           </p>
           <p>
-            <strong>Allele frequency.</strong> How often a variant appears in the population. Rare variants (low frequency)
-            may be more likely to be harmful.
+            <strong>Allele frequency.</strong> Population frequency of the variant in gnomAD v4. Rare variants
+            are common across the genome and many are undersampled; rarity alone is not evidence of pathogenicity.
           </p>
         </div>
       </div>
@@ -13428,7 +13452,6 @@
       background: var(--bgColor-default);
       border: 1px solid var(--borderColor-muted);
       border-radius: var(--r-lg);
-      overflow: hidden;
     }
     .report-header::before {
       content: "";
@@ -13437,6 +13460,8 @@
       width: 4px;
       height: 100%;
       background: var(--brand-primary);
+      border-top-left-radius: var(--r-lg);
+      border-bottom-left-radius: var(--r-lg);
     }
     .report-header-main { min-width: 0; }
     .report-title {
@@ -13606,7 +13631,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
-<script type="application/json" id="snake-plot-data">{"views": {"delta_rrcs": {"colors": {"3": "#bacfe5", "4": "#f1d5d9", "5": "#437db8", "6": "#f1d5d9", "7": "#f8ecee", "8": "#f8ecee", "11": "#f7f9fc", "12": "#f7f9fc", "13": "#b6cce3", "16": "#e8babf", "17": "#e8babf", "18": "#a3bfdc", "19": "#a8c3de", "22": "#b9cee4", "23": "#f1f5f9", "25": "#dfe9f3", "26": "#e8bbc1", "27": "#ecc6cb", "28": "#b8cee4", "29": "#f0d3d7", "30": "#eac0c5", "31": "#f0d2d5", "32": "#e6eef5", "33": "#c8d9ea", "34": "#e9bdc2", "35": "#e4ecf5", "36": "#f7e8ea", "37": "#f1f5f9", "38": "#fcf6f7", "39": "#f4e0e3", "40": "#e8eff6", "41": "#f1f5fa", "42": "#fbf4f5", "43": "#f7e7e9", "44": "#c0d3e7", "45": "#f0f4f9", "46": "#e9bfc4", "47": "#cadaeb", "48": "#c2d5e8", "49": "#f5e1e3", "50": "#dae5f1", "51": "#efd1d5", "52": "#e0a2a9", "53": "#f2d9dc", "54": "#ebc5ca", "55": "#efd0d4", "56": "#edcbcf", "57": "#db939c", "58": "#fbf4f5", "59": "#b3cae2", "60": "#e5edf5", "61": "#f2d9dc", "62": "#f1d7db", "63": "#eecdd1", "64": "#e2aab1", "65": "#f2d9dc", "66": "#ebc5ca", "67": "#dae5f1", "68": "#bfd3e7", "69": "#d6e2ef", "70": "#b9cfe5", "71": "#dde8f2", "72": "#bbd0e5", "73": "#a3c0dc", "74": "#f2d8db", "75": "#fbf3f4", "76": "#f4f7fb", "77": "#c8d9ea", "78": "#d7e4f0", "79": "#f0d2d5", "80": "#f1d6da", "81": "#b2cae2", "82": "#e6eef5", "83": "#eeced2", "84": "#fcf8f9", "85": "#edc9ce", "86": "#e3abb2", "87": "#dae5f1", "88": "#749fcb", "89": "#92b4d6", "90": "#bfd3e7", "91": "#f2dadd", "92": "#c8d9ea", "93": "#e7b9be", "94": "#dc969f", "95": "#f6f9fb", "96": "#f4e0e3", "97": "#e5edf5", "98": "#e6b4bb", "99": "#d47e89", "100": "#fbf4f5", "101": "#c5d7e9", "102": "#de9ca4", "103": "#9bbad9", "104": "#ccdcec", "105": "#f1d5d9", "106": "#edcbcf", "107": "#dbe6f1", "108": "#ebc4c9", "109": "#e6b5bb", "110": "#e6b4bb", "111": "#b5cce3", "112": "#c4d6e8", "113": "#e5b2b9", "114": "#fcf7f8", "115": "#dee8f2", "116": "#bdd1e6", "117": "#f4dee0", "118": "#d3e0ee", "119": "#e5edf5", "120": "#bbd0e5", "121": "#f5e1e4", "122": "#c1d4e7", "123": "#f0d3d6", "124": "#afc7e1", "125": "#e1eaf3", "126": "#ecf1f7", "127": "#ecc6ca", "128": "#dee8f2", "129": "#f7f9fc", "130": "#f6e5e7", "132": "#de9ea6", "133": "#f4dfe2", "134": "#f7e9eb", "135": "#d1dfed", "136": "#d6858f", "137": "#8aaed3", "138": "#e6eef5", "139": "#eff4f9", "140": "#9fbddb", "141": "#cbdbeb", "142": "#f0d3d7", "143": "#ecc6cb", "144": "#7da5ce", "145": "#f0d4d7", "146": "#eac0c6", "147": "#e2ebf4", "149": "#c2d5e8", "150": "#d3e0ee", "151": "#ebf1f7", "152": "#dce7f2", "153": "#e9eff6", "154": "#eef3f8", "155": "#dfe9f3", "156": "#f8eaec", "157": "#e0e9f3", "158": "#e1eaf3", "159": "#c7d8ea", "160": "#d6e3ef", "161": "#cfdeed", "162": "#c5d7e9", "163": "#b7cde4", "164": "#d27a85", "165": "#eeced2", "166": "#e8eff6", "167": "#f3dde0", "168": "#dae6f1", "169": "#f9eef0", "170": "#efd0d4", "171": "#f8eaec", "173": "#eef3f8", "174": "#f4dfe2", "175": "#e6eef5", "176": "#fdf9fa", "177": "#f1d6d9", "178": "#b4cbe3", "179": "#f5e2e5", "180": "#bbd0e5", "181": "#eeccd0", "182": "#8db0d4", "183": "#a2bfdc", "184": "#e6b6bc", "185": "#d78791", "186": "#eac1c6", "187": "#7ea6cf", "188": "#eef3f8", "189": "#ecf2f8", "190": "#acc6e0", "191": "#d3e1ee", "192": "#fbf5f6", "193": "#9ebcda", "194": "#f6e5e7", "195": "#dee8f2", "196": "#f0d3d6", "197": "#e9f0f7", "198": "#b1c9e1", "199": "#dfe9f3", "200": "#e1a6ae", "201": "#e3acb3", "202": "#f5e3e5", "203": "#e6b6bc", "204": "#b7cde4", "205": "#f0d2d6", "206": "#aec7e1", "207": "#f1d5d9", "208": "#c5d7e9", "209": "#ecc6ca", "210": "#f6e4e6", "211": "#f0f4f9", "212": "#f2d8db", "213": "#f3dcdf", "214": "#d2dfee", "215": "#eef3f9", "216": "#f6f8fb", "217": "#f3dcdf", "218": "#a2bfdc", "219": "#cfdeed", "220": "#b0c9e1", "221": "#c4d6e9", "223": "#f7e8ea", "224": "#c7d8ea", "225": "#a7c2de", "227": "#edcace", "228": "#f6e4e6", "230": "#d4e1ef", "231": "#bed2e6", "233": "#e6b4ba", "234": "#9fbddb", "235": "#f6e6e8", "236": "#e3adb4", "237": "#f6e6e8", "238": "#d6848e", "239": "#e5b2b8", "240": "#e0a3ab", "241": "#ebc4c9", "242": "#e4aeb5", "243": "#e6b4ba", "244": "#cb6571", "245": "#e0a3aa", "246": "#d3e1ee", "247": "#f5e2e4", "248": "#dee8f3", "249": "#e3ecf4", "250": "#de9ea6", "251": "#b9cfe5", "252": "#e1eaf3", "253": "#ecc6cb", "254": "#dd9aa2", "255": "#c1d4e7", "256": "#f4dfe2", "257": "#cddcec", "258": "#c2d5e8", "259": "#f4e0e2", "260": "#f9edef", "261": "#ebf1f7", "262": "#b7cde4", "263": "#eeccd0", "264": "#edf3f8", "265": "#f2d9dc", "266": "#cddcec", "267": "#a8c3de", "268": "#f4e0e3", "269": "#f0d4d8", "270": "#c6d7e9", "271": "#f8ecee", "272": "#e5edf5", "273": "#dbe6f1", "274": "#dae5f1", "275": "#e7b8be", "276": "#f3dcdf", "277": "#ceddec", "278": "#b6cce3", "279": "#f1d6d9", "280": "#f7e7e9", "281": "#d7e3f0", "282": "#f4dee0", "283": "#f3dcdf", "284": "#c6d8ea", "285": "#bdd1e6", "286": "#b8cee4", "287": "#f8eaeb", "288": "#e4ecf5", "289": "#e4afb6", "290": "#eac0c5", "291": "#dfa0a8", "292": "#edcbd0", "293": "#f8ebed", "294": "#edf2f8", "295": "#ecc6cb", "296": "#dee8f2", "297": "#ceddec", "298": "#b4cbe2", "299": "#a7c2de", "300": "#9ebcda", "301": "#f0d4d7", "302": "#cadaeb", "303": "#b4cbe3", "304": "#86acd1", "305": "#e2a8af", "306": "#d88a93", "307": "#f9fbfc", "308": "#cfdeed", "309": "#719dca", "310": "#8aaed3", "311": "#c95d6a", "312": "#c55361", "313": "#cadaeb", "314": "#b4cbe3", "315": "#b2182b", "316": "#c6d7e9", "317": "#fcf7f8", "318": "#e6b5bb", "319": "#dfa0a8", "320": "#edcace", "321": "#edc9ce", "322": "#e1a6ad", "323": "#ca606d", "324": "#e8babf", "325": "#dc969e", "326": "#e2a8af", "327": "#bb3445", "328": "#faf2f3", "329": "#e0a2aa", "330": "#dce7f2", "333": "#98b8d8", "334": "#b6cce3", "335": "#ebf1f7", "336": "#e6eef5", "337": "#81a8d0", "338": "#6494c5", "339": "#749fcb", "340": "#75a0cb", "341": "#9ab9d9", "342": "#bbd0e5", "343": "#fcf7f8", "344": "#edcbcf", "345": "#e6b6bc", "346": "#e9bdc3", "347": "#ecc8cc", "348": "#e1a5ac", "349": "#d5838d", "350": "#c75765", "351": "#ce6e7a", "352": "#f3dcdf", "353": "#f9edef"}, "label": "Delta RRCS", "description": "Per-residue mean \u0394RRCS (active \u2212 inactive)", "legend_type": "diverging", "legend_colors": ["#B2182B", "#FFFFFF", "#2166AC"], "legend_labels": ["Inactive-favoring", "0", "Active-favoring"]}, "active_rrcs": {"colors": {"3": "#fbfcfd", "4": "#ffffff", "5": "#bed2e6", "6": "#ffffff", "7": "#f9fbfc", "8": "#f9fbfc", "11": "#fefefe", "12": "#fefefe", "13": "#fafcfd", "16": "#f9fbfc", "17": "#f9fbfc", "18": "#d0deed", "19": "#e1eaf4", "22": "#c7d8ea", "23": "#fafcfd", "25": "#f4f7fb", "26": "#aec7e0", "27": "#f9fafc", "28": "#e3ecf4", "29": "#c1d4e8", "30": "#d4e1ee", "31": "#fefefe", "32": "#d2e0ee", "33": "#9fbcdb", "34": "#f2f6fa", "35": "#eff4f9", "36": "#b9cee4", "37": "#c5d7e9", "38": "#f8fafc", "39": "#eef3f8", "40": "#dbe6f1", "41": "#ceddec", "42": "#fbfcfd", "43": "#e8eff6", "44": "#6f9cc9", "45": "#f4f7fa", "46": "#f7f9fc", "47": "#d5e2ef", "48": "#c1d4e8", "49": "#bad0e5", "50": "#b9cee4", "51": "#fafbfd", "52": "#f4f7fa", "53": "#f6f9fb", "54": "#e0e9f3", "55": "#aac4df", "56": "#f2f6fa", "57": "#edf2f8", "58": "#d1dfee", "59": "#c0d3e7", "60": "#e0eaf3", "61": "#d9e5f1", "62": "#e8eff6", "63": "#edf2f8", "64": "#c9daea", "65": "#e9eff6", "66": "#ccdcec", "67": "#bed2e7", "68": "#c3d5e8", "69": "#ecf2f8", "70": "#ceddec", "71": "#5e90c3", "72": "#bdd1e6", "73": "#e7eff6", "74": "#86acd2", "75": "#c8d9ea", "76": "#f9fbfd", "77": "#dce6f1", "78": "#c0d3e7", "79": "#e7eef6", "80": "#bbd0e5", "81": "#b7cee4", "82": "#cbdbeb", "83": "#ebf1f7", "84": "#abc5df", "85": "#c1d4e8", "86": "#e8eff6", "87": "#ecf1f7", "88": "#d3e1ee", "89": "#80a7cf", "90": "#84aad1", "91": "#2f6fb1", "92": "#dae5f1", "93": "#92b4d6", "94": "#fefefe", "95": "#d8e4f0", "96": "#fafbfd", "97": "#cadbeb", "98": "#a8c3de", "99": "#e3ecf4", "100": "#eff4f9", "101": "#d0deed", "102": "#9cbbda", "103": "#bed2e6", "104": "#e1eaf3", "105": "#e3ecf4", "106": "#ccdcec", "107": "#d7e3f0", "108": "#acc6e0", "109": "#cddcec", "110": "#d4e1ef", "111": "#b1c9e2", "112": "#c8d9ea", "113": "#d2e0ee", "114": "#9ab9d9", "115": "#bcd1e6", "116": "#bed2e6", "117": "#cfdeed", "118": "#f0f5f9", "119": "#e0e9f3", "120": "#d7e4f0", "121": "#eaf1f7", "122": "#c1d4e7", "123": "#b9cfe5", "124": "#cadaeb", "125": "#ecf2f8", "126": "#e6edf5", "127": "#f7f9fc", "128": "#e3ebf4", "129": "#f1f5fa", "130": "#fcfdfe", "132": "#bacfe5", "133": "#f7f9fc", "134": "#fdfefe", "135": "#f3f7fa", "136": "#b6cde3", "137": "#7ea6ce", "138": "#f1f5fa", "139": "#c3d5e8", "140": "#ecf2f8", "141": "#e8eff6", "142": "#f6f9fb", "143": "#f7fafc", "144": "#eff4f9", "145": "#f8fafc", "146": "#dfe9f3", "147": "#fbfcfd", "149": "#c7d9ea", "150": "#bfd3e7", "151": "#fbfcfd", "152": "#d2e0ee", "153": "#d1dfee", "154": "#fefefe", "155": "#fcfdfe", "156": "#d4e1ee", "157": "#d2e0ee", "158": "#f8fafc", "159": "#e8eff6", "160": "#9ebcda", "161": "#c7d8ea", "162": "#e8eff6", "163": "#558abf", "164": "#2166ac", "165": "#b1c9e2", "166": "#b3cae2", "167": "#aec7e0", "168": "#dbe6f1", "169": "#ecf2f8", "170": "#f4f8fb", "171": "#f2f6fa", "173": "#a0bedb", "174": "#9ab9d9", "175": "#7ba4cd", "176": "#99b9d9", "177": "#85abd1", "178": "#3876b4", "179": "#bdd2e6", "180": "#5086bd", "181": "#ecf2f8", "182": "#d0deed", "183": "#bed2e6", "184": "#d7e3f0", "185": "#fbfcfd", "186": "#d8e4f0", "187": "#e8eff6", "188": "#f8fafc", "189": "#cbdbeb", "190": "#98b8d8", "191": "#edf2f8", "192": "#fafcfd", "193": "#cddcec", "194": "#dce7f2", "195": "#d8e4f0", "196": "#ffffff", "197": "#cedded", "198": "#dde7f2", "199": "#d2e0ee", "200": "#ffffff", "201": "#ecf2f8", "202": "#dae5f1", "203": "#f9fbfc", "204": "#ecf2f8", "205": "#c0d3e7", "206": "#a4c0dd", "207": "#dfe8f3", "208": "#b3cae2", "209": "#edf2f8", "210": "#9fbddb", "211": "#e9eff6", "212": "#d9e5f1", "213": "#c2d5e8", "214": "#cbdbeb", "215": "#fdfefe", "216": "#e8eff6", "217": "#cddcec", "218": "#f1f5fa", "219": "#f9fafc", "220": "#c4d6e9", "221": "#95b6d7", "223": "#ebf1f7", "224": "#c9daeb", "225": "#f8fafc", "227": "#e1eaf3", "228": "#d6e3ef", "230": "#fafcfd", "231": "#d4e1ee", "233": "#e4ecf5", "234": "#e9f0f6", "235": "#ffffff", "236": "#f9fbfc", "237": "#f2f6fa", "238": "#dae5f1", "239": "#f3f7fa", "240": "#f8fafc", "241": "#f2f6fa", "242": "#f4f7fb", "243": "#cadaeb", "244": "#ffffff", "245": "#fcfdfd", "246": "#e1eaf3", "247": "#e8eff6", "248": "#fefefe", "249": "#e0e9f3", "250": "#afc7e1", "251": "#bacfe5", "252": "#f6f9fb", "253": "#a5c1dd", "254": "#9fbcdb", "255": "#a5c1dd", "256": "#dfe9f3", "257": "#a9c3de", "258": "#94b5d7", "259": "#f8fafc", "260": "#dce7f2", "261": "#eff4f9", "262": "#d9e5f0", "263": "#f8fafc", "264": "#d8e4f0", "265": "#d3e1ee", "266": "#e6edf5", "267": "#7ba4cd", "268": "#e3ecf4", "269": "#edf2f8", "270": "#b8cee4", "271": "#ccdcec", "272": "#e9eff6", "273": "#e9f0f7", "274": "#edf3f8", "275": "#f7f9fc", "276": "#c8d9ea", "277": "#9ab9d9", "278": "#fafcfd", "279": "#fcfdfe", "280": "#d6e2ef", "281": "#f6f9fb", "282": "#dee8f2", "283": "#f3f7fa", "284": "#e1eaf3", "285": "#c5d7e9", "286": "#d7e4f0", "287": "#bed2e6", "288": "#dae5f1", "289": "#bacfe5", "290": "#d0deed", "291": "#d3e1ee", "292": "#a8c3de", "293": "#bacfe5", "294": "#acc5e0", "295": "#a1bedb", "296": "#cbdbeb", "297": "#d9e4f0", "298": "#9dbbda", "299": "#9cbbda", "300": "#e7eef6", "301": "#e2ebf4", "302": "#a2bfdc", "303": "#bcd1e6", "304": "#8eb1d4", "305": "#d0dfed", "306": "#ffffff", "307": "#edf3f8", "308": "#f9fbfc", "309": "#80a7cf", "310": "#dfe9f3", "311": "#fcfdfe", "312": "#e5edf5", "313": "#ecf2f8", "314": "#fafcfd", "315": "#ffffff", "316": "#d7e3f0", "317": "#e6edf5", "318": "#f4f7fb", "319": "#fdfdfe", "320": "#fcfdfd", "321": "#f0f4f9", "322": "#f8fafc", "323": "#fbfcfd", "324": "#fefefe", "325": "#f8fafc", "326": "#ffffff", "327": "#fbfcfd", "328": "#f6f8fb", "329": "#f6f9fc", "330": "#fefefe", "333": "#f6f9fb", "334": "#f6f9fb", "335": "#fefefe", "336": "#fefefe", "337": "#e6eef5", "338": "#d6e3ef", "339": "#dde8f2", "340": "#e1eaf4", "341": "#eff4f9", "342": "#fbfcfd", "343": "#fcfdfe", "344": "#eff4f9", "345": "#f1f6fa", "346": "#fdfdfe", "347": "#fafbfd", "348": "#f5f8fb", "349": "#f9fafc", "350": "#ffffff", "351": "#ffffff", "352": "#ffffff", "353": "#ffffff"}, "label": "Active RRCS", "description": "Total active-state contact strength per residue", "legend_type": "sequential", "legend_colors": ["#FFFFFF", "#2166AC"], "legend_labels": ["Low", "High"]}, "inactive_rrcs": {"colors": {"3": "#ffffff", "4": "#fefefe", "5": "#fcf8f8", "6": "#fefefe", "7": "#fdfbfb", "8": "#fdfbfb", "11": "#ffffff", "12": "#ffffff", "13": "#ffffff", "16": "#fcf8f9", "17": "#fcf8f9", "18": "#faf1f2", "19": "#faf2f3", "22": "#f4e0e3", "23": "#fefcfc", "25": "#fdf9f9", "26": "#e9bec3", "27": "#fcf6f6", "28": "#fbf4f5", "29": "#efd0d4", "30": "#f2d9dc", "31": "#fefcfc", "32": "#f5e2e4", "33": "#edc9ce", "34": "#fbf4f4", "35": "#fcf6f6", "36": "#eeccd0", "37": "#f2d8db", "38": "#fdfafa", "39": "#faf1f3", "40": "#f7e8ea", "41": "#f3dde0", "42": "#fefcfc", "43": "#f9eeef", "44": "#e4afb6", "45": "#fcf7f8", "46": "#f7e9eb", "47": "#faf2f3", "48": "#f4dee1", "49": "#eeccd0", "50": "#f1d7da", "51": "#fbf4f5", "52": "#f8eaec", "53": "#fcf7f7", "54": "#f4dee1", "55": "#e8babf", "56": "#fbf3f4", "57": "#efd0d4", "58": "#f4dfe2", "59": "#f7e9eb", "60": "#f8ecee", "61": "#f4e0e2", "62": "#f8eaec", "63": "#f9edef", "64": "#e8bac0", "65": "#f8eced", "66": "#f0d4d7", "67": "#f2d8db", "68": "#f3dcdf", "69": "#fbf5f6", "70": "#f8eaec", "71": "#db949d", "72": "#f4dee0", "73": "#fefcfc", "74": "#e1a5ad", "75": "#f2d8db", "76": "#fdfbfb", "77": "#f9eef0", "78": "#f3dbde", "79": "#f8ebed", "80": "#eeccd1", "81": "#faf0f2", "82": "#f3dde0", "83": "#f9eeef", "84": "#ebc5ca", "85": "#eeccd0", "86": "#f7e8ea", "87": "#fbf4f5", "88": "#fbf5f6", "89": "#eecdd1", "90": "#e6b5bb", "91": "#cc6874", "92": "#f8eced", "93": "#e2a8af", "94": "#fdf9f9", "95": "#f6e4e7", "96": "#fdfafb", "97": "#f3dde0", "98": "#e4b0b7", "99": "#ebc3c8", "100": "#fbf3f4", "101": "#f8ebec", "102": "#dd99a2", "103": "#f7e8ea", "104": "#faf2f3", "105": "#f6e4e6", "106": "#f0d2d5", "107": "#f7e9eb", "108": "#e7b7bc", "109": "#e9bfc4", "110": "#ecc6cb", "111": "#f4dee1", "112": "#f8eaec", "113": "#eeccd0", "114": "#e7b9bf", "115": "#f1d5d9", "116": "#f7e7e9", "117": "#f3dbde", "118": "#fcf8f8", "119": "#f8eced", "120": "#f9edef", "121": "#f9eff0", "122": "#f4dee1", "123": "#ebc5c9", "124": "#f7e8ea", "125": "#fbf4f5", "126": "#f9eef0", "127": "#fcf6f7", "128": "#f9edef", "129": "#fcf6f6", "130": "#fefcfd", "132": "#e6b4ba", "133": "#fcf7f8", "134": "#fefdfd", "135": "#fdf9f9", "136": "#e7b7bd", "137": "#f4e0e3", "138": "#fcf6f7", "139": "#f1d6d9", "140": "#fefcfc", "141": "#fbf5f6", "142": "#fcf8f8", "143": "#fcf6f7", "144": "#fefdfd", "145": "#fcf8f8", "146": "#f3dcde", "147": "#fefdfd", "149": "#f6e6e8", "150": "#f2dadd", "151": "#fefcfd", "152": "#f5e2e5", "153": "#f5e2e4", "154": "#fefefe", "155": "#fefefe", "156": "#f4e0e3", "157": "#f5e3e5", "158": "#fdfbfb", "159": "#fcf7f8", "160": "#eac2c7", "161": "#f3dde0", "162": "#fbf4f5", "163": "#dfa0a8", "164": "#b2182b", "165": "#e9bfc4", "166": "#eecdd1", "167": "#ebc4c9", "168": "#f7e8e9", "169": "#faf2f3", "170": "#fcf6f7", "171": "#fbf5f6", "173": "#e9bfc4", "174": "#e7b7bc", "175": "#e1a7af", "176": "#e7b9be", "177": "#e1a5ad", "178": "#d88b95", "179": "#efd0d4", "180": "#dd9aa3", "181": "#f9eff1", "182": "#fdfafb", "183": "#f9edef", "184": "#f4dee1", "185": "#f9eeef", "186": "#f4e0e3", "187": "#fcf8f8", "188": "#fdfafb", "189": "#f3dcde", "190": "#eeced2", "191": "#fbf5f6", "192": "#fefcfc", "193": "#faf0f2", "194": "#f6e5e7", "195": "#f7e8ea", "196": "#fefefe", "197": "#f4dee1", "198": "#fbf4f5", "199": "#f5e3e6", "200": "#fdfbfb", "201": "#f4dee1", "202": "#f5e3e6", "203": "#faf0f1", "204": "#fdfafb", "205": "#eecdd1", "206": "#f1d5d9", "207": "#f6e4e7", "208": "#f1d5d8", "209": "#f7e7e9", "210": "#e8babf", "211": "#faf0f1", "212": "#f5e3e5", "213": "#efd0d4", "214": "#f5e2e4", "215": "#fefefe", "216": "#f9eff0", "217": "#f1d7da", "218": "#ffffff", "219": "#fefcfc", "220": "#f6e4e6", "221": "#edcacf", "223": "#faf1f2", "224": "#f7e7e9", "225": "#ffffff", "227": "#f6e6e8", "228": "#f5e1e3", "230": "#fefdfd", "231": "#f7e8ea", "233": "#f6e4e6", "234": "#fefefe", "235": "#fefefe", "236": "#f9eeef", "237": "#fbf4f5", "238": "#dd9ba3", "239": "#f7e8ea", "240": "#f5e2e4", "241": "#f9eff0", "242": "#f7e7e9", "243": "#ecc7cc", "244": "#fbf3f4", "245": "#fbf4f5", "246": "#faf1f2", "247": "#f9edef", "248": "#ffffff", "249": "#f8eced", "250": "#da919a", "251": "#f3dcdf", "252": "#fdfafa", "253": "#e6b4bb", "254": "#d68690", "255": "#edcbd0", "256": "#f7e7e9", "257": "#eecdd1", "258": "#ebc3c8", "259": "#fcf8f9", "260": "#f6e6e8", "261": "#fbf4f5", "262": "#fbf5f6", "263": "#fbf5f6", "264": "#f6e5e7", "265": "#f4dee1", "266": "#faf2f3", "267": "#e8bcc1", "268": "#f7e8ea", "269": "#f9eff0", "270": "#f2d9dc", "271": "#f3dbde", "272": "#faf1f2", "273": "#faf2f3", "274": "#fcf6f6", "275": "#fcf7f7", "276": "#f1d7da", "277": "#e9bfc5", "278": "#ffffff", "279": "#fdfafb", "280": "#f5e1e3", "281": "#fdfbfb", "282": "#f7e7e9", "283": "#fbf4f5", "284": "#faf1f2", "285": "#f6e5e7", "286": "#faf1f2", "287": "#efd1d5", "288": "#f7e7e9", "289": "#eac0c5", "290": "#f1d7da", "291": "#efcfd3", "292": "#e7b8bd", "293": "#eeced2", "294": "#ecc7cb", "295": "#e4b0b6", "296": "#f4dee1", "297": "#f8ebec", "298": "#f3dddf", "299": "#f0d3d7", "300": "#fcf8f9", "301": "#f6e4e6", "302": "#f1d6d9", "303": "#f8eced", "304": "#fcf7f7", "305": "#ebc5ca", "306": "#f5e3e6", "307": "#fbf3f4", "308": "#fefefe", "309": "#fefdfd", "310": "#ffffff", "311": "#f5e3e5", "312": "#d78891", "313": "#fefefe", "314": "#ffffff", "315": "#db959e", "316": "#f9eeef", "317": "#f9edef", "318": "#f6e5e7", "319": "#f8eced", "320": "#fcf8f9", "321": "#f6e6e8", "322": "#f5e3e5", "323": "#e9bec3", "324": "#fbf5f6", "325": "#edc9ce", "326": "#fcf7f8", "327": "#e9bfc5", "328": "#fcf8f9", "329": "#faf1f2", "330": "#ffffff", "333": "#ffffff", "334": "#ffffff", "335": "#ffffff", "336": "#ffffff", "337": "#ffffff", "338": "#fefcfc", "339": "#fefcfc", "340": "#ffffff", "341": "#ffffff", "342": "#ffffff", "343": "#fefdfd", "344": "#faf1f2", "345": "#fbf3f4", "346": "#fdfbfc", "347": "#fcf8f9", "348": "#faf0f1", "349": "#f8ebed", "350": "#f5e3e5", "351": "#f8eaec", "352": "#fefdfd", "353": "#fefefe"}, "label": "Inactive RRCS", "description": "Total inactive-state contact strength per residue", "legend_type": "sequential", "legend_colors": ["#FFFFFF", "#B2182B"], "legend_labels": ["Low", "High"]}, "conservation": {"colors": {"1": "#6B1441", "2": "#D87A9F", "3": "#7CC6CB", "4": "#A83468", "5": "#0E7F86", "6": "#A83468", "7": "#7CC6CB", "8": "#EEBFD0", "9": "#7CC6CB", "10": "#D87A9F", "11": "#0E7F86", "12": "#F5F3F0", "13": "#7CC6CB", "14": "#3DA8AE", "15": "#3DA8AE", "16": "#0E7F86", "17": "#0E7F86", "18": "#3DA8AE", "19": "#F5F3F0", "20": "#B8E0E3", "21": "#F5F3F0", "22": "#B8E0E3", "23": "#0E7F86", "24": "#F5F3F0", "25": "#D87A9F", "26": "#0E7F86", "27": "#D87A9F", "28": "#B8E0E3", "29": "#F5F3F0", "30": "#7CC6CB", "31": "#F5F3F0", "32": "#EEBFD0", "33": "#3DA8AE", "34": "#3DA8AE", "35": "#F5F3F0", "36": "#EEBFD0", "37": "#D87A9F", "38": "#D87A9F", "39": "#D87A9F", "40": "#6B1441", "41": "#D87A9F", "42": "#EEBFD0", "43": "#6B1441", "44": "#6B1441", "45": "#6B1441", "46": "#D87A9F", "47": "#6B1441", "48": "#A83468", "49": "#A83468", "50": "#A83468", "51": "#EEBFD0", "52": "#A83468", "53": "#6B1441", "54": "#D87A9F", "55": "#6B1441", "56": "#3DA8AE", "57": "#F5F3F0", "58": "#A83468", "59": "#6B1441", "60": "#F5F3F0", "61": "#D87A9F", "62": "#EEBFD0", "63": "#7CC6CB", "64": "#D87A9F", "65": "#A83468", "66": "#A83468", "67": "#6B1441", "68": "#6B1441", "69": "#B8E0E3", "70": "#D87A9F", "71": "#6B1441", "72": "#A83468", "73": "#3DA8AE", "74": "#6B1441", "75": "#F5F3F0", "76": "#B8E0E3", "77": "#7CC6CB", "78": "#A83468", "79": "#6B1441", "80": "#EEBFD0", "81": "#0E7F86", "82": "#F5F3F0", "83": "#B8E0E3", "84": "#B8E0E3", "85": "#0E7F86", "86": "#D87A9F", "87": "#D87A9F", "88": "#3DA8AE", "89": "#0E7F86", "90": "#7CC6CB", "91": "#6B1441", "92": "#D87A9F", "93": "#A83468", "94": "#6B1441", "95": "#3DA8AE", "96": "#D87A9F", "97": "#EEBFD0", "98": "#6B1441", "99": "#6B1441", "100": "#F5F3F0", "101": "#7CC6CB", "102": "#3DA8AE", "103": "#3DA8AE", "104": "#F5F3F0", "105": "#7CC6CB", "106": "#3DA8AE", "107": "#EEBFD0", "108": "#6B1441", "109": "#D87A9F", "110": "#A83468", "111": "#7CC6CB", "112": "#6B1441", "113": "#A83468", "114": "#D87A9F", "115": "#D87A9F", "116": "#EEBFD0", "117": "#B8E0E3", "118": "#7CC6CB", "119": "#6B1441", "120": "#EEBFD0", "121": "#F5F3F0", "122": "#6B1441", "123": "#A83468", "124": "#6B1441", "125": "#EEBFD0", "126": "#EEBFD0", "127": "#A83468", "128": "#EEBFD0", "129": "#B8E0E3", "130": "#6B1441", "131": "#D87A9F", "132": "#6B1441", "133": "#D87A9F", "134": "#A83468", "135": "#A83468", "136": "#A83468", "137": "#A83468", "138": "#EEBFD0", "139": "#F5F3F0", "140": "#B8E0E3", "141": "#F5F3F0", "142": "#6B1441", "143": "#3DA8AE", "144": "#7CC6CB", "145": "#D87A9F", "146": "#B8E0E3", "147": "#7CC6CB", "148": "#B8E0E3", "149": "#3DA8AE", "150": "#6B1441", "151": "#F5F3F0", "152": "#7CC6CB", "153": "#D87A9F", "154": "#EEBFD0", "155": "#B8E0E3", "156": "#A83468", "157": "#F5F3F0", "158": "#B8E0E3", "159": "#A83468", "160": "#0E7F86", "161": "#B8E0E3", "162": "#EEBFD0", "163": "#F5F3F0", "164": "#0E7F86", "165": "#B8E0E3", "166": "#D87A9F", "167": "#7CC6CB", "168": "#0E7F86", "169": "#0E7F86", "170": "#0E7F86", "171": "#0E7F86", "172": "#F5F3F0", "173": "#3DA8AE", "174": "#7CC6CB", "175": "#0E7F86", "176": "#A83468", "177": "#0E7F86", "178": "#3DA8AE", "179": "#B8E0E3", "180": "#D87A9F", "181": "#3DA8AE", "182": "#0E7F86", "183": "#7CC6CB", "184": "#3DA8AE", "185": "#3DA8AE", "186": "#3DA8AE", "187": "#0E7F86", "188": "#3DA8AE", "189": "#EEBFD0", "190": "#3DA8AE", "191": "#0E7F86", "192": "#7CC6CB", "193": "#7CC6CB", "194": "#0E7F86", "195": "#3DA8AE", "196": "#3DA8AE", "197": "#0E7F86", "198": "#0E7F86", "199": "#3DA8AE", "200": "#B8E0E3", "201": "#0E7F86", "202": "#3DA8AE", "203": "#EEBFD0", "204": "#B8E0E3", "205": "#F5F3F0", "206": "#A83468", "207": "#F5F3F0", "208": "#F5F3F0", "209": "#A83468", "210": "#6B1441", "211": "#7CC6CB", "212": "#7CC6CB", "213": "#6B1441", "214": "#F5F3F0", "215": "#F5F3F0", "216": "#EEBFD0", "217": "#D87A9F", "218": "#7CC6CB", "219": "#B8E0E3", "220": "#A83468", "221": "#A83468", "222": "#EEBFD0", "223": "#EEBFD0", "224": "#D87A9F", "225": "#EEBFD0", "226": "#7CC6CB", "227": "#D87A9F", "228": "#EEBFD0", "229": "#7CC6CB", "230": "#EEBFD0", "231": "#3DA8AE", "232": "#3DA8AE", "233": "#3DA8AE", "234": "#7CC6CB", "235": "#7CC6CB", "236": "#D87A9F", "237": "#EEBFD0", "238": "#D87A9F", "239": "#D87A9F", "240": "#B8E0E3", "241": "#F5F3F0", "242": "#EEBFD0", "243": "#B8E0E3", "244": "#3DA8AE", "245": "#B8E0E3", "246": "#D87A9F", "247": "#F5F3F0", "248": "#7CC6CB", "249": "#7CC6CB", "250": "#A83468", "251": "#A83468", "252": "#B8E0E3", "253": "#A83468", "254": "#A83468", "255": "#7CC6CB", "256": "#A83468", "257": "#EEBFD0", "258": "#F5F3F0", "259": "#B8E0E3", "260": "#7CC6CB", "261": "#3DA8AE", "262": "#F5F3F0", "263": "#F5F3F0", "264": "#0E7F86", "265": "#3DA8AE", "266": "#7CC6CB", "267": "#0E7F86", "268": "#0E7F86", "269": "#3DA8AE", "270": "#F5F3F0", "271": "#0E7F86", "272": "#0E7F86", "273": "#0E7F86", "274": "#0E7F86", "275": "#0E7F86", "276": "#0E7F86", "277": "#0E7F86", "278": "#0E7F86", "279": "#3DA8AE", "280": "#B8E0E3", "281": "#0E7F86", "282": "#7CC6CB", "283": "#0E7F86", "284": "#B8E0E3", "285": "#3DA8AE", "286": "#7CC6CB", "287": "#F5F3F0", "288": "#EEBFD0", "289": "#F5F3F0", "290": "#A83468", "291": "#A83468", "292": "#EEBFD0", "293": "#EEBFD0", "294": "#6B1441", "295": "#6B1441", "296": "#A83468", "297": "#A83468", "298": "#6B1441", "299": "#6B1441", "300": "#B8E0E3", "301": "#6B1441", "302": "#6B1441", "303": "#A83468", "304": "#6B1441", "305": "#F5F3F0", "306": "#6B1441", "307": "#EEBFD0", "308": "#D87A9F", "309": "#A83468", "310": "#EEBFD0", "311": "#F5F3F0", "312": "#EEBFD0", "313": "#D87A9F", "314": "#B8E0E3", "315": "#B8E0E3", "316": "#6B1441", "317": "#D87A9F", "318": "#B8E0E3", "319": "#7CC6CB", "320": "#B8E0E3", "321": "#D87A9F", "322": "#6B1441", "323": "#F5F3F0", "324": "#6B1441", "325": "#D87A9F", "326": "#7CC6CB", "327": "#A83468", "328": "#7CC6CB", "329": "#0E7F86", "330": "#F5F3F0", "331": "#EEBFD0", "332": "#3DA8AE", "333": "#3DA8AE", "334": "#B8E0E3", "335": "#B8E0E3", "336": "#B8E0E3", "337": "#F5F3F0", "338": "#0E7F86", "339": "#7CC6CB", "340": "#7CC6CB", "341": "#B8E0E3", "342": "#3DA8AE", "343": "#B8E0E3", "344": "#B8E0E3", "345": "#B8E0E3", "346": "#3DA8AE", "347": "#EEBFD0", "348": "#0E7F86", "349": "#F5F3F0", "350": "#EEBFD0", "351": "#EEBFD0", "352": "#D87A9F", "353": "#D87A9F"}, "label": "Conservation", "description": "Per-residue conservation (ProtVar CONSERV), binned into 9 grades by this receptor's own score quantiles (ConSurf-style). 353 positions covered; grade 1 = most variable in this receptor, grade 9 = most conserved.", "legend_type": "sequential", "legend_colors": ["#0E7F86", "#3DA8AE", "#7CC6CB", "#B8E0E3", "#F5F3F0", "#EEBFD0", "#D87A9F", "#A83468", "#6B1441"], "legend_labels": ["1 variable", "5", "9 conserved"]}, "alphamissense": {"colors": {"5": "#388E3C", "18": "#388E3C", "33": "#388E3C", "50": "#F57C00", "52": "#388E3C", "55": "#D32F2F", "57": "#388E3C", "60": "#F57C00", "70": "#388E3C", "80": "#D32F2F", "81": "#388E3C", "88": "#388E3C", "89": "#388E3C", "93": "#D32F2F", "99": "#388E3C", "102": "#388E3C", "103": "#388E3C", "106": "#F57C00", "111": "#388E3C", "113": "#388E3C", "116": "#D32F2F", "123": "#F57C00", "132": "#D32F2F", "136": "#D32F2F", "137": "#F57C00", "150": "#D32F2F", "161": "#D32F2F", "164": "#F57C00", "176": "#D32F2F", "180": "#388E3C", "183": "#D32F2F", "185": "#388E3C", "190": "#388E3C", "193": "#388E3C", "205": "#388E3C", "206": "#D32F2F", "221": "#388E3C", "228": "#F57C00", "233": "#388E3C", "234": "#388E3C", "238": "#F57C00", "243": "#D32F2F", "251": "#D32F2F", "254": "#D32F2F", "255": "#F57C00", "262": "#388E3C", "270": "#388E3C", "299": "#D32F2F", "300": "#388E3C", "303": "#388E3C", "305": "#388E3C", "310": "#388E3C", "311": "#388E3C", "315": "#388E3C", "316": "#F57C00", "322": "#388E3C", "323": "#388E3C", "325": "#D32F2F", "337": "#388E3C", "351": "#388E3C"}, "label": "AlphaMissense", "description": "AlphaMissense classification at variant positions: 16 pathogenic, 10 ambiguous, 34 benign.", "legend_type": "categorical", "legend_colors": ["#388E3C", "#D32F2F"], "legend_labels": ["Benign", "Pathogenic"], "legend_items": [{"color": "#D32F2F", "label": "Pathogenic (\u2265 0.564)"}, {"color": "#F57C00", "label": "Ambiguous (0.34-0.564)"}, {"color": "#388E3C", "label": "Benign (< 0.34)"}]}, "cfr": {"colors": {"60": "#FF8F00", "109": "#FF8F00", "113": "#FF8F00", "122": "#FF8F00", "123": "#FF8F00", "178": "#FF8F00", "221": "#FF8F00", "238": "#FF8F00", "242": "#FF8F00", "250": "#FF8F00", "254": "#FF8F00", "291": "#FF8F00", "294": "#FF8F00", "299": "#FF8F00", "302": "#FF8F00", "303": "#FF8F00", "304": "#FF8F00", "305": "#FF8F00", "309": "#FF8F00", "310": "#FF8F00"}, "label": "Core Functional", "description": "Top cross-GPCR Core Functional Residues (20 mapped to this receptor)", "legend_type": "categorical", "legend_items": [{"color": "#FF8F00", "label": "CFR position"}]}, "aa_properties": {"colors": {"1": "#F0C05A", "2": "#5F9EA0", "3": "#87CEEB", "4": "#87CEEB", "5": "#DDA0DD", "6": "#87CEEB", "7": "#F0C05A", "8": "#F0C05A", "9": "#F0C05A", "10": "#87CEEB", "11": "#5F9EA0", "12": "#87CEEB", "13": "#5F9EA0", "14": "#5F9EA0", "15": "#F0C05A", "16": "#F0C05A", "17": "#F0C05A", "18": "#5F9EA0", "19": "#F0C05A", "20": "#F0C05A", "21": "#98FB98", "22": "#FF7F7F", "23": "#87CEEB", "24": "#F0C05A", "25": "#F0C05A", "26": "#DDA0DD", "27": "#F0C05A", "28": "#DDA0DD", "29": "#87CEEB", "30": "#F0C05A", "31": "#F0C05A", "32": "#F0C05A", "33": "#FF7F7F", "34": "#98FB98", "35": "#F0C05A", "36": "#87CEEB", "37": "#DDA0DD", "38": "#F0C05A", "39": "#DDA0DD", "40": "#98FB98", "41": "#F0C05A", "42": "#F0C05A", "43": "#98FB98", "44": "#87CEEB", "45": "#98FB98", "46": "#F0C05A", "47": "#F0C05A", "48": "#F0C05A", "49": "#DDA0DD", "50": "#F0C05A", "51": "#F0C05A", "52": "#98FB98", "53": "#DDA0DD", "54": "#FF7F7F", "55": "#F0C05A", "56": "#87CEEB", "57": "#FF7F7F", "58": "#87CEEB", "59": "#F0C05A", "60": "#87CEEB", "61": "#87CEEB", "62": "#F0C05A", "63": "#98FB98", "64": "#DDA0DD", "65": "#F0C05A", "66": "#87CEEB", "67": "#F0C05A", "68": "#F0C05A", "69": "#F0C05A", "70": "#F0C05A", "71": "#5F9EA0", "72": "#DDA0DD", "73": "#87CEEB", "74": "#DDA0DD", "75": "#87CEEB", "76": "#F0C05A", "77": "#F0C05A", "78": "#F0C05A", "79": "#F0C05A", "80": "#DDA0DD", "81": "#FF7F7F", "82": "#F0C05A", "83": "#F0C05A", "84": "#87CEEB", "85": "#F0C05A", "86": "#F0C05A", "87": "#F0C05A", "88": "#FF7F7F", "89": "#5F9EA0", "90": "#FF7F7F", "91": "#DDA0DD", "92": "#F0C05A", "93": "#DDA0DD", "94": "#98FB98", "95": "#87CEEB", "96": "#DDA0DD", "97": "#F0C05A", "98": "#98FB98", "99": "#FF7F7F", "100": "#F0C05A", "101": "#F0C05A", "102": "#FF7F7F", "103": "#F0C05A", "104": "#F0C05A", "105": "#F0C05A", "106": "#5F9EA0", "107": "#F0C05A", "108": "#87CEEB", "109": "#F0C05A", "110": "#DDA0DD", "111": "#F0C05A", "112": "#87CEEB", "113": "#F0C05A", "114": "#DDA0DD", "115": "#F0C05A", "116": "#F0C05A", "117": "#87CEEB", "118": "#F0C05A", "119": "#F0C05A", "120": "#F0C05A", "121": "#F0C05A", "122": "#5F9EA0", "123": "#FF7F7F", "124": "#98FB98", "125": "#F0C05A", "126": "#98FB98", "127": "#F0C05A", "128": "#F0C05A", "129": "#FF7F7F", "130": "#F0C05A", "131": "#F0C05A", "132": "#DDA0DD", "133": "#F0C05A", "134": "#87CEEB", "135": "#87CEEB", "136": "#FF7F7F", "137": "#FF7F7F", "138": "#87CEEB", "139": "#F0C05A", "140": "#87CEEB", "141": "#F0C05A", "142": "#F0C05A", "143": "#FF7F7F", "144": "#FF7F7F", "145": "#F0C05A", "146": "#F0C05A", "147": "#87CEEB", "148": "#98FB98", "149": "#F0C05A", "150": "#DDA0DD", "151": "#F0C05A", "152": "#DDA0DD", "153": "#87CEEB", "154": "#F0C05A", "155": "#F0C05A", "156": "#F0C05A", "157": "#87CEEB", "158": "#F0C05A", "159": "#F0C05A", "160": "#87CEEB", "161": "#DDA0DD", "162": "#F0C05A", "163": "#DDA0DD", "164": "#DDA0DD", "165": "#87CEEB", "166": "#87CEEB", "167": "#F0C05A", "168": "#87CEEB", "169": "#87CEEB", "170": "#87CEEB", "171": "#87CEEB", "172": "#98FB98", "173": "#5F9EA0", "174": "#87CEEB", "175": "#DDA0DD", "176": "#98FB98", "177": "#F0C05A", "178": "#DDA0DD", "179": "#87CEEB", "180": "#DDA0DD", "181": "#F0C05A", "182": "#DDA0DD", "183": "#DDA0DD", "184": "#98FB98", "185": "#5F9EA0", "186": "#87CEEB", "187": "#F0C05A", "188": "#F0C05A", "189": "#5F9EA0", "190": "#FF7F7F", "191": "#F0C05A", "192": "#87CEEB", "193": "#F0C05A", "194": "#DDA0DD", "195": "#F0C05A", "196": "#87CEEB", "197": "#F0C05A", "198": "#F0C05A", "199": "#FF7F7F", "200": "#F0C05A", "201": "#DDA0DD", "202": "#F0C05A", "203": "#F0C05A", "204": "#F0C05A", "205": "#FF7F7F", "206": "#DDA0DD", "207": "#F0C05A", "208": "#F0C05A", "209": "#98FB98", "210": "#DDA0DD", "211": "#87CEEB", "212": "#F0C05A", "213": "#F0C05A", "214": "#F0C05A", "215": "#87CEEB", "216": "#F0C05A", "217": "#F0C05A", "218": "#87CEEB", "219": "#F0C05A", "220": "#98FB98", "221": "#DDA0DD", "222": "#98FB98", "223": "#F0C05A", "224": "#F0C05A", "225": "#F0C05A", "226": "#F0C05A", "227": "#FF7F7F", "228": "#F0C05A", "229": "#FF7F7F", "230": "#FF7F7F", "231": "#87CEEB", "232": "#FF7F7F", "233": "#F0C05A", "234": "#F0C05A", "235": "#FF7F7F", "236": "#87CEEB", "237": "#87CEEB", "238": "#FF7F7F", "239": "#F0C05A", "240": "#F0C05A", "241": "#FF7F7F", "242": "#F0C05A", "243": "#DDA0DD", "244": "#F0C05A", "245": "#F0C05A", "246": "#F0C05A", "247": "#F0C05A", "248": "#F0C05A", "249": "#87CEEB", "250": "#DDA0DD", "251": "#DDA0DD", "252": "#F0C05A", "253": "#98FB98", "254": "#DDA0DD", "255": "#DDA0DD", "256": "#F0C05A", "257": "#DDA0DD", "258": "#5F9EA0", "259": "#F0C05A", "260": "#F0C05A", "261": "#98FB98", "262": "#F0C05A", "263": "#F0C05A", "264": "#F0C05A", "265": "#F0C05A", "266": "#F0C05A", "267": "#DDA0DD", "268": "#F0C05A", "269": "#FF7F7F", "270": "#5F9EA0", "271": "#F0C05A", "272": "#F0C05A", "273": "#F0C05A", "274": "#87CEEB", "275": "#98FB98", "276": "#FF7F7F", "277": "#DDA0DD", "278": "#FF7F7F", "279": "#F0C05A", "280": "#F0C05A", "281": "#F0C05A", "282": "#F0C05A", "283": "#F0C05A", "284": "#F0C05A", "285": "#87CEEB", "286": "#F0C05A", "287": "#87CEEB", "288": "#87CEEB", "289": "#87CEEB", "290": "#F0C05A", "291": "#F0C05A", "292": "#DDA0DD", "293": "#DDA0DD", "294": "#87CEEB", "295": "#87CEEB", "296": "#98FB98", "297": "#F0C05A", "298": "#87CEEB", "299": "#F0C05A", "300": "#F0C05A", "301": "#F0C05A", "302": "#DDA0DD", "303": "#F0C05A", "304": "#DDA0DD", "305": "#F0C05A", "306": "#98FB98", "307": "#FF7F7F", "308": "#87CEEB", "309": "#DDA0DD", "310": "#87CEEB", "311": "#5F9EA0", "312": "#FF7F7F", "313": "#F0C05A", "314": "#F0C05A", "315": "#FF7F7F", "316": "#87CEEB", "317": "#F0C05A", "318": "#F0C05A", "319": "#87CEEB", "320": "#87CEEB", "321": "#F0C05A", "322": "#5F9EA0", "323": "#FF7F7F", "324": "#F0C05A", "325": "#F0C05A", "326": "#87CEEB", "327": "#5F9EA0", "328": "#F0C05A", "329": "#F0C05A", "330": "#5F9EA0", "331": "#87CEEB", "332": "#F0C05A", "333": "#87CEEB", "334": "#87CEEB", "335": "#87CEEB", "336": "#87CEEB", "337": "#87CEEB", "338": "#5F9EA0", "339": "#87CEEB", "340": "#87CEEB", "341": "#87CEEB", "342": "#F0C05A", "343": "#87CEEB", "344": "#F0C05A", "345": "#F0C05A", "346": "#5F9EA0", "347": "#5F9EA0", "348": "#87CEEB", "349": "#5F9EA0", "350": "#F0C05A", "351": "#87CEEB", "352": "#F0C05A", "353": "#F0C05A"}, "label": "AA Properties", "description": "Amino acid physicochemical properties", "legend_type": "categorical", "legend_items": [{"color": "#F0C05A", "label": "Hydrophobic"}, {"color": "#87CEEB", "label": "Polar"}, {"color": "#FF7F7F", "label": "Positive"}, {"color": "#5F9EA0", "label": "Negative"}, {"color": "#DDA0DD", "label": "Aromatic"}, {"color": "#98FB98", "label": "Special (C,G,P)"}]}}, "contact_links": [{"from_seq": 312, "to_seq": 315, "color": "#B2182B", "width": 4.0, "delta": -16.13}, {"from_seq": 102, "to_seq": 164, "color": "#B2182B", "width": 2.5, "delta": -9.14}, {"from_seq": 109, "to_seq": 254, "color": "#B2182B", "width": 2.0, "delta": -6.93}, {"from_seq": 299, "to_seq": 304, "color": "#2166AC", "width": 2.0, "delta": 6.82}, {"from_seq": 303, "to_seq": 309, "color": "#2166AC", "width": 1.9, "delta": 6.69}, {"from_seq": 311, "to_seq": 312, "color": "#B2182B", "width": 1.9, "delta": -6.37}, {"from_seq": 103, "to_seq": 161, "color": "#2166AC", "width": 1.8, "delta": 6.12}, {"from_seq": 49, "to_seq": 316, "color": "#2166AC", "width": 1.7, "delta": 5.53}, {"from_seq": 99, "to_seq": 161, "color": "#B2182B", "width": 1.7, "delta": -5.52}, {"from_seq": 250, "to_seq": 254, "color": "#B2182B", "width": 1.6, "delta": -5.2}, {"from_seq": 238, "to_seq": 306, "color": "#B2182B", "width": 1.6, "delta": -5.19}, {"from_seq": 206, "to_seq": 262, "color": "#2166AC", "width": 1.6, "delta": 5.14}, {"from_seq": 71, "to_seq": 108, "color": "#B2182B", "width": 1.5, "delta": -4.77}, {"from_seq": 304, "to_seq": 310, "color": "#2166AC", "width": 1.5, "delta": 4.67}, {"from_seq": 55, "to_seq": 309, "color": "#2166AC", "width": 1.5, "delta": 4.64}, {"from_seq": 122, "to_seq": 123, "color": "#B2182B", "width": 1.4, "delta": -4.37}, {"from_seq": 64, "to_seq": 243, "color": "#B2182B", "width": 1.4, "delta": -4.28}, {"from_seq": 113, "to_seq": 250, "color": "#B2182B", "width": 1.4, "delta": -4.2}, {"from_seq": 50, "to_seq": 309, "color": "#2166AC", "width": 1.4, "delta": 4.05}, {"from_seq": 33, "to_seq": 78, "color": "#2166AC", "width": 1.4, "delta": 4.04}, {"from_seq": 111, "to_seq": 150, "color": "#2166AC", "width": 1.3, "delta": 3.91}, {"from_seq": 251, "to_seq": 255, "color": "#2166AC", "width": 1.3, "delta": 3.91}, {"from_seq": 106, "to_seq": 205, "color": "#B2182B", "width": 1.3, "delta": -3.82}, {"from_seq": 116, "to_seq": 302, "color": "#2166AC", "width": 1.3, "delta": 3.8}, {"from_seq": 74, "to_seq": 109, "color": "#2166AC", "width": 1.3, "delta": 3.78}, {"from_seq": 73, "to_seq": 108, "color": "#2166AC", "width": 1.3, "delta": 3.68}, {"from_seq": 71, "to_seq": 112, "color": "#2166AC", "width": 1.2, "delta": 3.56}, {"from_seq": 294, "to_seq": 298, "color": "#2166AC", "width": 1.2, "delta": 3.46}, {"from_seq": 242, "to_seq": 305, "color": "#B2182B", "width": 1.2, "delta": -3.33}, {"from_seq": 300, "to_seq": 305, "color": "#2166AC", "width": 1.2, "delta": 3.32}, {"from_seq": 123, "to_seq": 221, "color": "#2166AC", "width": 1.2, "delta": 3.31}, {"from_seq": 70, "to_seq": 108, "color": "#2166AC", "width": 1.2, "delta": 3.23}, {"from_seq": 254, "to_seq": 291, "color": "#B2182B", "width": 1.2, "delta": -3.17}, {"from_seq": 119, "to_seq": 243, "color": "#B2182B", "width": 1.2, "delta": -3.14}, {"from_seq": 160, "to_seq": 201, "color": "#B2182B", "width": 1.2, "delta": -3.13}, {"from_seq": 55, "to_seq": 312, "color": "#2166AC", "width": 1.1, "delta": 3.09}, {"from_seq": 250, "to_seq": 294, "color": "#B2182B", "width": 1.1, "delta": -2.98}, {"from_seq": 64, "to_seq": 123, "color": "#2166AC", "width": 1.1, "delta": 2.95}, {"from_seq": 49, "to_seq": 54, "color": "#B2182B", "width": 1.1, "delta": -2.89}, {"from_seq": 217, "to_seq": 250, "color": "#2166AC", "width": 1.1, "delta": 2.83}, {"from_seq": 60, "to_seq": 123, "color": "#B2182B", "width": 1.1, "delta": -2.82}, {"from_seq": 113, "to_seq": 254, "color": "#2166AC", "width": 1.1, "delta": 2.75}, {"from_seq": 221, "to_seq": 244, "color": "#B2182B", "width": 1.1, "delta": -2.72}, {"from_seq": 205, "to_seq": 258, "color": "#2166AC", "width": 1.1, "delta": 2.69}, {"from_seq": 204, "to_seq": 208, "color": "#2166AC", "width": 1.0, "delta": 2.63}, {"from_seq": 108, "to_seq": 295, "color": "#B2182B", "width": 1.0, "delta": -2.59}, {"from_seq": 124, "to_seq": 220, "color": "#2166AC", "width": 1.0, "delta": 2.59}, {"from_seq": 238, "to_seq": 305, "color": "#B2182B", "width": 1.0, "delta": -2.59}, {"from_seq": 77, "to_seq": 104, "color": "#2166AC", "width": 1.0, "delta": 2.53}, {"from_seq": 105, "to_seq": 292, "color": "#B2182B", "width": 1.0, "delta": -2.43}], "positions": {"56": [109.0, 375.0], "57": [123.0, 364.0], "89": [194.0, 20.0], "90": [210.0, 12.0], "91": [228.0, 9.0], "92": [246.0, 11.0], "93": [263.0, 17.0], "130": [324.0, 372.0], "131": [318.0, 391.0], "132": [312.0, 410.0], "133": [355.0, 365.0], "134": [349.0, 384.0], "135": [343.0, 403.0], "136": [337.0, 423.0], "137": [382.0, 372.0], "165": [361.0, 23.0], "166": [353.0, 7.0], "167": [347.0, -11.0], "168": [345.0, -28.0], "169": [346.0, -46.0], "170": [352.0, -63.0], "171": [362.0, -78.0], "172": [376.0, -89.0], "173": [392.0, -97.0], "174": [410.0, -101.0], "175": [428.0, -103.0], "176": [446.0, -102.0], "177": [463.0, -99.0], "178": [480.0, -92.0], "179": [495.0, -82.0], "180": [507.0, -69.0], "181": [515.0, -53.0], "182": [518.0, -35.0], "183": [516.0, -17.0], "184": [511.0, 0.0], "185": [504.0, 17.0], "232": [515.0, 437.0], "233": [531.0, 429.0], "234": [546.0, 419.0], "235": [559.0, 406.0], "268": [594.0, 20.0], "269": [610.0, 12.0], "270": [628.0, 9.0], "271": [646.0, 11.0], "272": [663.0, 17.0], "1": [237.0, -173.0], "2": [219.0, -173.0], "3": [201.0, -173.0], "4": [183.0, -173.0], "5": [165.0, -173.0], "6": [149.0, -166.0], "7": [133.0, -157.0], "8": [118.0, -148.0], "9": [104.0, -136.0], "10": [92.0, -123.0], "11": [82.0, -108.0], "12": [74.0, -92.0], "13": [68.0, -75.0], "14": [65.0, -57.0], "15": [64.0, -39.0], "16": [64.0, -21.0], "17": [67.0, -3.0], "18": [70.0, 15.0], "318": [790.0, 402.0], "319": [794.0, 419.0], "320": [794.0, 437.0], "321": [790.0, 455.0], "322": [782.0, 471.0], "323": [769.0, 484.0], "324": [754.0, 493.0], "325": [737.0, 500.0], "326": [720.0, 504.0], "327": [702.0, 507.0], "328": [684.0, 507.0], "329": [666.0, 507.0], "330": [648.0, 507.0], "331": [630.0, 507.0], "332": [612.0, 507.0], "333": [594.0, 507.0], "334": [576.0, 507.0], "335": [558.0, 507.0], "336": [540.0, 507.0], "337": [522.0, 507.0], "338": [504.0, 507.0], "339": [486.0, 507.0], "340": [468.0, 507.0], "341": [450.0, 507.0], "342": [432.0, 507.0], "343": [414.0, 507.0], "344": [396.0, 507.0], "345": [378.0, 507.0], "346": [360.0, 507.0], "347": [342.0, 507.0], "348": [324.0, 507.0], "349": [306.0, 507.0], "350": [288.0, 507.0], "351": [270.0, 507.0], "352": [252.0, 507.0], "353": [234.0, 507.0], "19": [81.0, 53.0], "20": [62.0, 59.0], "21": [43.0, 65.0], "22": [90.0, 79.0], "23": [71.0, 85.0], "24": [52.0, 91.0], "25": [32.0, 97.0], "26": [81.0, 111.0], "27": [62.0, 117.0], "28": [43.0, 123.0], "29": [90.0, 136.0], "30": [71.0, 142.0], "31": [52.0, 148.0], "32": [32.0, 154.0], "33": [81.0, 168.0], "34": [62.0, 174.0], "35": [43.0, 180.0], "36": [90.0, 194.0], "37": [71.0, 200.0], "38": [52.0, 206.0], "39": [32.0, 212.0], "40": [81.0, 226.0], "41": [62.0, 232.0], "42": [43.0, 238.0], "43": [90.0, 252.0], "44": [71.0, 258.0], "45": [52.0, 264.0], "46": [32.0, 270.0], "47": [81.0, 283.0], "48": [62.0, 289.0], "49": [43.0, 295.0], "50": [90.0, 309.0], "51": [71.0, 315.0], "52": [52.0, 321.0], "53": [32.0, 327.0], "54": [81.0, 341.0], "55": [62.0, 347.0], "58": [143.0, 295.0], "59": [162.0, 289.0], "60": [181.0, 283.0], "61": [132.0, 270.0], "62": [152.0, 264.0], "63": [171.0, 258.0], "64": [190.0, 252.0], "65": [143.0, 238.0], "66": [162.0, 232.0], "67": [181.0, 226.0], "68": [132.0, 212.0], "69": [152.0, 206.0], "70": [171.0, 200.0], "71": [190.0, 194.0], "72": [143.0, 180.0], "73": [162.0, 174.0], "74": [181.0, 168.0], "75": [132.0, 154.0], "76": [152.0, 148.0], "77": [171.0, 142.0], "78": [190.0, 136.0], "79": [143.0, 123.0], "80": [162.0, 117.0], "81": [181.0, 111.0], "82": [132.0, 97.0], "83": [152.0, 91.0], "84": [171.0, 85.0], "85": [190.0, 79.0], "86": [143.0, 65.0], "87": [162.0, 59.0], "88": [181.0, 53.0], "94": [281.0, 53.0], "95": [262.0, 59.0], "96": [243.0, 65.0], "97": [290.0, 79.0], "98": [271.0, 85.0], "99": [252.0, 91.0], "100": [232.0, 97.0], "101": [281.0, 111.0], "102": [262.0, 117.0], "103": [243.0, 123.0], "104": [290.0, 136.0], "105": [271.0, 142.0], "106": [252.0, 148.0], "107": [232.0, 154.0], "108": [281.0, 168.0], "109": [262.0, 174.0], "110": [243.0, 180.0], "111": [290.0, 194.0], "112": [271.0, 200.0], "113": [252.0, 206.0], "114": [232.0, 212.0], "115": [281.0, 226.0], "116": [262.0, 232.0], "117": [243.0, 238.0], "118": [290.0, 252.0], "119": [271.0, 258.0], "120": [252.0, 264.0], "121": [232.0, 270.0], "122": [281.0, 283.0], "123": [262.0, 289.0], "124": [243.0, 295.0], "125": [290.0, 309.0], "126": [271.0, 315.0], "127": [252.0, 321.0], "128": [232.0, 327.0], "129": [281.0, 341.0], "138": [332.0, 270.0], "139": [352.0, 264.0], "140": [371.0, 258.0], "141": [390.0, 252.0], "142": [343.0, 238.0], "143": [362.0, 232.0], "144": [381.0, 226.0], "145": [332.0, 212.0], "146": [352.0, 206.0], "147": [371.0, 200.0], "148": [390.0, 194.0], "149": [343.0, 180.0], "150": [362.0, 174.0], "151": [381.0, 168.0], "152": [332.0, 154.0], "153": [352.0, 148.0], "154": [371.0, 142.0], "155": [390.0, 136.0], "156": [343.0, 123.0], "157": [362.0, 117.0], "158": [332.0, 97.0], "159": [352.0, 91.0], "160": [371.0, 85.0], "161": [390.0, 79.0], "162": [343.0, 65.0], "163": [362.0, 59.0], "164": [381.0, 53.0], "186": [481.0, 53.0], "187": [462.0, 59.0], "188": [443.0, 65.0], "189": [490.0, 79.0], "190": [471.0, 85.0], "191": [452.0, 91.0], "192": [432.0, 97.0], "193": [481.0, 111.0], "194": [462.0, 117.0], "195": [443.0, 123.0], "196": [490.0, 136.0], "197": [471.0, 142.0], "198": [452.0, 148.0], "199": [432.0, 154.0], "200": [481.0, 168.0], "201": [462.0, 174.0], "202": [443.0, 180.0], "203": [490.0, 194.0], "204": [471.0, 200.0], "205": [452.0, 206.0], "206": [432.0, 212.0], "207": [481.0, 226.0], "208": [462.0, 232.0], "209": [448.0, 243.0], "210": [430.0, 241.0], "211": [481.0, 255.0], "212": [462.0, 261.0], "213": [443.0, 267.0], "214": [490.0, 280.0], "215": [471.0, 286.0], "216": [452.0, 292.0], "217": [432.0, 298.0], "218": [481.0, 312.0], "219": [462.0, 318.0], "220": [443.0, 324.0], "221": [490.0, 338.0], "222": [471.0, 344.0], "223": [452.0, 350.0], "224": [432.0, 356.0], "225": [481.0, 370.0], "226": [462.0, 376.0], "227": [443.0, 382.0], "228": [490.0, 396.0], "229": [471.0, 402.0], "230": [452.0, 408.0], "231": [432.0, 414.0], "236": [590.0, 309.0], "237": [543.0, 295.0], "238": [562.0, 289.0], "239": [581.0, 283.0], "240": [532.0, 270.0], "241": [552.0, 264.0], "242": [571.0, 258.0], "243": [590.0, 252.0], "244": [543.0, 238.0], "245": [562.0, 232.0], "246": [581.0, 226.0], "247": [532.0, 212.0], "248": [552.0, 206.0], "249": [571.0, 200.0], "250": [590.0, 194.0], "251": [543.0, 180.0], "252": [562.0, 174.0], "253": [581.0, 168.0], "254": [532.0, 154.0], "255": [552.0, 148.0], "256": [571.0, 142.0], "257": [590.0, 136.0], "258": [543.0, 123.0], "259": [562.0, 117.0], "260": [581.0, 111.0], "261": [532.0, 97.0], "262": [552.0, 91.0], "263": [571.0, 85.0], "264": [590.0, 79.0], "265": [543.0, 65.0], "266": [562.0, 59.0], "267": [581.0, 53.0], "273": [681.0, 53.0], "274": [662.0, 59.0], "275": [643.0, 65.0], "276": [690.0, 79.0], "277": [671.0, 85.0], "278": [652.0, 91.0], "279": [632.0, 97.0], "280": [681.0, 111.0], "281": [662.0, 117.0], "282": [643.0, 123.0], "283": [690.0, 136.0], "284": [671.0, 142.0], "285": [652.0, 148.0], "286": [632.0, 154.0], "287": [681.0, 168.0], "288": [662.0, 174.0], "289": [643.0, 180.0], "290": [690.0, 194.0], "291": [671.0, 200.0], "292": [652.0, 206.0], "293": [632.0, 212.0], "294": [662.0, 232.0], "295": [643.0, 238.0], "296": [690.0, 252.0], "297": [671.0, 258.0], "298": [652.0, 264.0], "299": [632.0, 270.0], "300": [681.0, 283.0], "301": [662.0, 289.0], "302": [643.0, 295.0], "303": [690.0, 309.0], "304": [671.0, 315.0], "305": [652.0, 321.0], "306": [695.0, 352.0], "307": [689.0, 371.0], "308": [683.0, 390.0], "313": [753.0, 352.0], "314": [747.0, 371.0], "315": [741.0, 390.0], "309": [726.0, 345.0], "310": [720.0, 364.0], "311": [714.0, 383.0], "312": [708.0, 403.0], "316": [783.0, 345.0], "317": [777.0, 364.0]}}</script>
+<script type="application/json" id="snake-plot-data">{"views": {"delta_rrcs": {"colors": {"3": "#bacfe5", "4": "#f1d5d9", "5": "#437db8", "6": "#f1d5d9", "7": "#f8ecee", "8": "#f8ecee", "11": "#f7f9fc", "12": "#f7f9fc", "13": "#b6cce3", "16": "#e8babf", "17": "#e8babf", "18": "#a3bfdc", "19": "#a8c3de", "22": "#b9cee4", "23": "#f1f5f9", "25": "#dfe9f3", "26": "#e8bbc1", "27": "#ecc6cb", "28": "#b8cee4", "29": "#f0d3d7", "30": "#eac0c5", "31": "#f0d2d5", "32": "#e6eef5", "33": "#c8d9ea", "34": "#e9bdc2", "35": "#e4ecf5", "36": "#f7e8ea", "37": "#f1f5f9", "38": "#fcf6f7", "39": "#f4e0e3", "40": "#e8eff6", "41": "#f1f5fa", "42": "#fbf4f5", "43": "#f7e7e9", "44": "#c0d3e7", "45": "#f0f4f9", "46": "#e9bfc4", "47": "#cadaeb", "48": "#c2d5e8", "49": "#f5e1e3", "50": "#dae5f1", "51": "#efd1d5", "52": "#e0a2a9", "53": "#f2d9dc", "54": "#ebc5ca", "55": "#efd0d4", "56": "#edcbcf", "57": "#db939c", "58": "#fbf4f5", "59": "#b3cae2", "60": "#e5edf5", "61": "#f2d9dc", "62": "#f1d7db", "63": "#eecdd1", "64": "#e2aab1", "65": "#f2d9dc", "66": "#ebc5ca", "67": "#dae5f1", "68": "#bfd3e7", "69": "#d6e2ef", "70": "#b9cfe5", "71": "#dde8f2", "72": "#bbd0e5", "73": "#a3c0dc", "74": "#f2d8db", "75": "#fbf3f4", "76": "#f4f7fb", "77": "#c8d9ea", "78": "#d7e4f0", "79": "#f0d2d5", "80": "#f1d6da", "81": "#b2cae2", "82": "#e6eef5", "83": "#eeced2", "84": "#fcf8f9", "85": "#edc9ce", "86": "#e3abb2", "87": "#dae5f1", "88": "#749fcb", "89": "#92b4d6", "90": "#bfd3e7", "91": "#f2dadd", "92": "#c8d9ea", "93": "#e7b9be", "94": "#dc969f", "95": "#f6f9fb", "96": "#f4e0e3", "97": "#e5edf5", "98": "#e6b4bb", "99": "#d47e89", "100": "#fbf4f5", "101": "#c5d7e9", "102": "#de9ca4", "103": "#9bbad9", "104": "#ccdcec", "105": "#f1d5d9", "106": "#edcbcf", "107": "#dbe6f1", "108": "#ebc4c9", "109": "#e6b5bb", "110": "#e6b4bb", "111": "#b5cce3", "112": "#c4d6e8", "113": "#e5b2b9", "114": "#fcf7f8", "115": "#dee8f2", "116": "#bdd1e6", "117": "#f4dee0", "118": "#d3e0ee", "119": "#e5edf5", "120": "#bbd0e5", "121": "#f5e1e4", "122": "#c1d4e7", "123": "#f0d3d6", "124": "#afc7e1", "125": "#e1eaf3", "126": "#ecf1f7", "127": "#ecc6ca", "128": "#dee8f2", "129": "#f7f9fc", "130": "#f6e5e7", "132": "#de9ea6", "133": "#f4dfe2", "134": "#f7e9eb", "135": "#d1dfed", "136": "#d6858f", "137": "#8aaed3", "138": "#e6eef5", "139": "#eff4f9", "140": "#9fbddb", "141": "#cbdbeb", "142": "#f0d3d7", "143": "#ecc6cb", "144": "#7da5ce", "145": "#f0d4d7", "146": "#eac0c6", "147": "#e2ebf4", "149": "#c2d5e8", "150": "#d3e0ee", "151": "#ebf1f7", "152": "#dce7f2", "153": "#e9eff6", "154": "#eef3f8", "155": "#dfe9f3", "156": "#f8eaec", "157": "#e0e9f3", "158": "#e1eaf3", "159": "#c7d8ea", "160": "#d6e3ef", "161": "#cfdeed", "162": "#c5d7e9", "163": "#b7cde4", "164": "#d27a85", "165": "#eeced2", "166": "#e8eff6", "167": "#f3dde0", "168": "#dae6f1", "169": "#f9eef0", "170": "#efd0d4", "171": "#f8eaec", "173": "#eef3f8", "174": "#f4dfe2", "175": "#e6eef5", "176": "#fdf9fa", "177": "#f1d6d9", "178": "#b4cbe3", "179": "#f5e2e5", "180": "#bbd0e5", "181": "#eeccd0", "182": "#8db0d4", "183": "#a2bfdc", "184": "#e6b6bc", "185": "#d78791", "186": "#eac1c6", "187": "#7ea6cf", "188": "#eef3f8", "189": "#ecf2f8", "190": "#acc6e0", "191": "#d3e1ee", "192": "#fbf5f6", "193": "#9ebcda", "194": "#f6e5e7", "195": "#dee8f2", "196": "#f0d3d6", "197": "#e9f0f7", "198": "#b1c9e1", "199": "#dfe9f3", "200": "#e1a6ae", "201": "#e3acb3", "202": "#f5e3e5", "203": "#e6b6bc", "204": "#b7cde4", "205": "#f0d2d6", "206": "#aec7e1", "207": "#f1d5d9", "208": "#c5d7e9", "209": "#ecc6ca", "210": "#f6e4e6", "211": "#f0f4f9", "212": "#f2d8db", "213": "#f3dcdf", "214": "#d2dfee", "215": "#eef3f9", "216": "#f6f8fb", "217": "#f3dcdf", "218": "#a2bfdc", "219": "#cfdeed", "220": "#b0c9e1", "221": "#c4d6e9", "223": "#f7e8ea", "224": "#c7d8ea", "225": "#a7c2de", "227": "#edcace", "228": "#f6e4e6", "230": "#d4e1ef", "231": "#bed2e6", "233": "#e6b4ba", "234": "#9fbddb", "235": "#f6e6e8", "236": "#e3adb4", "237": "#f6e6e8", "238": "#d6848e", "239": "#e5b2b8", "240": "#e0a3ab", "241": "#ebc4c9", "242": "#e4aeb5", "243": "#e6b4ba", "244": "#cb6571", "245": "#e0a3aa", "246": "#d3e1ee", "247": "#f5e2e4", "248": "#dee8f3", "249": "#e3ecf4", "250": "#de9ea6", "251": "#b9cfe5", "252": "#e1eaf3", "253": "#ecc6cb", "254": "#dd9aa2", "255": "#c1d4e7", "256": "#f4dfe2", "257": "#cddcec", "258": "#c2d5e8", "259": "#f4e0e2", "260": "#f9edef", "261": "#ebf1f7", "262": "#b7cde4", "263": "#eeccd0", "264": "#edf3f8", "265": "#f2d9dc", "266": "#cddcec", "267": "#a8c3de", "268": "#f4e0e3", "269": "#f0d4d8", "270": "#c6d7e9", "271": "#f8ecee", "272": "#e5edf5", "273": "#dbe6f1", "274": "#dae5f1", "275": "#e7b8be", "276": "#f3dcdf", "277": "#ceddec", "278": "#b6cce3", "279": "#f1d6d9", "280": "#f7e7e9", "281": "#d7e3f0", "282": "#f4dee0", "283": "#f3dcdf", "284": "#c6d8ea", "285": "#bdd1e6", "286": "#b8cee4", "287": "#f8eaeb", "288": "#e4ecf5", "289": "#e4afb6", "290": "#eac0c5", "291": "#dfa0a8", "292": "#edcbd0", "293": "#f8ebed", "294": "#edf2f8", "295": "#ecc6cb", "296": "#dee8f2", "297": "#ceddec", "298": "#b4cbe2", "299": "#a7c2de", "300": "#9ebcda", "301": "#f0d4d7", "302": "#cadaeb", "303": "#b4cbe3", "304": "#86acd1", "305": "#e2a8af", "306": "#d88a93", "307": "#f9fbfc", "308": "#cfdeed", "309": "#719dca", "310": "#8aaed3", "311": "#c95d6a", "312": "#c55361", "313": "#cadaeb", "314": "#b4cbe3", "315": "#b2182b", "316": "#c6d7e9", "317": "#fcf7f8", "318": "#e6b5bb", "319": "#dfa0a8", "320": "#edcace", "321": "#edc9ce", "322": "#e1a6ad", "323": "#ca606d", "324": "#e8babf", "325": "#dc969e", "326": "#e2a8af", "327": "#bb3445", "328": "#faf2f3", "329": "#e0a2aa", "330": "#dce7f2", "333": "#98b8d8", "334": "#b6cce3", "335": "#ebf1f7", "336": "#e6eef5", "337": "#81a8d0", "338": "#6494c5", "339": "#749fcb", "340": "#75a0cb", "341": "#9ab9d9", "342": "#bbd0e5", "343": "#fcf7f8", "344": "#edcbcf", "345": "#e6b6bc", "346": "#e9bdc3", "347": "#ecc8cc", "348": "#e1a5ac", "349": "#d5838d", "350": "#c75765", "351": "#ce6e7a", "352": "#f3dcdf", "353": "#f9edef"}, "label": "Delta RRCS", "description": "Per-residue mean \u0394RRCS (active \u2212 inactive)", "legend_type": "diverging", "legend_colors": ["#B2182B", "#FFFFFF", "#2166AC"], "legend_labels": ["Inactive-favoring", "0", "Active-favoring"]}, "active_rrcs": {"colors": {"3": "#fbfcfd", "4": "#ffffff", "5": "#bed2e6", "6": "#ffffff", "7": "#f9fbfc", "8": "#f9fbfc", "11": "#fefefe", "12": "#fefefe", "13": "#fafcfd", "16": "#f9fbfc", "17": "#f9fbfc", "18": "#d0deed", "19": "#e1eaf4", "22": "#c7d8ea", "23": "#fafcfd", "25": "#f4f7fb", "26": "#aec7e0", "27": "#f9fafc", "28": "#e3ecf4", "29": "#c1d4e8", "30": "#d4e1ee", "31": "#fefefe", "32": "#d2e0ee", "33": "#9fbcdb", "34": "#f2f6fa", "35": "#eff4f9", "36": "#b9cee4", "37": "#c5d7e9", "38": "#f8fafc", "39": "#eef3f8", "40": "#dbe6f1", "41": "#ceddec", "42": "#fbfcfd", "43": "#e8eff6", "44": "#6f9cc9", "45": "#f4f7fa", "46": "#f7f9fc", "47": "#d5e2ef", "48": "#c1d4e8", "49": "#bad0e5", "50": "#b9cee4", "51": "#fafbfd", "52": "#f4f7fa", "53": "#f6f9fb", "54": "#e0e9f3", "55": "#aac4df", "56": "#f2f6fa", "57": "#edf2f8", "58": "#d1dfee", "59": "#c0d3e7", "60": "#e0eaf3", "61": "#d9e5f1", "62": "#e8eff6", "63": "#edf2f8", "64": "#c9daea", "65": "#e9eff6", "66": "#ccdcec", "67": "#bed2e7", "68": "#c3d5e8", "69": "#ecf2f8", "70": "#ceddec", "71": "#5e90c3", "72": "#bdd1e6", "73": "#e7eff6", "74": "#86acd2", "75": "#c8d9ea", "76": "#f9fbfd", "77": "#dce6f1", "78": "#c0d3e7", "79": "#e7eef6", "80": "#bbd0e5", "81": "#b7cee4", "82": "#cbdbeb", "83": "#ebf1f7", "84": "#abc5df", "85": "#c1d4e8", "86": "#e8eff6", "87": "#ecf1f7", "88": "#d3e1ee", "89": "#80a7cf", "90": "#84aad1", "91": "#2f6fb1", "92": "#dae5f1", "93": "#92b4d6", "94": "#fefefe", "95": "#d8e4f0", "96": "#fafbfd", "97": "#cadbeb", "98": "#a8c3de", "99": "#e3ecf4", "100": "#eff4f9", "101": "#d0deed", "102": "#9cbbda", "103": "#bed2e6", "104": "#e1eaf3", "105": "#e3ecf4", "106": "#ccdcec", "107": "#d7e3f0", "108": "#acc6e0", "109": "#cddcec", "110": "#d4e1ef", "111": "#b1c9e2", "112": "#c8d9ea", "113": "#d2e0ee", "114": "#9ab9d9", "115": "#bcd1e6", "116": "#bed2e6", "117": "#cfdeed", "118": "#f0f5f9", "119": "#e0e9f3", "120": "#d7e4f0", "121": "#eaf1f7", "122": "#c1d4e7", "123": "#b9cfe5", "124": "#cadaeb", "125": "#ecf2f8", "126": "#e6edf5", "127": "#f7f9fc", "128": "#e3ebf4", "129": "#f1f5fa", "130": "#fcfdfe", "132": "#bacfe5", "133": "#f7f9fc", "134": "#fdfefe", "135": "#f3f7fa", "136": "#b6cde3", "137": "#7ea6ce", "138": "#f1f5fa", "139": "#c3d5e8", "140": "#ecf2f8", "141": "#e8eff6", "142": "#f6f9fb", "143": "#f7fafc", "144": "#eff4f9", "145": "#f8fafc", "146": "#dfe9f3", "147": "#fbfcfd", "149": "#c7d9ea", "150": "#bfd3e7", "151": "#fbfcfd", "152": "#d2e0ee", "153": "#d1dfee", "154": "#fefefe", "155": "#fcfdfe", "156": "#d4e1ee", "157": "#d2e0ee", "158": "#f8fafc", "159": "#e8eff6", "160": "#9ebcda", "161": "#c7d8ea", "162": "#e8eff6", "163": "#558abf", "164": "#2166ac", "165": "#b1c9e2", "166": "#b3cae2", "167": "#aec7e0", "168": "#dbe6f1", "169": "#ecf2f8", "170": "#f4f8fb", "171": "#f2f6fa", "173": "#a0bedb", "174": "#9ab9d9", "175": "#7ba4cd", "176": "#99b9d9", "177": "#85abd1", "178": "#3876b4", "179": "#bdd2e6", "180": "#5086bd", "181": "#ecf2f8", "182": "#d0deed", "183": "#bed2e6", "184": "#d7e3f0", "185": "#fbfcfd", "186": "#d8e4f0", "187": "#e8eff6", "188": "#f8fafc", "189": "#cbdbeb", "190": "#98b8d8", "191": "#edf2f8", "192": "#fafcfd", "193": "#cddcec", "194": "#dce7f2", "195": "#d8e4f0", "196": "#ffffff", "197": "#cedded", "198": "#dde7f2", "199": "#d2e0ee", "200": "#ffffff", "201": "#ecf2f8", "202": "#dae5f1", "203": "#f9fbfc", "204": "#ecf2f8", "205": "#c0d3e7", "206": "#a4c0dd", "207": "#dfe8f3", "208": "#b3cae2", "209": "#edf2f8", "210": "#9fbddb", "211": "#e9eff6", "212": "#d9e5f1", "213": "#c2d5e8", "214": "#cbdbeb", "215": "#fdfefe", "216": "#e8eff6", "217": "#cddcec", "218": "#f1f5fa", "219": "#f9fafc", "220": "#c4d6e9", "221": "#95b6d7", "223": "#ebf1f7", "224": "#c9daeb", "225": "#f8fafc", "227": "#e1eaf3", "228": "#d6e3ef", "230": "#fafcfd", "231": "#d4e1ee", "233": "#e4ecf5", "234": "#e9f0f6", "235": "#ffffff", "236": "#f9fbfc", "237": "#f2f6fa", "238": "#dae5f1", "239": "#f3f7fa", "240": "#f8fafc", "241": "#f2f6fa", "242": "#f4f7fb", "243": "#cadaeb", "244": "#ffffff", "245": "#fcfdfd", "246": "#e1eaf3", "247": "#e8eff6", "248": "#fefefe", "249": "#e0e9f3", "250": "#afc7e1", "251": "#bacfe5", "252": "#f6f9fb", "253": "#a5c1dd", "254": "#9fbcdb", "255": "#a5c1dd", "256": "#dfe9f3", "257": "#a9c3de", "258": "#94b5d7", "259": "#f8fafc", "260": "#dce7f2", "261": "#eff4f9", "262": "#d9e5f0", "263": "#f8fafc", "264": "#d8e4f0", "265": "#d3e1ee", "266": "#e6edf5", "267": "#7ba4cd", "268": "#e3ecf4", "269": "#edf2f8", "270": "#b8cee4", "271": "#ccdcec", "272": "#e9eff6", "273": "#e9f0f7", "274": "#edf3f8", "275": "#f7f9fc", "276": "#c8d9ea", "277": "#9ab9d9", "278": "#fafcfd", "279": "#fcfdfe", "280": "#d6e2ef", "281": "#f6f9fb", "282": "#dee8f2", "283": "#f3f7fa", "284": "#e1eaf3", "285": "#c5d7e9", "286": "#d7e4f0", "287": "#bed2e6", "288": "#dae5f1", "289": "#bacfe5", "290": "#d0deed", "291": "#d3e1ee", "292": "#a8c3de", "293": "#bacfe5", "294": "#acc5e0", "295": "#a1bedb", "296": "#cbdbeb", "297": "#d9e4f0", "298": "#9dbbda", "299": "#9cbbda", "300": "#e7eef6", "301": "#e2ebf4", "302": "#a2bfdc", "303": "#bcd1e6", "304": "#8eb1d4", "305": "#d0dfed", "306": "#ffffff", "307": "#edf3f8", "308": "#f9fbfc", "309": "#80a7cf", "310": "#dfe9f3", "311": "#fcfdfe", "312": "#e5edf5", "313": "#ecf2f8", "314": "#fafcfd", "315": "#ffffff", "316": "#d7e3f0", "317": "#e6edf5", "318": "#f4f7fb", "319": "#fdfdfe", "320": "#fcfdfd", "321": "#f0f4f9", "322": "#f8fafc", "323": "#fbfcfd", "324": "#fefefe", "325": "#f8fafc", "326": "#ffffff", "327": "#fbfcfd", "328": "#f6f8fb", "329": "#f6f9fc", "330": "#fefefe", "333": "#f6f9fb", "334": "#f6f9fb", "335": "#fefefe", "336": "#fefefe", "337": "#e6eef5", "338": "#d6e3ef", "339": "#dde8f2", "340": "#e1eaf4", "341": "#eff4f9", "342": "#fbfcfd", "343": "#fcfdfe", "344": "#eff4f9", "345": "#f1f6fa", "346": "#fdfdfe", "347": "#fafbfd", "348": "#f5f8fb", "349": "#f9fafc", "350": "#ffffff", "351": "#ffffff", "352": "#ffffff", "353": "#ffffff"}, "label": "Active RRCS", "description": "Total active-state contact strength per residue", "legend_type": "sequential", "legend_colors": ["#FFFFFF", "#2166AC"], "legend_labels": ["Low", "High"]}, "inactive_rrcs": {"colors": {"3": "#ffffff", "4": "#fefefe", "5": "#fcf8f8", "6": "#fefefe", "7": "#fdfbfb", "8": "#fdfbfb", "11": "#ffffff", "12": "#ffffff", "13": "#ffffff", "16": "#fcf8f9", "17": "#fcf8f9", "18": "#faf1f2", "19": "#faf2f3", "22": "#f4e0e3", "23": "#fefcfc", "25": "#fdf9f9", "26": "#e9bec3", "27": "#fcf6f6", "28": "#fbf4f5", "29": "#efd0d4", "30": "#f2d9dc", "31": "#fefcfc", "32": "#f5e2e4", "33": "#edc9ce", "34": "#fbf4f4", "35": "#fcf6f6", "36": "#eeccd0", "37": "#f2d8db", "38": "#fdfafa", "39": "#faf1f3", "40": "#f7e8ea", "41": "#f3dde0", "42": "#fefcfc", "43": "#f9eeef", "44": "#e4afb6", "45": "#fcf7f8", "46": "#f7e9eb", "47": "#faf2f3", "48": "#f4dee1", "49": "#eeccd0", "50": "#f1d7da", "51": "#fbf4f5", "52": "#f8eaec", "53": "#fcf7f7", "54": "#f4dee1", "55": "#e8babf", "56": "#fbf3f4", "57": "#efd0d4", "58": "#f4dfe2", "59": "#f7e9eb", "60": "#f8ecee", "61": "#f4e0e2", "62": "#f8eaec", "63": "#f9edef", "64": "#e8bac0", "65": "#f8eced", "66": "#f0d4d7", "67": "#f2d8db", "68": "#f3dcdf", "69": "#fbf5f6", "70": "#f8eaec", "71": "#db949d", "72": "#f4dee0", "73": "#fefcfc", "74": "#e1a5ad", "75": "#f2d8db", "76": "#fdfbfb", "77": "#f9eef0", "78": "#f3dbde", "79": "#f8ebed", "80": "#eeccd1", "81": "#faf0f2", "82": "#f3dde0", "83": "#f9eeef", "84": "#ebc5ca", "85": "#eeccd0", "86": "#f7e8ea", "87": "#fbf4f5", "88": "#fbf5f6", "89": "#eecdd1", "90": "#e6b5bb", "91": "#cc6874", "92": "#f8eced", "93": "#e2a8af", "94": "#fdf9f9", "95": "#f6e4e7", "96": "#fdfafb", "97": "#f3dde0", "98": "#e4b0b7", "99": "#ebc3c8", "100": "#fbf3f4", "101": "#f8ebec", "102": "#dd99a2", "103": "#f7e8ea", "104": "#faf2f3", "105": "#f6e4e6", "106": "#f0d2d5", "107": "#f7e9eb", "108": "#e7b7bc", "109": "#e9bfc4", "110": "#ecc6cb", "111": "#f4dee1", "112": "#f8eaec", "113": "#eeccd0", "114": "#e7b9bf", "115": "#f1d5d9", "116": "#f7e7e9", "117": "#f3dbde", "118": "#fcf8f8", "119": "#f8eced", "120": "#f9edef", "121": "#f9eff0", "122": "#f4dee1", "123": "#ebc5c9", "124": "#f7e8ea", "125": "#fbf4f5", "126": "#f9eef0", "127": "#fcf6f7", "128": "#f9edef", "129": "#fcf6f6", "130": "#fefcfd", "132": "#e6b4ba", "133": "#fcf7f8", "134": "#fefdfd", "135": "#fdf9f9", "136": "#e7b7bd", "137": "#f4e0e3", "138": "#fcf6f7", "139": "#f1d6d9", "140": "#fefcfc", "141": "#fbf5f6", "142": "#fcf8f8", "143": "#fcf6f7", "144": "#fefdfd", "145": "#fcf8f8", "146": "#f3dcde", "147": "#fefdfd", "149": "#f6e6e8", "150": "#f2dadd", "151": "#fefcfd", "152": "#f5e2e5", "153": "#f5e2e4", "154": "#fefefe", "155": "#fefefe", "156": "#f4e0e3", "157": "#f5e3e5", "158": "#fdfbfb", "159": "#fcf7f8", "160": "#eac2c7", "161": "#f3dde0", "162": "#fbf4f5", "163": "#dfa0a8", "164": "#b2182b", "165": "#e9bfc4", "166": "#eecdd1", "167": "#ebc4c9", "168": "#f7e8e9", "169": "#faf2f3", "170": "#fcf6f7", "171": "#fbf5f6", "173": "#e9bfc4", "174": "#e7b7bc", "175": "#e1a7af", "176": "#e7b9be", "177": "#e1a5ad", "178": "#d88b95", "179": "#efd0d4", "180": "#dd9aa3", "181": "#f9eff1", "182": "#fdfafb", "183": "#f9edef", "184": "#f4dee1", "185": "#f9eeef", "186": "#f4e0e3", "187": "#fcf8f8", "188": "#fdfafb", "189": "#f3dcde", "190": "#eeced2", "191": "#fbf5f6", "192": "#fefcfc", "193": "#faf0f2", "194": "#f6e5e7", "195": "#f7e8ea", "196": "#fefefe", "197": "#f4dee1", "198": "#fbf4f5", "199": "#f5e3e6", "200": "#fdfbfb", "201": "#f4dee1", "202": "#f5e3e6", "203": "#faf0f1", "204": "#fdfafb", "205": "#eecdd1", "206": "#f1d5d9", "207": "#f6e4e7", "208": "#f1d5d8", "209": "#f7e7e9", "210": "#e8babf", "211": "#faf0f1", "212": "#f5e3e5", "213": "#efd0d4", "214": "#f5e2e4", "215": "#fefefe", "216": "#f9eff0", "217": "#f1d7da", "218": "#ffffff", "219": "#fefcfc", "220": "#f6e4e6", "221": "#edcacf", "223": "#faf1f2", "224": "#f7e7e9", "225": "#ffffff", "227": "#f6e6e8", "228": "#f5e1e3", "230": "#fefdfd", "231": "#f7e8ea", "233": "#f6e4e6", "234": "#fefefe", "235": "#fefefe", "236": "#f9eeef", "237": "#fbf4f5", "238": "#dd9ba3", "239": "#f7e8ea", "240": "#f5e2e4", "241": "#f9eff0", "242": "#f7e7e9", "243": "#ecc7cc", "244": "#fbf3f4", "245": "#fbf4f5", "246": "#faf1f2", "247": "#f9edef", "248": "#ffffff", "249": "#f8eced", "250": "#da919a", "251": "#f3dcdf", "252": "#fdfafa", "253": "#e6b4bb", "254": "#d68690", "255": "#edcbd0", "256": "#f7e7e9", "257": "#eecdd1", "258": "#ebc3c8", "259": "#fcf8f9", "260": "#f6e6e8", "261": "#fbf4f5", "262": "#fbf5f6", "263": "#fbf5f6", "264": "#f6e5e7", "265": "#f4dee1", "266": "#faf2f3", "267": "#e8bcc1", "268": "#f7e8ea", "269": "#f9eff0", "270": "#f2d9dc", "271": "#f3dbde", "272": "#faf1f2", "273": "#faf2f3", "274": "#fcf6f6", "275": "#fcf7f7", "276": "#f1d7da", "277": "#e9bfc5", "278": "#ffffff", "279": "#fdfafb", "280": "#f5e1e3", "281": "#fdfbfb", "282": "#f7e7e9", "283": "#fbf4f5", "284": "#faf1f2", "285": "#f6e5e7", "286": "#faf1f2", "287": "#efd1d5", "288": "#f7e7e9", "289": "#eac0c5", "290": "#f1d7da", "291": "#efcfd3", "292": "#e7b8bd", "293": "#eeced2", "294": "#ecc7cb", "295": "#e4b0b6", "296": "#f4dee1", "297": "#f8ebec", "298": "#f3dddf", "299": "#f0d3d7", "300": "#fcf8f9", "301": "#f6e4e6", "302": "#f1d6d9", "303": "#f8eced", "304": "#fcf7f7", "305": "#ebc5ca", "306": "#f5e3e6", "307": "#fbf3f4", "308": "#fefefe", "309": "#fefdfd", "310": "#ffffff", "311": "#f5e3e5", "312": "#d78891", "313": "#fefefe", "314": "#ffffff", "315": "#db959e", "316": "#f9eeef", "317": "#f9edef", "318": "#f6e5e7", "319": "#f8eced", "320": "#fcf8f9", "321": "#f6e6e8", "322": "#f5e3e5", "323": "#e9bec3", "324": "#fbf5f6", "325": "#edc9ce", "326": "#fcf7f8", "327": "#e9bfc5", "328": "#fcf8f9", "329": "#faf1f2", "330": "#ffffff", "333": "#ffffff", "334": "#ffffff", "335": "#ffffff", "336": "#ffffff", "337": "#ffffff", "338": "#fefcfc", "339": "#fefcfc", "340": "#ffffff", "341": "#ffffff", "342": "#ffffff", "343": "#fefdfd", "344": "#faf1f2", "345": "#fbf3f4", "346": "#fdfbfc", "347": "#fcf8f9", "348": "#faf0f1", "349": "#f8ebed", "350": "#f5e3e5", "351": "#f8eaec", "352": "#fefdfd", "353": "#fefefe"}, "label": "Inactive RRCS", "description": "Total inactive-state contact strength per residue", "legend_type": "sequential", "legend_colors": ["#FFFFFF", "#B2182B"], "legend_labels": ["Low", "High"]}, "conservation": {"colors": {"1": "#6B1441", "2": "#D87A9F", "3": "#7CC6CB", "4": "#A83468", "5": "#0E7F86", "6": "#A83468", "7": "#7CC6CB", "8": "#EEBFD0", "9": "#7CC6CB", "10": "#D87A9F", "11": "#0E7F86", "12": "#F5F3F0", "13": "#7CC6CB", "14": "#3DA8AE", "15": "#3DA8AE", "16": "#0E7F86", "17": "#0E7F86", "18": "#3DA8AE", "19": "#F5F3F0", "20": "#B8E0E3", "21": "#F5F3F0", "22": "#B8E0E3", "23": "#0E7F86", "24": "#F5F3F0", "25": "#D87A9F", "26": "#0E7F86", "27": "#D87A9F", "28": "#B8E0E3", "29": "#F5F3F0", "30": "#7CC6CB", "31": "#F5F3F0", "32": "#EEBFD0", "33": "#3DA8AE", "34": "#3DA8AE", "35": "#F5F3F0", "36": "#EEBFD0", "37": "#D87A9F", "38": "#D87A9F", "39": "#D87A9F", "40": "#6B1441", "41": "#D87A9F", "42": "#EEBFD0", "43": "#6B1441", "44": "#6B1441", "45": "#6B1441", "46": "#D87A9F", "47": "#6B1441", "48": "#A83468", "49": "#A83468", "50": "#A83468", "51": "#EEBFD0", "52": "#A83468", "53": "#6B1441", "54": "#D87A9F", "55": "#6B1441", "56": "#3DA8AE", "57": "#F5F3F0", "58": "#A83468", "59": "#6B1441", "60": "#F5F3F0", "61": "#D87A9F", "62": "#EEBFD0", "63": "#7CC6CB", "64": "#D87A9F", "65": "#A83468", "66": "#A83468", "67": "#6B1441", "68": "#6B1441", "69": "#B8E0E3", "70": "#D87A9F", "71": "#6B1441", "72": "#A83468", "73": "#3DA8AE", "74": "#6B1441", "75": "#F5F3F0", "76": "#B8E0E3", "77": "#7CC6CB", "78": "#A83468", "79": "#6B1441", "80": "#EEBFD0", "81": "#0E7F86", "82": "#F5F3F0", "83": "#B8E0E3", "84": "#B8E0E3", "85": "#0E7F86", "86": "#D87A9F", "87": "#D87A9F", "88": "#3DA8AE", "89": "#0E7F86", "90": "#7CC6CB", "91": "#6B1441", "92": "#D87A9F", "93": "#A83468", "94": "#6B1441", "95": "#3DA8AE", "96": "#D87A9F", "97": "#EEBFD0", "98": "#6B1441", "99": "#6B1441", "100": "#F5F3F0", "101": "#7CC6CB", "102": "#3DA8AE", "103": "#3DA8AE", "104": "#F5F3F0", "105": "#7CC6CB", "106": "#3DA8AE", "107": "#EEBFD0", "108": "#6B1441", "109": "#D87A9F", "110": "#A83468", "111": "#7CC6CB", "112": "#6B1441", "113": "#A83468", "114": "#D87A9F", "115": "#D87A9F", "116": "#EEBFD0", "117": "#B8E0E3", "118": "#7CC6CB", "119": "#6B1441", "120": "#EEBFD0", "121": "#F5F3F0", "122": "#6B1441", "123": "#A83468", "124": "#6B1441", "125": "#EEBFD0", "126": "#EEBFD0", "127": "#A83468", "128": "#EEBFD0", "129": "#B8E0E3", "130": "#6B1441", "131": "#D87A9F", "132": "#6B1441", "133": "#D87A9F", "134": "#A83468", "135": "#A83468", "136": "#A83468", "137": "#A83468", "138": "#EEBFD0", "139": "#F5F3F0", "140": "#B8E0E3", "141": "#F5F3F0", "142": "#6B1441", "143": "#3DA8AE", "144": "#7CC6CB", "145": "#D87A9F", "146": "#B8E0E3", "147": "#7CC6CB", "148": "#B8E0E3", "149": "#3DA8AE", "150": "#6B1441", "151": "#F5F3F0", "152": "#7CC6CB", "153": "#D87A9F", "154": "#EEBFD0", "155": "#B8E0E3", "156": "#A83468", "157": "#F5F3F0", "158": "#B8E0E3", "159": "#A83468", "160": "#0E7F86", "161": "#B8E0E3", "162": "#EEBFD0", "163": "#F5F3F0", "164": "#0E7F86", "165": "#B8E0E3", "166": "#D87A9F", "167": "#7CC6CB", "168": "#0E7F86", "169": "#0E7F86", "170": "#0E7F86", "171": "#0E7F86", "172": "#F5F3F0", "173": "#3DA8AE", "174": "#7CC6CB", "175": "#0E7F86", "176": "#A83468", "177": "#0E7F86", "178": "#3DA8AE", "179": "#B8E0E3", "180": "#D87A9F", "181": "#3DA8AE", "182": "#0E7F86", "183": "#7CC6CB", "184": "#3DA8AE", "185": "#3DA8AE", "186": "#3DA8AE", "187": "#0E7F86", "188": "#3DA8AE", "189": "#EEBFD0", "190": "#3DA8AE", "191": "#0E7F86", "192": "#7CC6CB", "193": "#7CC6CB", "194": "#0E7F86", "195": "#3DA8AE", "196": "#3DA8AE", "197": "#0E7F86", "198": "#0E7F86", "199": "#3DA8AE", "200": "#B8E0E3", "201": "#0E7F86", "202": "#3DA8AE", "203": "#EEBFD0", "204": "#B8E0E3", "205": "#F5F3F0", "206": "#A83468", "207": "#F5F3F0", "208": "#F5F3F0", "209": "#A83468", "210": "#6B1441", "211": "#7CC6CB", "212": "#7CC6CB", "213": "#6B1441", "214": "#F5F3F0", "215": "#F5F3F0", "216": "#EEBFD0", "217": "#D87A9F", "218": "#7CC6CB", "219": "#B8E0E3", "220": "#A83468", "221": "#A83468", "222": "#EEBFD0", "223": "#EEBFD0", "224": "#D87A9F", "225": "#EEBFD0", "226": "#7CC6CB", "227": "#D87A9F", "228": "#EEBFD0", "229": "#7CC6CB", "230": "#EEBFD0", "231": "#3DA8AE", "232": "#3DA8AE", "233": "#3DA8AE", "234": "#7CC6CB", "235": "#7CC6CB", "236": "#D87A9F", "237": "#EEBFD0", "238": "#D87A9F", "239": "#D87A9F", "240": "#B8E0E3", "241": "#F5F3F0", "242": "#EEBFD0", "243": "#B8E0E3", "244": "#3DA8AE", "245": "#B8E0E3", "246": "#D87A9F", "247": "#F5F3F0", "248": "#7CC6CB", "249": "#7CC6CB", "250": "#A83468", "251": "#A83468", "252": "#B8E0E3", "253": "#A83468", "254": "#A83468", "255": "#7CC6CB", "256": "#A83468", "257": "#EEBFD0", "258": "#F5F3F0", "259": "#B8E0E3", "260": "#7CC6CB", "261": "#3DA8AE", "262": "#F5F3F0", "263": "#F5F3F0", "264": "#0E7F86", "265": "#3DA8AE", "266": "#7CC6CB", "267": "#0E7F86", "268": "#0E7F86", "269": "#3DA8AE", "270": "#F5F3F0", "271": "#0E7F86", "272": "#0E7F86", "273": "#0E7F86", "274": "#0E7F86", "275": "#0E7F86", "276": "#0E7F86", "277": "#0E7F86", "278": "#0E7F86", "279": "#3DA8AE", "280": "#B8E0E3", "281": "#0E7F86", "282": "#7CC6CB", "283": "#0E7F86", "284": "#B8E0E3", "285": "#3DA8AE", "286": "#7CC6CB", "287": "#F5F3F0", "288": "#EEBFD0", "289": "#F5F3F0", "290": "#A83468", "291": "#A83468", "292": "#EEBFD0", "293": "#EEBFD0", "294": "#6B1441", "295": "#6B1441", "296": "#A83468", "297": "#A83468", "298": "#6B1441", "299": "#6B1441", "300": "#B8E0E3", "301": "#6B1441", "302": "#6B1441", "303": "#A83468", "304": "#6B1441", "305": "#F5F3F0", "306": "#6B1441", "307": "#EEBFD0", "308": "#D87A9F", "309": "#A83468", "310": "#EEBFD0", "311": "#F5F3F0", "312": "#EEBFD0", "313": "#D87A9F", "314": "#B8E0E3", "315": "#B8E0E3", "316": "#6B1441", "317": "#D87A9F", "318": "#B8E0E3", "319": "#7CC6CB", "320": "#B8E0E3", "321": "#D87A9F", "322": "#6B1441", "323": "#F5F3F0", "324": "#6B1441", "325": "#D87A9F", "326": "#7CC6CB", "327": "#A83468", "328": "#7CC6CB", "329": "#0E7F86", "330": "#F5F3F0", "331": "#EEBFD0", "332": "#3DA8AE", "333": "#3DA8AE", "334": "#B8E0E3", "335": "#B8E0E3", "336": "#B8E0E3", "337": "#F5F3F0", "338": "#0E7F86", "339": "#7CC6CB", "340": "#7CC6CB", "341": "#B8E0E3", "342": "#3DA8AE", "343": "#B8E0E3", "344": "#B8E0E3", "345": "#B8E0E3", "346": "#3DA8AE", "347": "#EEBFD0", "348": "#0E7F86", "349": "#F5F3F0", "350": "#EEBFD0", "351": "#EEBFD0", "352": "#D87A9F", "353": "#D87A9F"}, "label": "Conservation", "description": "Per-residue conservation (ProtVar CONSERV), binned into 9 grades by this receptor's own score quantiles. 353 positions covered; grade 1 = most variable in this receptor, grade 9 = most conserved.", "legend_type": "sequential", "legend_colors": ["#0E7F86", "#3DA8AE", "#7CC6CB", "#B8E0E3", "#F5F3F0", "#EEBFD0", "#D87A9F", "#A83468", "#6B1441"], "legend_labels": ["1 variable", "5", "9 conserved"]}, "alphamissense": {"colors": {"5": "#388E3C", "18": "#388E3C", "33": "#388E3C", "50": "#F57C00", "52": "#388E3C", "55": "#D32F2F", "57": "#388E3C", "60": "#F57C00", "70": "#388E3C", "80": "#D32F2F", "81": "#388E3C", "88": "#388E3C", "89": "#388E3C", "93": "#D32F2F", "99": "#388E3C", "102": "#388E3C", "103": "#388E3C", "106": "#F57C00", "111": "#388E3C", "113": "#388E3C", "116": "#D32F2F", "123": "#F57C00", "132": "#D32F2F", "136": "#D32F2F", "137": "#F57C00", "150": "#D32F2F", "161": "#D32F2F", "164": "#F57C00", "176": "#D32F2F", "180": "#388E3C", "183": "#D32F2F", "185": "#388E3C", "190": "#388E3C", "193": "#388E3C", "205": "#388E3C", "206": "#D32F2F", "221": "#388E3C", "228": "#F57C00", "233": "#388E3C", "234": "#388E3C", "238": "#F57C00", "243": "#D32F2F", "251": "#D32F2F", "254": "#D32F2F", "255": "#F57C00", "262": "#388E3C", "270": "#388E3C", "299": "#D32F2F", "300": "#388E3C", "303": "#388E3C", "305": "#388E3C", "310": "#388E3C", "311": "#388E3C", "315": "#388E3C", "316": "#F57C00", "322": "#388E3C", "323": "#388E3C", "325": "#D32F2F", "337": "#388E3C", "351": "#388E3C"}, "label": "AlphaMissense", "description": "AlphaMissense classification at variant positions: 16 pathogenic, 10 ambiguous, 34 benign.", "legend_type": "categorical", "legend_colors": ["#388E3C", "#D32F2F"], "legend_labels": ["Benign", "Pathogenic"], "legend_items": [{"color": "#D32F2F", "label": "Pathogenic (\u2265 0.564)"}, {"color": "#F57C00", "label": "Ambiguous (0.34-0.564)"}, {"color": "#388E3C", "label": "Benign (< 0.34)"}]}, "cfr": {"colors": {"60": "#FF8F00", "109": "#FF8F00", "113": "#FF8F00", "122": "#FF8F00", "123": "#FF8F00", "178": "#FF8F00", "221": "#FF8F00", "238": "#FF8F00", "242": "#FF8F00", "250": "#FF8F00", "254": "#FF8F00", "291": "#FF8F00", "294": "#FF8F00", "299": "#FF8F00", "302": "#FF8F00", "303": "#FF8F00", "304": "#FF8F00", "305": "#FF8F00", "309": "#FF8F00", "310": "#FF8F00"}, "label": "Core Functional", "description": "Top cross-GPCR Core Functional Residues (20 mapped to this receptor)", "legend_type": "categorical", "legend_items": [{"color": "#FF8F00", "label": "CFR position"}]}, "aa_properties": {"colors": {"1": "#F0C05A", "2": "#5F9EA0", "3": "#87CEEB", "4": "#87CEEB", "5": "#DDA0DD", "6": "#87CEEB", "7": "#F0C05A", "8": "#F0C05A", "9": "#F0C05A", "10": "#87CEEB", "11": "#5F9EA0", "12": "#87CEEB", "13": "#5F9EA0", "14": "#5F9EA0", "15": "#F0C05A", "16": "#F0C05A", "17": "#F0C05A", "18": "#5F9EA0", "19": "#F0C05A", "20": "#F0C05A", "21": "#98FB98", "22": "#FF7F7F", "23": "#87CEEB", "24": "#F0C05A", "25": "#F0C05A", "26": "#DDA0DD", "27": "#F0C05A", "28": "#DDA0DD", "29": "#87CEEB", "30": "#F0C05A", "31": "#F0C05A", "32": "#F0C05A", "33": "#FF7F7F", "34": "#98FB98", "35": "#F0C05A", "36": "#87CEEB", "37": "#DDA0DD", "38": "#F0C05A", "39": "#DDA0DD", "40": "#98FB98", "41": "#F0C05A", "42": "#F0C05A", "43": "#98FB98", "44": "#87CEEB", "45": "#98FB98", "46": "#F0C05A", "47": "#F0C05A", "48": "#F0C05A", "49": "#DDA0DD", "50": "#F0C05A", "51": "#F0C05A", "52": "#98FB98", "53": "#DDA0DD", "54": "#FF7F7F", "55": "#F0C05A", "56": "#87CEEB", "57": "#FF7F7F", "58": "#87CEEB", "59": "#F0C05A", "60": "#87CEEB", "61": "#87CEEB", "62": "#F0C05A", "63": "#98FB98", "64": "#DDA0DD", "65": "#F0C05A", "66": "#87CEEB", "67": "#F0C05A", "68": "#F0C05A", "69": "#F0C05A", "70": "#F0C05A", "71": "#5F9EA0", "72": "#DDA0DD", "73": "#87CEEB", "74": "#DDA0DD", "75": "#87CEEB", "76": "#F0C05A", "77": "#F0C05A", "78": "#F0C05A", "79": "#F0C05A", "80": "#DDA0DD", "81": "#FF7F7F", "82": "#F0C05A", "83": "#F0C05A", "84": "#87CEEB", "85": "#F0C05A", "86": "#F0C05A", "87": "#F0C05A", "88": "#FF7F7F", "89": "#5F9EA0", "90": "#FF7F7F", "91": "#DDA0DD", "92": "#F0C05A", "93": "#DDA0DD", "94": "#98FB98", "95": "#87CEEB", "96": "#DDA0DD", "97": "#F0C05A", "98": "#98FB98", "99": "#FF7F7F", "100": "#F0C05A", "101": "#F0C05A", "102": "#FF7F7F", "103": "#F0C05A", "104": "#F0C05A", "105": "#F0C05A", "106": "#5F9EA0", "107": "#F0C05A", "108": "#87CEEB", "109": "#F0C05A", "110": "#DDA0DD", "111": "#F0C05A", "112": "#87CEEB", "113": "#F0C05A", "114": "#DDA0DD", "115": "#F0C05A", "116": "#F0C05A", "117": "#87CEEB", "118": "#F0C05A", "119": "#F0C05A", "120": "#F0C05A", "121": "#F0C05A", "122": "#5F9EA0", "123": "#FF7F7F", "124": "#98FB98", "125": "#F0C05A", "126": "#98FB98", "127": "#F0C05A", "128": "#F0C05A", "129": "#FF7F7F", "130": "#F0C05A", "131": "#F0C05A", "132": "#DDA0DD", "133": "#F0C05A", "134": "#87CEEB", "135": "#87CEEB", "136": "#FF7F7F", "137": "#FF7F7F", "138": "#87CEEB", "139": "#F0C05A", "140": "#87CEEB", "141": "#F0C05A", "142": "#F0C05A", "143": "#FF7F7F", "144": "#FF7F7F", "145": "#F0C05A", "146": "#F0C05A", "147": "#87CEEB", "148": "#98FB98", "149": "#F0C05A", "150": "#DDA0DD", "151": "#F0C05A", "152": "#DDA0DD", "153": "#87CEEB", "154": "#F0C05A", "155": "#F0C05A", "156": "#F0C05A", "157": "#87CEEB", "158": "#F0C05A", "159": "#F0C05A", "160": "#87CEEB", "161": "#DDA0DD", "162": "#F0C05A", "163": "#DDA0DD", "164": "#DDA0DD", "165": "#87CEEB", "166": "#87CEEB", "167": "#F0C05A", "168": "#87CEEB", "169": "#87CEEB", "170": "#87CEEB", "171": "#87CEEB", "172": "#98FB98", "173": "#5F9EA0", "174": "#87CEEB", "175": "#DDA0DD", "176": "#98FB98", "177": "#F0C05A", "178": "#DDA0DD", "179": "#87CEEB", "180": "#DDA0DD", "181": "#F0C05A", "182": "#DDA0DD", "183": "#DDA0DD", "184": "#98FB98", "185": "#5F9EA0", "186": "#87CEEB", "187": "#F0C05A", "188": "#F0C05A", "189": "#5F9EA0", "190": "#FF7F7F", "191": "#F0C05A", "192": "#87CEEB", "193": "#F0C05A", "194": "#DDA0DD", "195": "#F0C05A", "196": "#87CEEB", "197": "#F0C05A", "198": "#F0C05A", "199": "#FF7F7F", "200": "#F0C05A", "201": "#DDA0DD", "202": "#F0C05A", "203": "#F0C05A", "204": "#F0C05A", "205": "#FF7F7F", "206": "#DDA0DD", "207": "#F0C05A", "208": "#F0C05A", "209": "#98FB98", "210": "#DDA0DD", "211": "#87CEEB", "212": "#F0C05A", "213": "#F0C05A", "214": "#F0C05A", "215": "#87CEEB", "216": "#F0C05A", "217": "#F0C05A", "218": "#87CEEB", "219": "#F0C05A", "220": "#98FB98", "221": "#DDA0DD", "222": "#98FB98", "223": "#F0C05A", "224": "#F0C05A", "225": "#F0C05A", "226": "#F0C05A", "227": "#FF7F7F", "228": "#F0C05A", "229": "#FF7F7F", "230": "#FF7F7F", "231": "#87CEEB", "232": "#FF7F7F", "233": "#F0C05A", "234": "#F0C05A", "235": "#FF7F7F", "236": "#87CEEB", "237": "#87CEEB", "238": "#FF7F7F", "239": "#F0C05A", "240": "#F0C05A", "241": "#FF7F7F", "242": "#F0C05A", "243": "#DDA0DD", "244": "#F0C05A", "245": "#F0C05A", "246": "#F0C05A", "247": "#F0C05A", "248": "#F0C05A", "249": "#87CEEB", "250": "#DDA0DD", "251": "#DDA0DD", "252": "#F0C05A", "253": "#98FB98", "254": "#DDA0DD", "255": "#DDA0DD", "256": "#F0C05A", "257": "#DDA0DD", "258": "#5F9EA0", "259": "#F0C05A", "260": "#F0C05A", "261": "#98FB98", "262": "#F0C05A", "263": "#F0C05A", "264": "#F0C05A", "265": "#F0C05A", "266": "#F0C05A", "267": "#DDA0DD", "268": "#F0C05A", "269": "#FF7F7F", "270": "#5F9EA0", "271": "#F0C05A", "272": "#F0C05A", "273": "#F0C05A", "274": "#87CEEB", "275": "#98FB98", "276": "#FF7F7F", "277": "#DDA0DD", "278": "#FF7F7F", "279": "#F0C05A", "280": "#F0C05A", "281": "#F0C05A", "282": "#F0C05A", "283": "#F0C05A", "284": "#F0C05A", "285": "#87CEEB", "286": "#F0C05A", "287": "#87CEEB", "288": "#87CEEB", "289": "#87CEEB", "290": "#F0C05A", "291": "#F0C05A", "292": "#DDA0DD", "293": "#DDA0DD", "294": "#87CEEB", "295": "#87CEEB", "296": "#98FB98", "297": "#F0C05A", "298": "#87CEEB", "299": "#F0C05A", "300": "#F0C05A", "301": "#F0C05A", "302": "#DDA0DD", "303": "#F0C05A", "304": "#DDA0DD", "305": "#F0C05A", "306": "#98FB98", "307": "#FF7F7F", "308": "#87CEEB", "309": "#DDA0DD", "310": "#87CEEB", "311": "#5F9EA0", "312": "#FF7F7F", "313": "#F0C05A", "314": "#F0C05A", "315": "#FF7F7F", "316": "#87CEEB", "317": "#F0C05A", "318": "#F0C05A", "319": "#87CEEB", "320": "#87CEEB", "321": "#F0C05A", "322": "#5F9EA0", "323": "#FF7F7F", "324": "#F0C05A", "325": "#F0C05A", "326": "#87CEEB", "327": "#5F9EA0", "328": "#F0C05A", "329": "#F0C05A", "330": "#5F9EA0", "331": "#87CEEB", "332": "#F0C05A", "333": "#87CEEB", "334": "#87CEEB", "335": "#87CEEB", "336": "#87CEEB", "337": "#87CEEB", "338": "#5F9EA0", "339": "#87CEEB", "340": "#87CEEB", "341": "#87CEEB", "342": "#F0C05A", "343": "#87CEEB", "344": "#F0C05A", "345": "#F0C05A", "346": "#5F9EA0", "347": "#5F9EA0", "348": "#87CEEB", "349": "#5F9EA0", "350": "#F0C05A", "351": "#87CEEB", "352": "#F0C05A", "353": "#F0C05A"}, "label": "AA Properties", "description": "Amino acid physicochemical properties", "legend_type": "categorical", "legend_items": [{"color": "#F0C05A", "label": "Hydrophobic"}, {"color": "#87CEEB", "label": "Polar"}, {"color": "#FF7F7F", "label": "Positive"}, {"color": "#5F9EA0", "label": "Negative"}, {"color": "#DDA0DD", "label": "Aromatic"}, {"color": "#98FB98", "label": "Special (C,G,P)"}]}}, "contact_links": [{"from_seq": 312, "to_seq": 315, "color": "#B2182B", "width": 4.0, "delta": -16.13}, {"from_seq": 102, "to_seq": 164, "color": "#B2182B", "width": 2.5, "delta": -9.14}, {"from_seq": 109, "to_seq": 254, "color": "#B2182B", "width": 2.0, "delta": -6.93}, {"from_seq": 299, "to_seq": 304, "color": "#2166AC", "width": 2.0, "delta": 6.82}, {"from_seq": 303, "to_seq": 309, "color": "#2166AC", "width": 1.9, "delta": 6.69}, {"from_seq": 311, "to_seq": 312, "color": "#B2182B", "width": 1.9, "delta": -6.37}, {"from_seq": 103, "to_seq": 161, "color": "#2166AC", "width": 1.8, "delta": 6.12}, {"from_seq": 49, "to_seq": 316, "color": "#2166AC", "width": 1.7, "delta": 5.53}, {"from_seq": 99, "to_seq": 161, "color": "#B2182B", "width": 1.7, "delta": -5.52}, {"from_seq": 250, "to_seq": 254, "color": "#B2182B", "width": 1.6, "delta": -5.2}, {"from_seq": 238, "to_seq": 306, "color": "#B2182B", "width": 1.6, "delta": -5.19}, {"from_seq": 206, "to_seq": 262, "color": "#2166AC", "width": 1.6, "delta": 5.14}, {"from_seq": 71, "to_seq": 108, "color": "#B2182B", "width": 1.5, "delta": -4.77}, {"from_seq": 304, "to_seq": 310, "color": "#2166AC", "width": 1.5, "delta": 4.67}, {"from_seq": 55, "to_seq": 309, "color": "#2166AC", "width": 1.5, "delta": 4.64}, {"from_seq": 122, "to_seq": 123, "color": "#B2182B", "width": 1.4, "delta": -4.37}, {"from_seq": 64, "to_seq": 243, "color": "#B2182B", "width": 1.4, "delta": -4.28}, {"from_seq": 113, "to_seq": 250, "color": "#B2182B", "width": 1.4, "delta": -4.2}, {"from_seq": 50, "to_seq": 309, "color": "#2166AC", "width": 1.4, "delta": 4.05}, {"from_seq": 33, "to_seq": 78, "color": "#2166AC", "width": 1.4, "delta": 4.04}, {"from_seq": 111, "to_seq": 150, "color": "#2166AC", "width": 1.3, "delta": 3.91}, {"from_seq": 251, "to_seq": 255, "color": "#2166AC", "width": 1.3, "delta": 3.91}, {"from_seq": 106, "to_seq": 205, "color": "#B2182B", "width": 1.3, "delta": -3.82}, {"from_seq": 116, "to_seq": 302, "color": "#2166AC", "width": 1.3, "delta": 3.8}, {"from_seq": 74, "to_seq": 109, "color": "#2166AC", "width": 1.3, "delta": 3.78}, {"from_seq": 73, "to_seq": 108, "color": "#2166AC", "width": 1.3, "delta": 3.68}, {"from_seq": 71, "to_seq": 112, "color": "#2166AC", "width": 1.2, "delta": 3.56}, {"from_seq": 294, "to_seq": 298, "color": "#2166AC", "width": 1.2, "delta": 3.46}, {"from_seq": 242, "to_seq": 305, "color": "#B2182B", "width": 1.2, "delta": -3.33}, {"from_seq": 300, "to_seq": 305, "color": "#2166AC", "width": 1.2, "delta": 3.32}, {"from_seq": 123, "to_seq": 221, "color": "#2166AC", "width": 1.2, "delta": 3.31}, {"from_seq": 70, "to_seq": 108, "color": "#2166AC", "width": 1.2, "delta": 3.23}, {"from_seq": 254, "to_seq": 291, "color": "#B2182B", "width": 1.2, "delta": -3.17}, {"from_seq": 119, "to_seq": 243, "color": "#B2182B", "width": 1.2, "delta": -3.14}, {"from_seq": 160, "to_seq": 201, "color": "#B2182B", "width": 1.2, "delta": -3.13}, {"from_seq": 55, "to_seq": 312, "color": "#2166AC", "width": 1.1, "delta": 3.09}, {"from_seq": 250, "to_seq": 294, "color": "#B2182B", "width": 1.1, "delta": -2.98}, {"from_seq": 64, "to_seq": 123, "color": "#2166AC", "width": 1.1, "delta": 2.95}, {"from_seq": 49, "to_seq": 54, "color": "#B2182B", "width": 1.1, "delta": -2.89}, {"from_seq": 217, "to_seq": 250, "color": "#2166AC", "width": 1.1, "delta": 2.83}, {"from_seq": 60, "to_seq": 123, "color": "#B2182B", "width": 1.1, "delta": -2.82}, {"from_seq": 113, "to_seq": 254, "color": "#2166AC", "width": 1.1, "delta": 2.75}, {"from_seq": 221, "to_seq": 244, "color": "#B2182B", "width": 1.1, "delta": -2.72}, {"from_seq": 205, "to_seq": 258, "color": "#2166AC", "width": 1.1, "delta": 2.69}, {"from_seq": 204, "to_seq": 208, "color": "#2166AC", "width": 1.0, "delta": 2.63}, {"from_seq": 108, "to_seq": 295, "color": "#B2182B", "width": 1.0, "delta": -2.59}, {"from_seq": 124, "to_seq": 220, "color": "#2166AC", "width": 1.0, "delta": 2.59}, {"from_seq": 238, "to_seq": 305, "color": "#B2182B", "width": 1.0, "delta": -2.59}, {"from_seq": 77, "to_seq": 104, "color": "#2166AC", "width": 1.0, "delta": 2.53}, {"from_seq": 105, "to_seq": 292, "color": "#B2182B", "width": 1.0, "delta": -2.43}], "positions": {"56": [109.0, 375.0], "57": [123.0, 364.0], "89": [194.0, 20.0], "90": [210.0, 12.0], "91": [228.0, 9.0], "92": [246.0, 11.0], "93": [263.0, 17.0], "130": [324.0, 372.0], "131": [318.0, 391.0], "132": [312.0, 410.0], "133": [355.0, 365.0], "134": [349.0, 384.0], "135": [343.0, 403.0], "136": [337.0, 423.0], "137": [382.0, 372.0], "165": [361.0, 23.0], "166": [353.0, 7.0], "167": [347.0, -11.0], "168": [345.0, -28.0], "169": [346.0, -46.0], "170": [352.0, -63.0], "171": [362.0, -78.0], "172": [376.0, -89.0], "173": [392.0, -97.0], "174": [410.0, -101.0], "175": [428.0, -103.0], "176": [446.0, -102.0], "177": [463.0, -99.0], "178": [480.0, -92.0], "179": [495.0, -82.0], "180": [507.0, -69.0], "181": [515.0, -53.0], "182": [518.0, -35.0], "183": [516.0, -17.0], "184": [511.0, 0.0], "185": [504.0, 17.0], "232": [515.0, 437.0], "233": [531.0, 429.0], "234": [546.0, 419.0], "235": [559.0, 406.0], "268": [594.0, 20.0], "269": [610.0, 12.0], "270": [628.0, 9.0], "271": [646.0, 11.0], "272": [663.0, 17.0], "1": [237.0, -173.0], "2": [219.0, -173.0], "3": [201.0, -173.0], "4": [183.0, -173.0], "5": [165.0, -173.0], "6": [149.0, -166.0], "7": [133.0, -157.0], "8": [118.0, -148.0], "9": [104.0, -136.0], "10": [92.0, -123.0], "11": [82.0, -108.0], "12": [74.0, -92.0], "13": [68.0, -75.0], "14": [65.0, -57.0], "15": [64.0, -39.0], "16": [64.0, -21.0], "17": [67.0, -3.0], "18": [70.0, 15.0], "318": [790.0, 402.0], "319": [794.0, 419.0], "320": [794.0, 437.0], "321": [790.0, 455.0], "322": [782.0, 471.0], "323": [769.0, 484.0], "324": [754.0, 493.0], "325": [737.0, 500.0], "326": [720.0, 504.0], "327": [702.0, 507.0], "328": [684.0, 507.0], "329": [666.0, 507.0], "330": [648.0, 507.0], "331": [630.0, 507.0], "332": [612.0, 507.0], "333": [594.0, 507.0], "334": [576.0, 507.0], "335": [558.0, 507.0], "336": [540.0, 507.0], "337": [522.0, 507.0], "338": [504.0, 507.0], "339": [486.0, 507.0], "340": [468.0, 507.0], "341": [450.0, 507.0], "342": [432.0, 507.0], "343": [414.0, 507.0], "344": [396.0, 507.0], "345": [378.0, 507.0], "346": [360.0, 507.0], "347": [342.0, 507.0], "348": [324.0, 507.0], "349": [306.0, 507.0], "350": [288.0, 507.0], "351": [270.0, 507.0], "352": [252.0, 507.0], "353": [234.0, 507.0], "19": [81.0, 53.0], "20": [62.0, 59.0], "21": [43.0, 65.0], "22": [90.0, 79.0], "23": [71.0, 85.0], "24": [52.0, 91.0], "25": [32.0, 97.0], "26": [81.0, 111.0], "27": [62.0, 117.0], "28": [43.0, 123.0], "29": [90.0, 136.0], "30": [71.0, 142.0], "31": [52.0, 148.0], "32": [32.0, 154.0], "33": [81.0, 168.0], "34": [62.0, 174.0], "35": [43.0, 180.0], "36": [90.0, 194.0], "37": [71.0, 200.0], "38": [52.0, 206.0], "39": [32.0, 212.0], "40": [81.0, 226.0], "41": [62.0, 232.0], "42": [43.0, 238.0], "43": [90.0, 252.0], "44": [71.0, 258.0], "45": [52.0, 264.0], "46": [32.0, 270.0], "47": [81.0, 283.0], "48": [62.0, 289.0], "49": [43.0, 295.0], "50": [90.0, 309.0], "51": [71.0, 315.0], "52": [52.0, 321.0], "53": [32.0, 327.0], "54": [81.0, 341.0], "55": [62.0, 347.0], "58": [143.0, 295.0], "59": [162.0, 289.0], "60": [181.0, 283.0], "61": [132.0, 270.0], "62": [152.0, 264.0], "63": [171.0, 258.0], "64": [190.0, 252.0], "65": [143.0, 238.0], "66": [162.0, 232.0], "67": [181.0, 226.0], "68": [132.0, 212.0], "69": [152.0, 206.0], "70": [171.0, 200.0], "71": [190.0, 194.0], "72": [143.0, 180.0], "73": [162.0, 174.0], "74": [181.0, 168.0], "75": [132.0, 154.0], "76": [152.0, 148.0], "77": [171.0, 142.0], "78": [190.0, 136.0], "79": [143.0, 123.0], "80": [162.0, 117.0], "81": [181.0, 111.0], "82": [132.0, 97.0], "83": [152.0, 91.0], "84": [171.0, 85.0], "85": [190.0, 79.0], "86": [143.0, 65.0], "87": [162.0, 59.0], "88": [181.0, 53.0], "94": [281.0, 53.0], "95": [262.0, 59.0], "96": [243.0, 65.0], "97": [290.0, 79.0], "98": [271.0, 85.0], "99": [252.0, 91.0], "100": [232.0, 97.0], "101": [281.0, 111.0], "102": [262.0, 117.0], "103": [243.0, 123.0], "104": [290.0, 136.0], "105": [271.0, 142.0], "106": [252.0, 148.0], "107": [232.0, 154.0], "108": [281.0, 168.0], "109": [262.0, 174.0], "110": [243.0, 180.0], "111": [290.0, 194.0], "112": [271.0, 200.0], "113": [252.0, 206.0], "114": [232.0, 212.0], "115": [281.0, 226.0], "116": [262.0, 232.0], "117": [243.0, 238.0], "118": [290.0, 252.0], "119": [271.0, 258.0], "120": [252.0, 264.0], "121": [232.0, 270.0], "122": [281.0, 283.0], "123": [262.0, 289.0], "124": [243.0, 295.0], "125": [290.0, 309.0], "126": [271.0, 315.0], "127": [252.0, 321.0], "128": [232.0, 327.0], "129": [281.0, 341.0], "138": [332.0, 270.0], "139": [352.0, 264.0], "140": [371.0, 258.0], "141": [390.0, 252.0], "142": [343.0, 238.0], "143": [362.0, 232.0], "144": [381.0, 226.0], "145": [332.0, 212.0], "146": [352.0, 206.0], "147": [371.0, 200.0], "148": [390.0, 194.0], "149": [343.0, 180.0], "150": [362.0, 174.0], "151": [381.0, 168.0], "152": [332.0, 154.0], "153": [352.0, 148.0], "154": [371.0, 142.0], "155": [390.0, 136.0], "156": [343.0, 123.0], "157": [362.0, 117.0], "158": [332.0, 97.0], "159": [352.0, 91.0], "160": [371.0, 85.0], "161": [390.0, 79.0], "162": [343.0, 65.0], "163": [362.0, 59.0], "164": [381.0, 53.0], "186": [481.0, 53.0], "187": [462.0, 59.0], "188": [443.0, 65.0], "189": [490.0, 79.0], "190": [471.0, 85.0], "191": [452.0, 91.0], "192": [432.0, 97.0], "193": [481.0, 111.0], "194": [462.0, 117.0], "195": [443.0, 123.0], "196": [490.0, 136.0], "197": [471.0, 142.0], "198": [452.0, 148.0], "199": [432.0, 154.0], "200": [481.0, 168.0], "201": [462.0, 174.0], "202": [443.0, 180.0], "203": [490.0, 194.0], "204": [471.0, 200.0], "205": [452.0, 206.0], "206": [432.0, 212.0], "207": [481.0, 226.0], "208": [462.0, 232.0], "209": [448.0, 243.0], "210": [430.0, 241.0], "211": [481.0, 255.0], "212": [462.0, 261.0], "213": [443.0, 267.0], "214": [490.0, 280.0], "215": [471.0, 286.0], "216": [452.0, 292.0], "217": [432.0, 298.0], "218": [481.0, 312.0], "219": [462.0, 318.0], "220": [443.0, 324.0], "221": [490.0, 338.0], "222": [471.0, 344.0], "223": [452.0, 350.0], "224": [432.0, 356.0], "225": [481.0, 370.0], "226": [462.0, 376.0], "227": [443.0, 382.0], "228": [490.0, 396.0], "229": [471.0, 402.0], "230": [452.0, 408.0], "231": [432.0, 414.0], "236": [590.0, 309.0], "237": [543.0, 295.0], "238": [562.0, 289.0], "239": [581.0, 283.0], "240": [532.0, 270.0], "241": [552.0, 264.0], "242": [571.0, 258.0], "243": [590.0, 252.0], "244": [543.0, 238.0], "245": [562.0, 232.0], "246": [581.0, 226.0], "247": [532.0, 212.0], "248": [552.0, 206.0], "249": [571.0, 200.0], "250": [590.0, 194.0], "251": [543.0, 180.0], "252": [562.0, 174.0], "253": [581.0, 168.0], "254": [532.0, 154.0], "255": [552.0, 148.0], "256": [571.0, 142.0], "257": [590.0, 136.0], "258": [543.0, 123.0], "259": [562.0, 117.0], "260": [581.0, 111.0], "261": [532.0, 97.0], "262": [552.0, 91.0], "263": [571.0, 85.0], "264": [590.0, 79.0], "265": [543.0, 65.0], "266": [562.0, 59.0], "267": [581.0, 53.0], "273": [681.0, 53.0], "274": [662.0, 59.0], "275": [643.0, 65.0], "276": [690.0, 79.0], "277": [671.0, 85.0], "278": [652.0, 91.0], "279": [632.0, 97.0], "280": [681.0, 111.0], "281": [662.0, 117.0], "282": [643.0, 123.0], "283": [690.0, 136.0], "284": [671.0, 142.0], "285": [652.0, 148.0], "286": [632.0, 154.0], "287": [681.0, 168.0], "288": [662.0, 174.0], "289": [643.0, 180.0], "290": [690.0, 194.0], "291": [671.0, 200.0], "292": [652.0, 206.0], "293": [632.0, 212.0], "294": [662.0, 232.0], "295": [643.0, 238.0], "296": [690.0, 252.0], "297": [671.0, 258.0], "298": [652.0, 264.0], "299": [632.0, 270.0], "300": [681.0, 283.0], "301": [662.0, 289.0], "302": [643.0, 295.0], "303": [690.0, 309.0], "304": [671.0, 315.0], "305": [652.0, 321.0], "306": [695.0, 352.0], "307": [689.0, 371.0], "308": [683.0, 390.0], "313": [753.0, 352.0], "314": [747.0, 371.0], "315": [741.0, 390.0], "309": [726.0, 345.0], "310": [720.0, 364.0], "311": [714.0, 383.0], "312": [708.0, 403.0], "316": [783.0, 345.0], "317": [777.0, 364.0]}}</script>
 <script>
 (function() {
   var snakeData = JSON.parse(document.getElementById('snake-plot-data').textContent);
@@ -13673,40 +13698,201 @@ document.addEventListener('DOMContentLoaded', function() {
     el.innerHTML = html;
   }
 
-  function toggleSnakeLinks(show) {
+  var maxAbsDelta = links.reduce(function(m, l) { return Math.max(m, Math.abs(l.delta)); }, 0);
+  var minAbsDelta = links.length
+    ? links.reduce(function(m, l) { return Math.min(m, Math.abs(l.delta)); }, maxAbsDelta)
+    : 0;
+
+  var filterState = {
+    visible: false,
+    selectedResidue: null,
+    magMin: minAbsDelta,
+    magMax: maxAbsDelta,
+    direction: 'both'
+  };
+
+  function redrawSnakeLinks() {
     var container = document.getElementById('snake-plot-container');
     var snakeGroup = container.querySelector('#snake');
     if (!snakeGroup) return;
-    if (!linksDrawn && show) {
-      var ns = 'http://www.w3.org/2000/svg';
-      var g = document.createElementNS(ns, 'g');
-      g.setAttribute('id', 'snake-links');
-      links.forEach(function(link) {
-        var p1 = positions[String(link.from_seq)];
-        var p2 = positions[String(link.to_seq)];
-        if (!p1 || !p2) return;
-        var midX = (p1[0] + p2[0]) / 2;
-        var midY = (p1[1] + p2[1]) / 2;
-        var dist = Math.abs(link.to_seq - link.from_seq);
-        var arcH = 30 + dist * 0.5;
-        var direction = dist < 20 ? -1 : 1;
-        var ctrlY = midY + direction * arcH;
-        var path = document.createElementNS(ns, 'path');
-        path.setAttribute('d', 'M ' + p1[0] + ',' + p1[1] + ' Q' + midX + ',' + ctrlY + ' ' + p2[0] + ',' + p2[1]);
-        path.setAttribute('stroke', link.color);
-        path.setAttribute('stroke-width', String(link.width));
-        path.setAttribute('fill', 'none');
-        path.setAttribute('opacity', '0.6');
-        var title = document.createElementNS(ns, 'title');
-        title.textContent = 'Res ' + link.from_seq + ' ↔ ' + link.to_seq + ' | ΔRRCS: ' + link.delta;
-        path.appendChild(title);
-        g.appendChild(path);
-      });
-      snakeGroup.appendChild(g);
-      linksDrawn = true;
+
+    var existing = container.querySelector('#snake-links');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    var summary = document.getElementById('snake-filter-summary');
+
+    if (!filterState.visible) {
+      if (summary) summary.textContent = '';
+      return;
     }
-    var linksGroup = document.getElementById('snake-links');
-    if (linksGroup) linksGroup.style.display = show ? '' : 'none';
+
+    var ns = 'http://www.w3.org/2000/svg';
+    var g = document.createElementNS(ns, 'g');
+    g.setAttribute('id', 'snake-links');
+
+    var visibleCount = 0;
+    links.forEach(function(link) {
+      var absDelta = Math.abs(link.delta);
+      if (absDelta < filterState.magMin - 1e-9 || absDelta > filterState.magMax + 1e-9) return;
+      if (filterState.direction === 'active' && link.delta < 0) return;
+      if (filterState.direction === 'inactive' && link.delta > 0) return;
+      if (filterState.selectedResidue !== null &&
+          link.from_seq !== filterState.selectedResidue &&
+          link.to_seq !== filterState.selectedResidue) return;
+
+      var p1 = positions[String(link.from_seq)];
+      var p2 = positions[String(link.to_seq)];
+      if (!p1 || !p2) return;
+
+      var midX = (p1[0] + p2[0]) / 2;
+      var midY = (p1[1] + p2[1]) / 2;
+      var dist = Math.abs(link.to_seq - link.from_seq);
+      var arcH = 30 + dist * 0.5;
+      var arcDir = dist < 20 ? -1 : 1;
+      var ctrlY = midY + arcDir * arcH;
+
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M ' + p1[0] + ',' + p1[1] + ' Q' + midX + ',' + ctrlY + ' ' + p2[0] + ',' + p2[1]);
+      path.setAttribute('stroke', link.color);
+      path.setAttribute('stroke-width', String(link.width));
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.6');
+      var title = document.createElementNS(ns, 'title');
+      title.textContent = 'Res ' + link.from_seq + ' ↔ ' + link.to_seq + ' | ΔRRCS: ' + link.delta;
+      path.appendChild(title);
+      g.appendChild(path);
+      visibleCount++;
+    });
+    snakeGroup.appendChild(g);
+
+    if (summary) {
+      summary.textContent = visibleCount + ' / ' + links.length + ' arc' +
+        (links.length === 1 ? '' : 's') + ' shown';
+    }
+  }
+
+  function updateResidueHighlight() {
+    var container = document.getElementById('snake-plot-container');
+    var sel = filterState.selectedResidue;
+    container.querySelectorAll('circle').forEach(function(c) {
+      var id = c.getAttribute('id');
+      if (!id || !/^\d+$/.test(id)) return;
+      if (sel !== null && parseInt(id, 10) === sel) {
+        c.setAttribute('stroke-width', '4');
+      } else {
+        c.setAttribute('stroke-width', '2');
+      }
+    });
+  }
+
+  function toggleSnakeLinks(show) {
+    filterState.visible = show;
+    var panel = document.getElementById('snake-filter-panel');
+    if (panel) {
+      if (show) panel.removeAttribute('hidden');
+      else panel.setAttribute('hidden', '');
+    }
+    redrawSnakeLinks();
+  }
+
+  function setSelectedResidue(seq) {
+    filterState.selectedResidue = (filterState.selectedResidue === seq) ? null : seq;
+    updateResidueHighlight();
+    redrawSnakeLinks();
+  }
+
+  function updateMagDisplays() {
+    var minEl = document.getElementById('snake-mag-min-val');
+    var maxEl = document.getElementById('snake-mag-max-val');
+    if (minEl) minEl.textContent = filterState.magMin.toFixed(2);
+    if (maxEl) maxEl.textContent = filterState.magMax.toFixed(2);
+  }
+
+  function setDirection(dir) {
+    filterState.direction = dir;
+    document.querySelectorAll('.snake-dir-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.dir === dir);
+    });
+    redrawSnakeLinks();
+  }
+
+  function resetFilters() {
+    filterState.selectedResidue = null;
+    filterState.magMin = minAbsDelta;
+    filterState.magMax = maxAbsDelta;
+    filterState.direction = 'both';
+    var minSlider = document.getElementById('snake-mag-min');
+    var maxSlider = document.getElementById('snake-mag-max');
+    if (minSlider) minSlider.value = String(minAbsDelta);
+    if (maxSlider) maxSlider.value = String(maxAbsDelta);
+    document.querySelectorAll('.snake-dir-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.dir === 'both');
+    });
+    updateMagDisplays();
+    updateResidueHighlight();
+    redrawSnakeLinks();
+  }
+
+  function initFilterControls() {
+    var minSlider = document.getElementById('snake-mag-min');
+    var maxSlider = document.getElementById('snake-mag-max');
+    if (minSlider) {
+      minSlider.min = String(minAbsDelta);
+      minSlider.max = String(maxAbsDelta);
+      minSlider.value = String(minAbsDelta);
+      minSlider.addEventListener('input', function() {
+        filterState.magMin = parseFloat(minSlider.value);
+        if (filterState.magMin > filterState.magMax) {
+          filterState.magMax = filterState.magMin;
+          if (maxSlider) maxSlider.value = minSlider.value;
+        }
+        updateMagDisplays();
+        redrawSnakeLinks();
+      });
+    }
+    if (maxSlider) {
+      maxSlider.min = String(minAbsDelta);
+      maxSlider.max = String(maxAbsDelta);
+      maxSlider.value = String(maxAbsDelta);
+      maxSlider.addEventListener('input', function() {
+        filterState.magMax = parseFloat(maxSlider.value);
+        if (filterState.magMax < filterState.magMin) {
+          filterState.magMin = filterState.magMax;
+          if (minSlider) minSlider.value = maxSlider.value;
+        }
+        updateMagDisplays();
+        redrawSnakeLinks();
+      });
+    }
+    document.querySelectorAll('.snake-dir-btn').forEach(function(b) {
+      b.addEventListener('click', function() { setDirection(b.dataset.dir); });
+    });
+    var resetBtn = document.getElementById('snake-filter-reset');
+    if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+    updateMagDisplays();
+  }
+
+  function attachResidueClicks() {
+    var container = document.getElementById('snake-plot-container');
+    container.querySelectorAll('circle').forEach(function(c) {
+      var id = c.getAttribute('id');
+      if (!id || !/^\d+$/.test(id)) return;
+      c.style.cursor = 'pointer';
+      c.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        setSelectedResidue(parseInt(id, 10));
+      });
+    });
+    var svgEl = container.querySelector('svg');
+    if (svgEl) {
+      svgEl.addEventListener('click', function(ev) {
+        if (ev.target === svgEl && filterState.selectedResidue !== null) {
+          filterState.selectedResidue = null;
+          updateResidueHighlight();
+          redrawSnakeLinks();
+        }
+      });
+    }
   }
 
   function toggleLoop(selector, currentMode, expanded, element) {
@@ -13720,6 +13906,8 @@ document.addEventListener('DOMContentLoaded', function() {
   window.toggleSnakeLinks = toggleSnakeLinks;
   window.toggleLoop = toggleLoop;
   switchSnakeView('delta_rrcs');
+  initFilterControls();
+  attachResidueClicks();
 })();
 </script>
 
