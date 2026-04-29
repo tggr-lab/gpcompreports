@@ -283,8 +283,7 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
         )
     elif cons_colors:
         cons_view['description'] = (
-            'Sequence conservation (ProtVar) at variant positions only, rendered on the '
-            '9-grade conservation palette. Run scripts/fetch_conservation.py to populate all residues.'
+            'Conservation shown at variant positions only; coverage is partial for this receptor.'
         )
     else:
         cons_view['description'] = 'No conservation data for this receptor'
