@@ -24,8 +24,8 @@
         <h1 class="report-title">{{ uniprot_name }}</h1>
         <div class="report-meta">
           <span class="report-meta-item"><span class="report-meta-label">Gene</span> <strong>{{ gene_name }}</strong></span>
-          <span class="badge badge-teal">{{ receptor_family }}</span>
-          <span class="badge badge-accent">{{ ligand_type }}</span>
+          <span class="report-meta-item"><span class="report-meta-label">Family</span> <strong>{{ receptor_family }}</strong></span>
+          <span class="report-meta-item"><span class="report-meta-label">Ligand type</span> <strong>{{ ligand_type }}</strong></span>
           {% if uniprot_id %}<span class="report-meta-item"><span class="report-meta-label">UniProt</span> <code>{{ uniprot_id }}</code></span>{% endif %}
         </div>
       </div>
@@ -101,8 +101,8 @@
     {% if top_changes %}
     <section class="report-section">
       <header class="report-section-head">
-        <h2>Top 100 conformational changes</h2>
-        <p class="section-sub">Residue pairs with the largest RRCS changes between active and inactive states. GPCRdb numbering in parentheses. Highlighted rows exceed the receptor-specific ΔRRCS threshold.</p>
+        <h2>Largest active-inactive contact-score changes</h2>
+        <p class="section-sub">Residue pairs ranked by |ΔRRCS| between the active and inactive models. GPCRdb generic numbers are shown in parentheses when available. Highlighted rows exceed the receptor-specific ΔRRCS threshold.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="top-changes-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -150,9 +150,10 @@
       </header>
       <div class="callout">
         <p>
-          <span class="is-active">Active-favoring</span> residues form stronger contacts in the active state (positive ΔRRCS).
-          <span class="is-inactive">Inactive-favoring</span> residues form stronger contacts in the inactive state (negative ΔRRCS).
-          Only residues with |ΔRRCS| ≥ {{ "%.2f"|format(sig_threshold) }} are shown (per-receptor significance threshold = max(mean(|Δ|) + σ, 0.2)).
+          Residues are grouped by segment according to whether their contact pairs are stronger in the
+          <span class="is-active">active model</span> (positive ΔRRCS) or the
+          <span class="is-inactive">inactive model</span> (negative ΔRRCS). Only residues linked to
+          contact-pair changes above the receptor-specific ΔRRCS threshold (|ΔRRCS| ≥ {{ "%.2f"|format(sig_threshold) }}, computed as max(mean(|Δ|) + σ, 0.2)) are shown.
         </p>
       </div>
       <div class="v2-table-wrap" data-table-auto="tm-summary-table" data-page-size="50">
@@ -240,8 +241,8 @@
     {% if variants %}
     <section class="report-section">
       <header class="report-section-head">
-        <h2>Variants of interest</h2>
-        <p class="section-sub">{{ total_variants }} variants mapped to contact positions, sorted by |ΔRRCS| impact.</p>
+        <h2>Contact-site missense variants</h2>
+        <p class="section-sub">{{ total_variants }} gnomAD missense variants located at contact-forming residues, sorted by the ΔRRCS magnitude of the corresponding position.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="variants-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -292,7 +293,7 @@
     <section class="report-section">
       <header class="report-section-head">
         <h2>Complete RRCS results</h2>
-        <p class="section-sub">Top 1000 contact pairs by |ΔRRCS|. Significance threshold: |ΔRRCS| ≥ {{ "%.2f"|format(sig_threshold) }}, computed as max(mean(|Δ|) + σ, 0.2). Highlighted rows indicate significant changes.</p>
+        <p class="section-sub">Top 1000 contact pairs ranked by |ΔRRCS|. Rows above the receptor-specific ΔRRCS threshold (|ΔRRCS| ≥ {{ "%.2f"|format(sig_threshold) }}, computed as max(mean(|Δ|) + σ, 0.2)) are highlighted.</p>
       </header>
       <div class="v2-table-wrap" data-table-auto="rrcs-table" data-page-size="25">
         <div class="v2-table-toolbar">
@@ -401,11 +402,12 @@
           <ul>
             <li><strong class="is-active">Positive ΔRRCS.</strong> Contact is stronger in the active state.</li>
             <li><strong class="is-inactive">Negative ΔRRCS.</strong> Contact is stronger in the inactive state.</li>
-            <li><strong>Large |ΔRRCS|.</strong> Significant structural rearrangement.</li>
+            <li><strong>Large |ΔRRCS|.</strong> Notable contact-score difference between the active and inactive models.</li>
           </ul>
           <p>
-            Residues with large RRCS changes are critical for protein function. Mutations at these positions may disrupt
-            the protein's ability to change shape properly.
+            Residues with large ΔRRCS values mark positions whose contact environment differs between the
+            active and inactive models. These positions may be useful candidates for structural interpretation
+            or follow-up variant analysis, but they should not be interpreted as functional proof on their own.
           </p>
 
           <h3 class="report-chart-head">Pathogenicity predictions</h3>
@@ -419,7 +421,7 @@
           <h3 class="report-chart-head">Conservation &amp; population data</h3>
           <p>
             <strong>Conservation score.</strong> How well-preserved a position is across species (0 = variable, 1 = conserved).
-            High conservation suggests the position is critical for function.
+            Highly conserved positions are often functionally important, but conservation alone is not proof of function.
           </p>
           <p>
             <strong>Allele frequency.</strong> How often a variant appears in the population. Rare variants (low frequency)
