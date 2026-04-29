@@ -113,7 +113,7 @@ def make_cfr_dotplot(cfr_table):
         title='Top 50 Core Functional Residue Positions',
         labels={
             'mean_abs_delta': 'Mean |ΔRRCS|',
-            'frequency': 'Number of GPCRs with Significant Change',
+            'frequency': 'GPCRs with above-threshold change',
             'segment': 'Segment',
             'cfr_score': 'CFR Score',
         },
