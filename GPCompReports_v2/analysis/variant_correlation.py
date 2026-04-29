@@ -138,7 +138,7 @@ def make_pathogenicity_bar(path_result):
         ))
 
     stat = path_result.get('stats', {})
-    title = 'AlphaMissense Pathogenicity: CFR vs Non-CFR Positions'
+    title = 'AlphaMissense pathogenicity tier: CFR vs non-CFR positions'
     if stat:
         title += f" (chi-squared p = {stat['p_value']:.2e})"
 
@@ -207,7 +207,7 @@ def make_conservation_scatter(conservation_data):
     fig = px.scatter(
         df, x='conservation', y='max_abs_delta',
         opacity=0.3,
-        title='Conservation Score vs Conformational Change',
+        title='Conservation score vs |ΔRRCS|',
         labels={
             'conservation': 'Conservation Score',
             'max_abs_delta': 'Max |ΔRRCS| at Position',

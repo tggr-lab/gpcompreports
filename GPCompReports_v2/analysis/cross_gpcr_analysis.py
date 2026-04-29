@@ -44,7 +44,7 @@ def make_ranking_bar(info_df):
     fig = px.bar(
         top30, x='sum_abs_delta', y='uniprot_name',
         color='ligand_type', orientation='h',
-        title='Top 30 GPCRs by Total Conformational Change',
+        title='Top 30 GPCRs by total |ΔRRCS|',
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'uniprot_name': 'GPCR',
                 'ligand_type': 'Ligand Type'},
         color_discrete_sequence=px.colors.qualitative.Set2,
@@ -72,7 +72,7 @@ def make_delta_histogram(store):
         name='ΔRRCS'
     ))
     fig.update_layout(
-        title='Global Distribution of ΔRRCS Values Across All GPCRs',
+        title='ΔRRCS distribution across all detected contact pairs',
         xaxis_title='ΔRRCS (Active - Inactive)',
         yaxis_title='Count',
         height=450,
@@ -85,7 +85,7 @@ def make_box_by_ligand(info_df):
     fig = px.box(
         info_df, x='ligand_type', y='sum_abs_delta',
         color='ligand_type',
-        title='Conformational Change Distribution by Ligand Type',
+        title='ΔRRCS distribution by ligand type',
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'ligand_type': 'Ligand Type'},
         color_discrete_sequence=px.colors.qualitative.Set2,
     )
@@ -116,7 +116,7 @@ def make_box_by_family(info_df):
     fig = px.box(
         subset, x='receptor_family', y='sum_abs_delta',
         color='receptor_family',
-        title='Conformational Change by Receptor Family (Top 15)',
+        title='ΔRRCS by receptor family (top 15)',
         labels={'sum_abs_delta': 'Sum |ΔRRCS|', 'receptor_family': 'Receptor Family'},
         color_discrete_sequence=px.colors.qualitative.Pastel,
     )

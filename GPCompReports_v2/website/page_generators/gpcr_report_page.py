@@ -277,14 +277,14 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
     if cons_colors and cache_hit:
         cons_view['description'] = (
             f'Per-residue conservation (ProtVar CONSERV), binned into 9 grades by '
-            f'this receptor\'s own score quantiles (ConSurf-style). '
+            f"this receptor's own score quantiles. "
             f'{len(cons_colors)} positions covered; grade 1 = most variable in this '
             f'receptor, grade 9 = most conserved.'
         )
     elif cons_colors:
         cons_view['description'] = (
             'Sequence conservation (ProtVar) at variant positions only, rendered on the '
-            'ConSurf 9-grade palette. Run scripts/fetch_conservation.py to populate all residues.'
+            '9-grade conservation palette. Run scripts/fetch_conservation.py to populate all residues.'
         )
     else:
         cons_view['description'] = 'No conservation data for this receptor'

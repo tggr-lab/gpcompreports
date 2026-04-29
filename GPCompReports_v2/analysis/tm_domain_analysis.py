@@ -83,7 +83,7 @@ def make_tm_bar(domain_stats):
         textposition='outside',
     ))
     fig.update_layout(
-        title='Mean Conformational Change by TM Helix',
+        title='Mean |ΔRRCS| by TM helix',
         xaxis_title='Mean |ΔRRCS|',
         yaxis_title='Segment',
         height=400,
@@ -137,7 +137,7 @@ def make_interaction_heatmap(interaction_matrix):
         hovertemplate='%{y} - %{x}<br>Mean |ΔRRCS|: %{z:.2f}<extra></extra>',
     ))
     fig.update_layout(
-        title='TM Helix Interaction Change Heatmap',
+        title='TM helix pair contact-change heatmap',
         height=500, width=550,
         xaxis_title='Segment', yaxis_title='Segment',
         yaxis_autorange='reversed',
@@ -205,7 +205,7 @@ def make_conserved_variable_scatter(cv_data):
         cv_data, x='mean_abs_delta', y='cv',
         color='segment',
         hover_data=['generic_number', 'n_observations'],
-        title='Conserved vs Variable Positions (Mean |Δ| vs Coefficient of Variation)',
+        title='Conserved vs variable positions (mean |Δ| vs coefficient of variation)',
         labels={
             'mean_abs_delta': 'Mean |ΔRRCS|',
             'cv': 'Coefficient of Variation',
