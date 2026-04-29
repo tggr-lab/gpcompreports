@@ -57,6 +57,9 @@ _RTEXT_TITLE_RE = re.compile(
     r"(<text\s+[^>]*?rtext[^>]*?)\s+title='([^']*)'([^>]*?)>",
     re.DOTALL,
 )
+_SVG_OPEN_TAG_RE = re.compile(r"<svg\b([^>]*)>", re.DOTALL)
+_SVG_WIDTH_RE = re.compile(r"\bwidth=['\"]([\d.]+)['\"]")
+_SVG_HEIGHT_RE = re.compile(r"\bheight=['\"]([\d.]+)['\"]")
 
 
 def _inject_svg_tooltips(svg: str) -> str:
@@ -72,6 +75,29 @@ def _inject_svg_tooltips(svg: str) -> str:
     svg = _RCIRCLE_TITLE_RE.sub(r"\1\3><title>\2</title></circle>", svg)
     svg = _RTEXT_TITLE_RE.sub(r"\1\3><title>\2</title>", svg)
     return svg
+
+
+def _inject_svg_viewbox(svg: str) -> str:
+    """Add a viewBox to the snake-plot <svg> tag if it lacks one.
+
+    Ouroboros emits the SVG with fixed pixel width/height and no viewBox,
+    which prevents the browser from scaling content responsively at narrow
+    viewports (snake plot renders blank on mobile). Compute the viewBox
+    from the existing width/height so the SVG keeps its intrinsic aspect
+    ratio while CSS can size it freely.
+    """
+    m = _SVG_OPEN_TAG_RE.search(svg)
+    if not m:
+        return svg
+    attrs = m.group(1)
+    if 'viewBox' in attrs:
+        return svg
+    w = _SVG_WIDTH_RE.search(attrs)
+    h = _SVG_HEIGHT_RE.search(attrs)
+    if not (w and h):
+        return svg
+    new_open = f"<svg{attrs} viewBox='0 0 {w.group(1)} {h.group(1)}'>"
+    return svg.replace(m.group(0), new_open, 1)
 
 
 def _prepare_snake_plot(gpcr_id, delta_df, var_df, sig_threshold):
@@ -91,6 +117,7 @@ def _prepare_snake_plot(gpcr_id, delta_df, var_df, sig_threshold):
         positions = renderer._extract_positions(svg)
 
         svg = _inject_svg_tooltips(svg)
+        svg = _inject_svg_viewbox(svg)
 
         builder = SnakePlotDataBuilder(
             delta_matrix=delta_df,
