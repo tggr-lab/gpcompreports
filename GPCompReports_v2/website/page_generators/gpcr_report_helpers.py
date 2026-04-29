@@ -622,7 +622,8 @@ def _prepare_variants_full(var_df, delta_df):
 
         am_score_display = fmt_decimal(row.get('am_score', ''), digits=3)
 
-        am_class = str(row.get('am_class', '')).strip()
+        am_class_raw = row.get('am_class', '')
+        am_class = str(am_class_raw).strip() if pd.notna(am_class_raw) else ''
         if am_class.upper() == 'PATHOGENIC':
             am_badge = 'pathogenic'
         elif am_class.upper() == 'BENIGN':
@@ -631,6 +632,7 @@ def _prepare_variants_full(var_df, delta_df):
             am_badge = 'ambiguous'
         else:
             am_badge = ''
+            am_class = MISSING
 
         conservation_display = fmt_decimal(row.get('conservation', ''), digits=2)
 
