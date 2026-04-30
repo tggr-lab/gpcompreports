@@ -322,7 +322,7 @@ def _make_scatter_plot(delta_df, name):
         mode='markers',
         marker=dict(
             color=delta_df['delta_rrcs'].tolist(),
-            colorscale='RdBu',
+            colorscale='RdBu_r',
             showscale=True,
             colorbar=dict(title='ΔRRCS'),
             size=5,
@@ -395,7 +395,7 @@ def _make_residue_changes(delta_df, annot_map, name):
         marker=dict(
             size=(df_c['max_abs'] / df_c['max_abs'].max() * 15 + 3).tolist(),
             color=df_c['mean_change'].tolist(),
-            colorscale='RdBu',
+            colorscale='RdBu_r',
             showscale=True,
             colorbar=dict(title='Mean ΔRRCS'),
             opacity=0.7,
