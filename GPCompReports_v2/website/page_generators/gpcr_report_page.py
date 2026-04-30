@@ -15,6 +15,7 @@ import pandas as pd
 from jinja2 import Environment
 
 from . import gpcr_report_helpers as v1
+from ..format_helpers import DELTA_CLIP, SPARKLINE_BINS, bin_signed_delta
 from ..plotly_theming import theme_overrides
 
 
@@ -365,6 +366,11 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
         max_increase = float(delta_df['delta_rrcs'].max()) if not delta_df.empty else 0.0
         max_decrease = float(delta_df['delta_rrcs'].min()) if not delta_df.empty else 0.0
 
+        delta_bins = (
+            bin_signed_delta(delta_df['delta_rrcs'].values)
+            if not delta_df.empty else [0] * SPARKLINE_BINS
+        )
+
         html = template.render(
             static_prefix='../',
             active_page='report',
@@ -406,6 +412,9 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
             rrcs_stats=rrcs_stats,
             layout_light_json=layout_light_json,
             layout_dark_json=layout_dark_json,
+            delta_bins=delta_bins,
+            sparkline_bins=SPARKLINE_BINS,
+            delta_clip=DELTA_CLIP,
         )
 
         out_path = reports_dir / f'{gid}.html'
