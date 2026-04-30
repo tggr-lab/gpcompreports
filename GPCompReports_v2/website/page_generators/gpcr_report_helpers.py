@@ -415,8 +415,8 @@ def _make_residue_changes(delta_df, annot_map, name):
 
 
 def _make_tm_breakdown(delta_df, annot_map, name):
-    """Bar chart of mean |delta| per segment — TM1-7 primary, loops secondary."""
-    seg_vals = {s: [] for s in ALL_SEGMENTS}
+    """Bar chart of mean |delta| across TM1-TM7 only."""
+    seg_vals = {s: [] for s in TM_HELICES}
 
     for _, row in delta_df.iterrows():
         for res_col in ['res1', 'res2']:
@@ -425,13 +425,8 @@ def _make_tm_breakdown(delta_df, annot_map, name):
             if seg in seg_vals:
                 seg_vals[seg].append(abs(row['delta_rrcs']))
 
-    # TM helices (primary) — teal
     tm_segs = [s for s in TM_HELICES if seg_vals[s]]
     tm_means = [float(np.mean(seg_vals[s])) for s in tm_segs]
-
-    # Loops + H8 (secondary) — orange
-    loop_segs = [s for s in LOOP_SEGMENTS if seg_vals[s]]
-    loop_means = [float(np.mean(seg_vals[s])) for s in loop_segs]
 
     fig = go.Figure()
     if tm_segs:
@@ -442,23 +437,14 @@ def _make_tm_breakdown(delta_df, annot_map, name):
             textposition='outside',
             name='TM Helices',
         ))
-    if loop_segs:
-        fig.add_trace(go.Bar(
-            x=loop_segs, y=loop_means,
-            marker_color='#E8820C',
-            text=[f'{v:.2f}' for v in loop_means],
-            textposition='outside',
-            name='Loops / H8',
-        ))
     fig.update_layout(
-        title=f'Mean |ΔRRCS| by Segment: {name}',
-        xaxis_title='Protein Segment',
+        title=f'Mean |ΔRRCS| by TM helix: {name}',
+        xaxis_title='Transmembrane helix',
         yaxis_title='Mean |ΔRRCS|',
         height=380,
         margin=dict(l=50, r=20, t=50, b=50),
         template='plotly_white',
-        showlegend=True,
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        showlegend=False,
     )
     return fig
 
