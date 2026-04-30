@@ -28,6 +28,7 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         'chart-tm-heatmap': tm.get('fig_tm_heatmap'),
         'chart-cv-scatter': tm.get('fig_conserved_variable'),
         'chart-cfr-dotplot': cfr.get('fig_cfr_dotplot'),
+        'chart-pca': cfr.get('fig_pca_scatter'),
         'chart-pathogenicity': variant.get('fig_pathogenicity_bar'),
         'chart-conservation': variant.get('fig_conservation_scatter'),
     }

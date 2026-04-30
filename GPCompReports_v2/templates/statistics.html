@@ -85,6 +85,19 @@
            data-chart-layout-dark='{{ layout_dark_json }}'></div>
       {% endif %}
 
+      {% if 'chart-pca' in charts %}
+      <h3 class="report-chart-head" style="margin-top: var(--s-5);">Receptor PCA in CFR-aligned ΔRRCS space</h3>
+      <p class="section-sub">
+        Each point is one receptor projected onto the first two principal components of its
+        ΔRRCS at the top 30 CFR generic-numbered positions. Use the buttons above the plot
+        to recolor by receptor family or ligand type. Click any point to open that receptor's report.
+      </p>
+      <div class="v2-chart v2-chart-wide"
+           id="chart-pca"
+           data-chart-layout-light='{{ layout_light_json }}'
+           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+      {% endif %}
+
       {% if cfr_table %}
       <div class="v2-table-wrap">
         <div class="v2-table-toolbar">
@@ -292,6 +305,27 @@ window.CHART_DATA['{{ chart_id }}'] = {{ chart_json | safe }};
 {% endfor %}
 document.addEventListener('DOMContentLoaded', function() {
   if (window.Site && Site.initCharts) Site.initCharts();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var pcaEl = document.getElementById('chart-pca');
+  if (!pcaEl) return;
+  // Plotly assigns the .on() method after the chart finishes rendering. Wait
+  // for it via a polling tick — Site.initCharts schedules its own draws.
+  function attach() {
+    if (typeof pcaEl.on !== 'function') {
+      window.setTimeout(attach, 200);
+      return;
+    }
+    pcaEl.on('plotly_click', function(data) {
+      var pt = data && data.points && data.points[0];
+      if (!pt || !pt.customdata) return;
+      var gid = pt.customdata[0];
+      if (gid) window.location.href = 'reports/' + gid + '.html';
+    });
+  }
+  attach();
 });
 </script>
 {% endblock %}
