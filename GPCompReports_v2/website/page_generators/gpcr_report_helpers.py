@@ -589,7 +589,7 @@ def _build_tm_summary(delta_df, annot_map, sig_threshold):
         return results
 
     # Return TM helices first, then loops — template will handle display
-    return _build_entries(TM_HELICES) + _build_entries(LOOP_SEGMENTS)
+    return _build_entries(TM_HELICES)
 
 
 # ---------------------------------------------------------------------------
