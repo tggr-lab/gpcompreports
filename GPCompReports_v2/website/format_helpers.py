@@ -7,14 +7,7 @@ source (pandas DataFrames, CSV strings, etc.).
 
 import math
 
-import numpy as np
-
 MISSING = '-'
-
-# Sparkline binning constants. Used by the landing-page top-5 cards and
-# by the per-receptor report header.
-DELTA_CLIP = 3.0
-SPARKLINE_BINS = 40
 
 
 def _is_missing(value):
@@ -53,18 +46,3 @@ def fmt_int(value, default=MISSING):
         return str(int(float(value)))
     except (TypeError, ValueError):
         return default
-
-
-def bin_signed_delta(values, n_bins=SPARKLINE_BINS, clip=DELTA_CLIP):
-    """Bin signed delta_rrcs values into a symmetric histogram around 0.
-
-    Returns a list of integer counts. The midpoint index is where the
-    positive/negative split lives; consumers render bins left of midpoint
-    as inactive-favoring and right of midpoint as active-favoring.
-    """
-    if len(values) == 0:
-        return [0] * n_bins
-    v = np.clip(np.asarray(values, dtype=float), -clip, clip)
-    edges = np.linspace(-clip, clip, n_bins + 1)
-    counts, _ = np.histogram(v, bins=edges)
-    return counts.tolist()

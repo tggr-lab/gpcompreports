@@ -3,9 +3,27 @@
 import json
 from pathlib import Path
 
+import numpy as np
 from jinja2 import Environment
 
-from ..format_helpers import DELTA_CLIP, SPARKLINE_BINS, bin_signed_delta
+
+DELTA_CLIP = 3.0
+SPARKLINE_BINS = 40
+
+
+def bin_signed_delta(values, n_bins=SPARKLINE_BINS, clip=DELTA_CLIP):
+    """Bin signed delta_rrcs values into symmetric histogram around 0.
+
+    Returns a list of integer counts. The midpoint index is where the
+    positive/negative split lives; consumers render bins left of midpoint
+    red (inactive-favoring) and right of midpoint blue (active-favoring).
+    """
+    if len(values) == 0:
+        return [0] * n_bins
+    v = np.clip(np.asarray(values, dtype=float), -clip, clip)
+    edges = np.linspace(-clip, clip, n_bins + 1)
+    counts, _ = np.histogram(v, bins=edges)
+    return counts.tolist()
 
 
 def generate_landing_page(env: Environment, store, output_dir: Path):
