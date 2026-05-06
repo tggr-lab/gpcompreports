@@ -13,7 +13,7 @@ This script fills that gap:
   2. Query UniProt for the canonical sequence length.
   3. Call `GET https://www.ebi.ac.uk/ProtVar/api/score/{acc}/{pos}` for every
      residue 1..length, extract the CONSERV entry's score.
-  4. Write `GPCompReports/output/data/conservation_{gpcr_id}.json`:
+  4. Write `GPCompaReports_v2/output/data/conservation_{gpcr_id}.json`:
        {"gpcr_id": "5ht1a_human", "uniprot_id": "P08908",
         "sequence_length": 422, "scores": {"1": 0.42, "2": 0.88, ...}}
 
@@ -44,7 +44,7 @@ import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-GPCOMP_V2_ROOT = REPO_ROOT / 'GPCompReports_v2'
+GPCOMP_V2_ROOT = REPO_ROOT / 'GPCompaReports_v2'
 BATCH_ROOT = REPO_ROOT / 'The_batch_RRCS_analyzer'
 METADATA_CSV = REPO_ROOT / 'class_A_all.csv'
 

@@ -1,3 +1,3 @@
-# GPCompReports
+# GPCompaReports
 
 Beta: https://tggr-lab.github.io/gpcompreports/

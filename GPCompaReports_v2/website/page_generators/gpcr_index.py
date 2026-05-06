@@ -1,4 +1,4 @@
-"""Generate the GPCR browser page for GPCompReports v2."""
+"""Generate the GPCR browser page for GPCompaReports v2."""
 
 import json
 
@@ -35,7 +35,7 @@ def generate_gpcr_index(env: Environment, store, output_dir):
         nav_home_url='../index.html',
         nav_browse_url='index.html',
         nav_stats_url='../statistics.html',
-        page_title='Browse GPCRs · GPCompReports',
+        page_title='Browse GPCRs · GPCompaReports',
         total_gpcrs=total_gpcrs,
         gpcr_json=gpcr_json,
     )

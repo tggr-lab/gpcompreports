@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPCompReports v2 — Master script to generate the complete static website.
+"""GPCompaReports v2 — Master script to generate the complete static website.
 
 Usage:
     python3 generate_site.py
@@ -21,7 +21,7 @@ from GPCompaReports_v2.website.site_generator import SiteGenerator
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate GPCompReports v2 static website')
+    parser = argparse.ArgumentParser(description='Generate GPCompaReports v2 static website')
     parser.add_argument('--output', type=str, default=None,
                         help='Output directory (default: GPCompaReports_v2/output)')
     parser.add_argument('--batch-dir', type=str, default=None,

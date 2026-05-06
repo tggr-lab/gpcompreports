@@ -1,4 +1,4 @@
-"""Generate the landing page for GPCompReports v2."""
+"""Generate the landing page for GPCompaReports v2."""
 
 import json
 from pathlib import Path
@@ -57,7 +57,7 @@ def generate_landing_page(env: Environment, store, output_dir: Path):
         nav_home_url='index.html',
         nav_browse_url='browse/index.html',
         nav_stats_url='statistics.html',
-        page_title='GPCompReports: active-inactive contact changes across human Class A GPCRs',
+        page_title='GPCompaReports: active-inactive contact changes across human Class A GPCRs',
         extra_css=['static/css/landing.css'],
         total_gpcrs=total_gpcrs,
         n_families=n_families,

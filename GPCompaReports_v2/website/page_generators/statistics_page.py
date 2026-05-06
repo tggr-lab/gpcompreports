@@ -1,4 +1,4 @@
-"""Generate the statistics page for GPCompReports v2.
+"""Generate the statistics page for GPCompaReports v2.
 
 Writes output/statistics.html. Plotly figures produced by analysis/* modules
 are emitted once; theme overrides are applied client-side via
@@ -68,7 +68,7 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         nav_home_url='index.html',
         nav_browse_url='browse/index.html',
         nav_stats_url='statistics.html',
-        page_title='Database Statistics · GPCompReports',
+        page_title='Database Statistics · GPCompaReports',
         total_gpcrs=len(store.gpcr_ids),
         charts=charts,
         cfr_table=cfr_table_data,

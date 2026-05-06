@@ -58,7 +58,7 @@ import requests
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-GPCOMP_V2_ROOT = REPO_ROOT / 'GPCompReports_v2'
+GPCOMP_V2_ROOT = REPO_ROOT / 'GPCompaReports_v2'
 BATCH_ROOT = REPO_ROOT / 'The_batch_RRCS_analyzer'
 
 PROTVAR_BASE = 'https://www.ebi.ac.uk/ProtVar/api'

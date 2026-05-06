@@ -1,4 +1,4 @@
-"""Site generator for GPCompReports v2 — Primer + teal/orange design system.
+"""Site generator for GPCompaReports v2 — Primer + teal/orange design system.
 
 Self-contained v2 pipeline. The v1 site lives in ../GPCompReports/ and is
 unchanged by this build; the two projects share only the upstream RRCS batch
@@ -36,7 +36,7 @@ class SiteGenerator:
 
     def run(self):
         print("=" * 60)
-        print("GPCompReports v2 — Site Generator")
+        print("GPCompaReports v2 — Site Generator")
         print("=" * 60)
 
         print("\n[1/5] Loading data...")
