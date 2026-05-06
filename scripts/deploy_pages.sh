@@ -62,7 +62,14 @@ fi
 # 4. Sync built output into the worktree. --delete drops files that no longer
 #    exist in the build so the branch stays clean.
 echo "==> Syncing output to gh-pages..."
-rsync -a --delete --exclude='.git' --exclude='.nojekyll' "$OUTPUT/" "$WORKTREE/"
+rsync -a --delete \
+  --exclude='.git' --exclude='.nojekyll' \
+  --exclude='/data/' \
+  "$OUTPUT/" "$WORKTREE/"
+# data/ holds build-time JSON caches (conservation_*.json, alphamissense_*.json)
+# that the HTML doesn't reference at runtime. Drop any stale data/ left from a
+# previous deploy so gh-pages stays lean.
+rm -rf "$WORKTREE/data"
 touch "$WORKTREE/.nojekyll"
 
 # 5. Commit + push

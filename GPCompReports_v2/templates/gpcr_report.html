@@ -77,6 +77,8 @@
 
       <div class="snake-plot-toolbar">
         <button class="snake-btn active" data-view="delta_rrcs" onclick="switchSnakeView('delta_rrcs')" data-tooltip="Mean ΔRRCS per residue. Red = active-favoring, Blue = inactive-favoring">Delta RRCS</button>
+        <button class="snake-btn" data-view="residue_net_delta" onclick="switchSnakeView('residue_net_delta')" data-tooltip="Signed sum of ΔRRCS across all of the residue's contacts. Red = active-favoring, Blue = inactive-favoring.">Residue net Δ</button>
+        <button class="snake-btn" data-view="residue_max_delta" onclick="switchSnakeView('residue_max_delta')" data-tooltip="Largest |ΔRRCS| at this residue, colored by the sign of that single contact.">Residue max Δ</button>
         <button class="snake-btn" data-view="active_rrcs" onclick="switchSnakeView('active_rrcs')" data-tooltip="RRCS values in the active conformation. Brighter = stronger contacts">Active RRCS</button>
         <button class="snake-btn" data-view="inactive_rrcs" onclick="switchSnakeView('inactive_rrcs')" data-tooltip="RRCS values in the inactive conformation. Brighter = stronger contacts">Inactive RRCS</button>
         <button class="snake-btn" data-view="conservation" onclick="switchSnakeView('conservation')" data-tooltip="Sequence conservation across species. Darker teal = more conserved">Conservation</button>
@@ -177,17 +179,24 @@
       <div class="v2-table-wrap" data-table-auto="tm-summary-table" data-page-size="50">
         <div class="v2-table-toolbar">
           <strong>Per-segment summary</strong>
+          <div class="tm-metric-toggle" role="radiogroup" aria-label="Per-residue metric" style="margin-left:1rem;">
+            <button type="button" class="btn btn-sm tm-metric-btn active" data-tm-metric="signed" aria-pressed="true"
+                    data-tooltip="ΔRRCS aggregated across all of the residue's contacts. Positive = net contact gain on activation.">Signed sum</button>
+            <button type="button" class="btn btn-sm tm-metric-btn" data-tm-metric="max" aria-pressed="false"
+                    data-tooltip="The maximum-magnitude single contact change at this residue.">Largest single contact</button>
+          </div>
           <button type="button" class="btn btn-ghost btn-sm" style="margin-left:auto;" data-table-export="tm-summary-table" data-filename="{{ gpcr_id }}_tm_summary.csv">Export CSV</button>
+          {% if residue_summary_json %}<button type="button" id="residue-summary-export-btn" class="btn btn-ghost btn-sm" data-tooltip="All residues with both metrics: active_minus_inactive (signed sum) and max_abs_delta (largest single contact). Independent of the toggle.">Download residue summary (CSV)</button>{% endif %}
         </div>
         <div class="v2-table-scroll">
-          <table class="v2-table" id="tm-summary-table">
+          <table class="v2-table tm-metric-table" id="tm-summary-table" data-tm-metric="signed">
             <thead>
               <tr>
                 <th data-tooltip="Transmembrane helix or loop">Segment</th>
                 <th data-tooltip="Residue range covered by this segment">Range</th>
-                <th data-tooltip="Residues with positive ΔRRCS (stronger in active)">Active-favoring residues</th>
+                <th data-tooltip="Residues with positive net ΔRRCS (stronger in active)">Active-favoring residues</th>
                 <th data-tooltip="Number of active-favoring residues in this segment">Count</th>
-                <th data-tooltip="Residues with negative ΔRRCS (stronger in inactive)">Inactive-favoring residues</th>
+                <th data-tooltip="Residues with negative net ΔRRCS (stronger in inactive)">Inactive-favoring residues</th>
                 <th data-tooltip="Number of inactive-favoring residues in this segment">Count</th>
               </tr>
             </thead>
@@ -198,13 +207,13 @@
                 <td class="num">{{ dom.range }}</td>
                 <td class="is-active">
                   {% if dom.active_residues %}
-                    {% for r in dom.active_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
+                    {% for r in dom.active_residues %}<span class="tm-res" data-signed="{{ '%.2f'|format(r.signed_sum) }}" data-max="{{ '%.2f'|format(r.max_signed_delta) }}" data-tooltip="Signed sum {{ '%+.2f'|format(r.signed_sum) }} | Largest single contact {{ '%+.2f'|format(r.max_signed_delta) }} (with {{ r.partner_at_max }}) | {{ r.n_contact_partners }} partners"><strong>{{ r.position }}</strong> (<span class="tm-res-val tm-val-signed">{{ '%+.1f'|format(r.signed_sum) }}</span><span class="tm-res-val tm-val-max" hidden>{{ '%+.1f'|format(r.max_signed_delta) }}</span>)</span>{% if not loop.last %}, {% endif %}{% endfor %}
                   {% else %}-{% endif %}
                 </td>
                 <td class="num is-active"><strong>{{ dom.total_active }}</strong></td>
                 <td class="is-inactive">
                   {% if dom.inactive_residues %}
-                    {% for r in dom.inactive_residues %}<strong>{{ r.position }}</strong> ({{ "%.1f"|format(r.delta_rrcs) }}){% if not loop.last %}, {% endif %}{% endfor %}
+                    {% for r in dom.inactive_residues %}<span class="tm-res" data-signed="{{ '%.2f'|format(r.signed_sum) }}" data-max="{{ '%.2f'|format(r.max_signed_delta) }}" data-tooltip="Signed sum {{ '%+.2f'|format(r.signed_sum) }} | Largest single contact {{ '%+.2f'|format(r.max_signed_delta) }} (with {{ r.partner_at_max }}) | {{ r.n_contact_partners }} partners"><strong>{{ r.position }}</strong> (<span class="tm-res-val tm-val-signed">{{ '%+.1f'|format(r.signed_sum) }}</span><span class="tm-res-val tm-val-max" hidden>{{ '%+.1f'|format(r.max_signed_delta) }}</span>)</span>{% if not loop.last %}, {% endif %}{% endfor %}
                   {% else %}-{% endif %}
                 </td>
                 <td class="num is-inactive"><strong>{{ dom.total_inactive }}</strong></td>
@@ -614,6 +623,26 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.35);
     }
 
+    /* TM metric toggle (signed sum / largest single contact) */
+    .tm-metric-toggle { display: inline-flex; gap: 0; }
+    .tm-metric-toggle .tm-metric-btn {
+      border: 1px solid var(--borderColor-muted);
+      background: var(--bgColor-default);
+      color: var(--fgColor-muted);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .tm-metric-toggle .tm-metric-btn:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+    .tm-metric-toggle .tm-metric-btn:last-child  { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: 0; }
+    .tm-metric-toggle .tm-metric-btn.active {
+      background: var(--brand-primary);
+      color: #fff;
+      border-color: var(--brand-primary);
+    }
+    .tm-res { white-space: nowrap; }
+    .tm-res-val { font-variant-numeric: tabular-nums; }
+
     @media (max-width: 600px) {
       .report-header { padding: var(--s-4); }
       .report-stats { grid-template-columns: repeat(2, 1fr); }
@@ -633,6 +662,72 @@ document.addEventListener('DOMContentLoaded', function() {
   if (window.Site && Site.initCharts) Site.initCharts();
 });
 </script>
+
+{# -------- TM-summary metric toggle (signed sum / largest single contact) -------- #}
+<script>
+(function() {
+  var btns = document.querySelectorAll('.tm-metric-btn');
+  var table = document.getElementById('tm-summary-table');
+  if (!btns.length || !table) return;
+  function setMetric(metric) {
+    table.setAttribute('data-tm-metric', metric);
+    btns.forEach(function(b) {
+      var on = b.getAttribute('data-tm-metric') === metric;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    table.querySelectorAll('.tm-res').forEach(function(span) {
+      var sg = span.querySelector('.tm-val-signed');
+      var mx = span.querySelector('.tm-val-max');
+      if (!sg || !mx) return;
+      if (metric === 'max') { sg.hidden = true; mx.hidden = false; }
+      else { sg.hidden = false; mx.hidden = true; }
+    });
+  }
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() { setMetric(b.getAttribute('data-tm-metric')); });
+  });
+})();
+</script>
+
+{# -------- Residue summary CSV export -------- #}
+{% if residue_summary_json %}
+<script type="application/json" id="residue-summary-data">{{ residue_summary_json | safe }}</script>
+<script>
+(function() {
+  var btn = document.getElementById('residue-summary-export-btn');
+  var node = document.getElementById('residue-summary-data');
+  if (!btn || !node) return;
+  btn.addEventListener('click', function() {
+    var rows;
+    try { rows = JSON.parse(node.textContent); } catch (e) { return; }
+    if (!Array.isArray(rows) || !rows.length) return;
+    var cols = ['position','amino_acid','protein_segment','generic_number','display_number',
+                'n_contact_partners','active_minus_inactive','max_abs_delta','max_signed_delta','partner_at_max'];
+    function esc(v) {
+      var s = (v == null) ? '' : String(v);
+      if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    var lines = [];
+    lines.push('# active_minus_inactive: signed sum of ΔRRCS across all of a residue\'s contacts. Positive = net contact gain on activation.');
+    lines.push('# max_abs_delta: maximum |ΔRRCS| at this residue (the largest single contact change).');
+    lines.push('# max_signed_delta: signed ΔRRCS at the |Δ|-max contact (preserves sign for color coding).');
+    lines.push('# partner_at_max: the partner residue at the |Δ|-max contact.');
+    lines.push(cols.join(','));
+    rows.forEach(function(r) { lines.push(cols.map(function(c){ return esc(r[c]); }).join(',')); });
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '{{ gpcr_id }}_residue_summary.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function() { URL.revokeObjectURL(link.href); }, 1000);
+  });
+})();
+</script>
+{% endif %}
 
 {% if has_snake_plot %}
 <script type="application/json" id="snake-plot-data">{{ snake_plot_json | safe }}</script>

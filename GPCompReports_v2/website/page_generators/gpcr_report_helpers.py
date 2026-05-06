@@ -346,69 +346,199 @@ def _make_scatter_plot(delta_df, name):
     return fig
 
 
-def _make_residue_changes(delta_df, annot_map, name):
-    """Residue-wise mean ΔRRCS scatter with hover info."""
+def _compute_residue_metrics(delta_df, annot_map):
+    """Aggregate pair-level ΔRRCS into per-residue metrics.
+
+    Single source of truth used by every residue-level surface (TM-by-TM
+    table, residue-wise plot, snake plot patch, residue CSV export, dossier
+    writer). One row per residue position that appears in any contact pair.
+
+    Columns:
+      position, amino_acid, protein_segment, generic_number, display_number,
+      n_contact_partners,
+      active_minus_inactive  -- signed sum of delta_rrcs across the residue's contacts
+      max_abs_delta          -- max |delta_rrcs| at this residue
+      max_signed_delta       -- the signed delta_rrcs at the |Δ|-max contact (preserves sign)
+      partner_at_max         -- e.g. "F300", the partner residue at the |Δ|-max contact
+    """
+    if delta_df is None or delta_df.empty:
+        return pd.DataFrame(columns=[
+            'position', 'amino_acid', 'protein_segment', 'generic_number',
+            'display_number', 'n_contact_partners', 'active_minus_inactive',
+            'max_abs_delta', 'max_signed_delta', 'partner_at_max',
+        ])
+
+    annot_map = annot_map or {}
     all_res = set(delta_df['res1'].tolist()) | set(delta_df['res2'].tolist())
-    records = []
+    rows = []
     for res in sorted(all_res):
         res_int = int(res)
-        mask = (delta_df['res1'] == res) | (delta_df['res2'] == res)
-        changes = delta_df.loc[mask, 'delta_rrcs']
-        if changes.empty:
+        mask = (delta_df['res1'] == res_int) | (delta_df['res2'] == res_int)
+        sub = delta_df.loc[mask]
+        if sub.empty:
             continue
-        # Get amino acid name from the delta rows
+
         aa_name = ''
-        res1_match = delta_df.loc[delta_df['res1'] == res]
-        if len(res1_match) > 0:
-            aa_name = res1_match.iloc[0]['res1_name']
+        match = sub.loc[sub['res1'] == res_int]
+        if len(match):
+            aa_name = match.iloc[0]['res1_name']
         else:
-            res2_match = delta_df.loc[delta_df['res2'] == res]
-            if len(res2_match) > 0:
-                aa_name = res2_match.iloc[0]['res2_name']
+            match = sub.loc[sub['res2'] == res_int]
+            if len(match):
+                aa_name = match.iloc[0]['res2_name']
+
+        deltas = sub['delta_rrcs']
+        idx_max = deltas.abs().idxmax()
+        max_signed = float(deltas.loc[idx_max])
+        max_abs = abs(max_signed)
+
+        max_row = sub.loc[idx_max]
+        partner_pos = int(max_row['res2']) if int(max_row['res1']) == res_int else int(max_row['res1'])
+        partner_aa = max_row['res2_name'] if int(max_row['res1']) == res_int else max_row['res1_name']
+        # Compact one-letter when possible (existing CSVs mix 3-letter and 1-letter)
+        partner_at_max = f"{_aa_one_letter(partner_aa)}{partner_pos}"
+
+        partners = set()
+        for _, r in sub.iterrows():
+            other = int(r['res2']) if int(r['res1']) == res_int else int(r['res1'])
+            partners.add(other)
 
         annot = annot_map.get(res_int, {})
-        seg = annot.get('protein_segment', '')
-        gpcrdb = annot.get('generic_number', '') or annot.get('display_number', '')
-
-        label = f"{aa_name}{res_int}"
-        if gpcrdb:
-            label += f" ({gpcrdb})"
-        if seg:
-            label += f" [{seg}]"
-
-        records.append({
-            'residue': res_int,
-            'mean_change': float(changes.mean()),
-            'max_abs': float(changes.abs().max()),
-            'segment': seg,
-            'hover': f"{label}<br>Mean ΔRRCS: {changes.mean():.2f}<br>Max |ΔRRCS|: {changes.abs().max():.2f}",
+        rows.append({
+            'position': res_int,
+            'amino_acid': _aa_one_letter(aa_name),
+            'protein_segment': annot.get('protein_segment', '') or '',
+            'generic_number': annot.get('generic_number', '') or '',
+            'display_number': annot.get('display_number', '') or '',
+            'n_contact_partners': len(partners),
+            'active_minus_inactive': float(deltas.sum()),
+            'max_abs_delta': max_abs,
+            'max_signed_delta': max_signed,
+            'partner_at_max': partner_at_max,
         })
-    if not records:
+
+    return pd.DataFrame(rows)
+
+
+_AA_3_TO_1 = {
+    'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D', 'CYS': 'C',
+    'GLN': 'Q', 'GLU': 'E', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
+    'LEU': 'L', 'LYS': 'K', 'MET': 'M', 'PHE': 'F', 'PRO': 'P',
+    'SER': 'S', 'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V',
+}
+
+
+def _aa_one_letter(name):
+    if not name:
+        return ''
+    s = str(name).strip().upper()
+    if len(s) == 1:
+        return s
+    return _AA_3_TO_1.get(s, s[:1])
+
+
+def _make_residue_changes(delta_df, annot_map, name):
+    """Two-panel residue-wise figure: signed sum on top, max |ΔRRCS| below.
+
+    Both panels share the residue-position x-axis. Marker colors use a
+    diverging RdBu_r ramp anchored at zero so red = active-favoring and
+    blue = inactive-favoring across both panels.
+    """
+    from plotly.subplots import make_subplots
+
+    metrics = _compute_residue_metrics(delta_df, annot_map)
+    if metrics.empty:
         return go.Figure()
 
-    df_c = pd.DataFrame(records)
-    fig = go.Figure()
+    metrics = metrics.sort_values('position').reset_index(drop=True)
+
+    def _label(row):
+        lbl = f"{row['amino_acid']}{row['position']}" if row['amino_acid'] else str(row['position'])
+        gpcrdb = row['generic_number'] or row['display_number']
+        if gpcrdb:
+            lbl += f" ({gpcrdb})"
+        if row['protein_segment']:
+            lbl += f" [{row['protein_segment']}]"
+        return lbl
+
+    metrics['label'] = metrics.apply(_label, axis=1)
+
+    # Symmetric color scale around 0 for both panels (sign coloring)
+    abs_max = float(max(metrics['active_minus_inactive'].abs().max(),
+                        metrics['max_abs_delta'].max()))
+    if abs_max == 0:
+        abs_max = 1.0
+
+    n_max = float(metrics['n_contact_partners'].max() or 1)
+    sizes = (metrics['n_contact_partners'] / n_max * 14 + 4).tolist()
+
+    hover_top = [
+        f"{row['label']}<br>Signed sum: {row['active_minus_inactive']:+.2f}"
+        f"<br>n contact partners: {row['n_contact_partners']}"
+        for _, row in metrics.iterrows()
+    ]
+    hover_bot = [
+        f"{row['label']}<br>Max |ΔRRCS|: {row['max_abs_delta']:.2f}"
+        f"<br>Largest single Δ: {row['max_signed_delta']:+.2f} (with {row['partner_at_max']})"
+        for _, row in metrics.iterrows()
+    ]
+
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.10,
+        subplot_titles=(
+            'Signed sum (active − inactive) ΔRRCS per residue',
+            'Largest single contact change (max |ΔRRCS|) per residue',
+        ),
+    )
+
     fig.add_trace(go.Scatter(
-        x=df_c['residue'].tolist(),
-        y=df_c['mean_change'].tolist(),
+        x=metrics['position'].tolist(),
+        y=metrics['active_minus_inactive'].tolist(),
         mode='markers',
         marker=dict(
-            size=(df_c['max_abs'] / df_c['max_abs'].max() * 15 + 3).tolist(),
-            color=df_c['mean_change'].tolist(),
+            size=sizes,
+            color=metrics['active_minus_inactive'].tolist(),
             colorscale='RdBu_r',
-            showscale=True,
-            colorbar=dict(title='Mean ΔRRCS'),
-            opacity=0.7,
+            cmin=-abs_max, cmax=abs_max,
+            showscale=False,
+            opacity=0.8,
+            line=dict(width=0.5, color='rgba(0,0,0,0.2)'),
         ),
-        text=df_c['hover'].tolist(),
+        text=hover_top,
         hovertemplate='%{text}<extra></extra>',
-    ))
+        name='Signed sum',
+        showlegend=False,
+    ), row=1, col=1)
+
+    fig.add_hline(y=0, line=dict(color='rgba(0,0,0,0.3)', width=1, dash='dot'), row=1, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=metrics['position'].tolist(),
+        y=metrics['max_abs_delta'].tolist(),
+        mode='markers',
+        marker=dict(
+            size=sizes,
+            color=metrics['max_signed_delta'].tolist(),
+            colorscale='RdBu_r',
+            cmin=-abs_max, cmax=abs_max,
+            showscale=False,
+            opacity=0.8,
+            line=dict(width=0.5, color='rgba(0,0,0,0.2)'),
+        ),
+        text=hover_bot,
+        hovertemplate='%{text}<extra></extra>',
+        name='Max |ΔRRCS|',
+        showlegend=False,
+    ), row=2, col=1)
+
+    fig.update_yaxes(title_text='Signed sum ΔRRCS', row=1, col=1)
+    fig.update_yaxes(title_text='Max |ΔRRCS|', row=2, col=1)
+    fig.update_xaxes(title_text='Residue position', row=2, col=1)
+
     fig.update_layout(
         title=f'Residue-wise RRCS Changes: {name}',
-        xaxis_title='Residue Position',
-        yaxis_title='Mean ΔRRCS',
-        height=400,
-        margin=dict(l=50, r=20, t=50, b=50),
+        height=620,
+        margin=dict(l=60, r=20, t=70, b=50),
         template='plotly_white',
     )
     return fig
@@ -521,47 +651,56 @@ def _build_tm_summary(delta_df, annot_map, sig_threshold):
     if delta_df.empty or not annot_map:
         return []
 
-    # Build position -> segment mapping
+    metrics = _compute_residue_metrics(delta_df, annot_map)
+    if metrics.empty:
+        return []
+
+    # Position -> per-residue metric record
+    metric_by_pos = {int(r['position']): r for _, r in metrics.iterrows()}
+
     pos_to_seg = {}
     for pos, info in annot_map.items():
         seg = info.get('protein_segment', '')
         if seg:
             pos_to_seg[pos] = seg
 
-    # Collect per-segment significant residues (using unified threshold)
     threshold = sig_threshold
     seg_active = {s: [] for s in ALL_SEGMENTS}
     seg_inactive = {s: [] for s in ALL_SEGMENTS}
-    seen = set()
 
-    for _, row in delta_df.iterrows():
-        for res_col in ['res1', 'res2']:
-            pos = int(row[res_col])
-            if pos in seen:
-                continue
-            seg = pos_to_seg.get(pos, '')
-            if seg not in seg_active:
-                continue
-            pos_changes = delta_df.loc[
-                (delta_df['res1'] == pos) | (delta_df['res2'] == pos), 'delta_rrcs'
-            ]
-            if pos_changes.empty:
-                continue
-            idx_max = pos_changes.abs().idxmax()
-            delta = float(pos_changes.loc[idx_max])
-            if abs(delta) >= threshold:
-                entry = {'position': pos, 'delta_rrcs': delta}
-                if delta > 0:
-                    seg_active[seg].append(entry)
-                else:
-                    seg_inactive[seg].append(entry)
-            seen.add(pos)
+    for pos, m in metric_by_pos.items():
+        seg = pos_to_seg.get(pos, '')
+        if seg not in seg_active:
+            continue
+        signed_sum = float(m['active_minus_inactive'])
+        max_signed = float(m['max_signed_delta'])
+        # Include if either metric crosses the significance threshold so
+        # residues with many small same-sign contacts (large signed sum but
+        # small individual Δ) still appear.
+        if max(abs(signed_sum), abs(max_signed)) < threshold:
+            continue
+        # Bucket by the SIGN of the signed_sum (the default visible metric).
+        # max_signed sign is also carried so the toggle can recolor without
+        # having to re-bucket — but the bucket itself stays stable so the
+        # active/inactive columns don't shuffle on toggle.
+        entry = {
+            'position': pos,
+            'signed_sum': signed_sum,
+            'max_signed_delta': max_signed,
+            'max_abs_delta': float(m['max_abs_delta']),
+            'partner_at_max': m['partner_at_max'],
+            'n_contact_partners': int(m['n_contact_partners']),
+        }
+        if signed_sum > 0:
+            seg_active[seg].append(entry)
+        else:
+            seg_inactive[seg].append(entry)
 
     def _build_entries(segment_list):
         results = []
         for seg in segment_list:
-            active = sorted(seg_active.get(seg, []), key=lambda x: x['delta_rrcs'], reverse=True)
-            inactive = sorted(seg_inactive.get(seg, []), key=lambda x: x['delta_rrcs'])
+            active = sorted(seg_active.get(seg, []), key=lambda x: x['signed_sum'], reverse=True)
+            inactive = sorted(seg_inactive.get(seg, []), key=lambda x: x['signed_sum'])
             positions_in_seg = [p for p, s in pos_to_seg.items() if s == seg]
             seg_range = f"{min(positions_in_seg)}-{max(positions_in_seg)}" if positions_in_seg else '-'
             results.append({
@@ -574,7 +713,6 @@ def _build_tm_summary(delta_df, annot_map, sig_threshold):
             })
         return results
 
-    # Return TM helices first, then loops — template will handle display
     return _build_entries(TM_HELICES)
 
 

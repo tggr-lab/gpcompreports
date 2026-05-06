@@ -46,6 +46,40 @@ def _load_conservation_cache(gpcr_id, output_dir):
     return result
 
 
+def _load_am_landscape_cache(gpcr_id, output_dir):
+    """Load the per-GPCR AlphaMissense LANDSCAPE cache written by
+    `scripts/fetch_alphamissense.py`, if it exists.
+
+    Returns the MEAN AM score per position (across all 19 possible
+    substitutions), which is what the snake plot uses for coloring.
+    The max-of-19 is also in the cache file for reference, but not used
+    here because it saturates: every TM position has at least one
+    pathogenic substitution out of 19, so max ≈ 1 everywhere.
+
+    Returns {position_int: mean_am_score_float}. Empty dict if no cache.
+    """
+    if output_dir is None:
+        return {}
+    cache = Path(output_dir) / 'data' / f'alphamissense_{gpcr_id}.json'
+    if not cache.exists():
+        return {}
+    try:
+        obj = json.loads(cache.read_text())
+    except (ValueError, OSError):
+        return {}
+    # Prefer mean; fall back to max only if an older cache lacks the mean column
+    scores = obj.get('mean_am_score') or obj.get('max_am_score') or {}
+    result = {}
+    for k, v in scores.items():
+        if v is None:
+            continue
+        try:
+            result[int(k)] = float(v)
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
 CFR_COLOR = '#FF8F00'  # orange accent, matches ouroboros' legend swatch
 
 # AlphaMissense classification thresholds (the values AlphaMissense ships with)
@@ -169,12 +203,30 @@ def _lerp_hex(frac, lo_hex, hi_hex):
     return f'#{r:02X}{g:02X}{b:02X}'
 
 
-def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, conservation_cache=None):
+def _diverging_color(value, vmax):
+    """Return a hex color on a blue-white-red ramp anchored at 0.
+
+    value: signed float (e.g. ΔRRCS). Positive → red, negative → blue.
+    vmax:  the |value| at which the ramp hits the saturated endpoint.
+    """
+    if vmax <= 0:
+        return '#FFFFFF'
+    frac = max(-1.0, min(1.0, float(value) / float(vmax)))
+    if frac >= 0:
+        # white -> red (#B2182B), matching the snake builder's diverging legend
+        return _lerp_hex(frac, '#FFFFFF', '#B2182B')
+    return _lerp_hex(-frac, '#FFFFFF', '#2166AC')
+
+
+def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df,
+                       conservation_cache=None, residue_metrics=None,
+                       am_landscape_cache=None):
     """Patch the snake plot JSON's view data:
       - CFR view: populate with per-GPCR residue positions (builder stubs empty)
       - AlphaMissense view: switch to categorical (benign/ambiguous/pathogenic)
       - Conservation view: swap purple gradient for white->teal
       - Variants view: remove (we don't expose it in v2)
+      - Residue net Δ + Residue max Δ: inject from residue_metrics DataFrame
     """
     if not snake_json_str or snake_json_str == '{}':
         return snake_json_str
@@ -183,6 +235,42 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
     except (ValueError, TypeError):
         return snake_json_str
     views = data.setdefault('views', {})
+
+    # --- Residue net Δ + Residue max Δ ---
+    if residue_metrics is not None and not residue_metrics.empty:
+        net_vmax = float(residue_metrics['active_minus_inactive'].abs().max() or 0.0)
+        max_vmax = float(residue_metrics['max_abs_delta'].max() or 0.0)
+        net_colors, max_colors = {}, {}
+        for _, r in residue_metrics.iterrows():
+            pos_str = str(int(r['position']))
+            net_colors[pos_str] = _diverging_color(float(r['active_minus_inactive']), net_vmax)
+            # Sign coloring on max view per spec ("red-active / blue-inactive convention")
+            max_colors[pos_str] = _diverging_color(float(r['max_signed_delta']), max_vmax)
+
+        net_view = views.setdefault('residue_net_delta', {})
+        net_view['colors'] = net_colors
+        net_view['label'] = 'Residue net Δ'
+        net_view['legend_type'] = 'diverging'
+        net_view['legend_colors'] = ['#2166AC', '#FFFFFF', '#B2182B']
+        net_view['legend_labels'] = [
+            f'{-net_vmax:+.1f} (inactive)', '0', f'{net_vmax:+.1f} (active)'
+        ] if net_vmax > 0 else ['Inactive-favoring', '0', 'Active-favoring']
+        net_view['description'] = (
+            "Signed sum of ΔRRCS across all of the residue's contacts. "
+            "Red = active-favoring, Blue = inactive-favoring."
+        )
+
+        max_view = views.setdefault('residue_max_delta', {})
+        max_view['colors'] = max_colors
+        max_view['label'] = 'Residue max Δ'
+        max_view['legend_type'] = 'diverging'
+        max_view['legend_colors'] = ['#2166AC', '#FFFFFF', '#B2182B']
+        max_view['legend_labels'] = [
+            f'{-max_vmax:+.1f} (inactive)', '0', f'{max_vmax:+.1f} (active)'
+        ] if max_vmax > 0 else ['Inactive-favoring', '0', 'Active-favoring']
+        max_view['description'] = (
+            "Largest |ΔRRCS| at this residue, colored by the sign of that single contact."
+        )
 
     # --- CFR ---
     cfr_colors = {}
@@ -202,10 +290,28 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
     )
 
     # --- AlphaMissense (categorical) ---
+    # Prefer the LANDSCAPE cache (max AM across all 19 substitutions) so a
+    # position colors pathogenic if any theoretical substitution is, not
+    # just the substitutions humans happen to carry. Fall back to the
+    # gnomAD-observed scores when the landscape cache hasn't been fetched.
     am_colors = {}
     am_counts = {'pathogenic': 0, 'ambiguous': 0, 'benign': 0}
-    if var_df is not None and not var_df.empty and 'am_score' in var_df.columns:
-        # Use the max am_score per position, matching the batch analyzer's logic
+    am_source = None  # 'landscape' | 'observed' | None
+    if am_landscape_cache:
+        am_source = 'landscape'
+        for pos_int, score in am_landscape_cache.items():
+            color = _am_bucket_color(score)
+            if color is None:
+                continue
+            am_colors[str(pos_int)] = color
+            if color == AM_PATHOGENIC_COLOR:
+                am_counts['pathogenic'] += 1
+            elif color == AM_AMBIGUOUS_COLOR:
+                am_counts['ambiguous'] += 1
+            else:
+                am_counts['benign'] += 1
+    elif var_df is not None and not var_df.empty and 'am_score' in var_df.columns:
+        am_source = 'observed'
         for pos, group in var_df.groupby('protein_position'):
             scores = group['am_score'].dropna()
             if scores.empty:
@@ -233,11 +339,21 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df, c
         {'color': AM_AMBIGUOUS_COLOR,  'label': f"Ambiguous ({AM_BENIGN_CUTOFF}-{AM_PATHOGENIC_CUTOFF})"},
         {'color': AM_BENIGN_COLOR,     'label': f"Benign (< {AM_BENIGN_CUTOFF})"},
     ]
-    if am_colors:
+    if am_source == 'landscape':
         am_view['description'] = (
-            f"AlphaMissense classification at variant positions: "
+            f"AlphaMissense per-residue average across all 19 possible "
+            f"substitutions (not just the substitutions seen in gnomAD). "
+            f"Mean is used rather than max because max-of-19 saturates "
+            f"(almost every position has at least one pathogenic substitution). "
             f"{am_counts['pathogenic']} pathogenic, "
-            f"{am_counts['ambiguous']} ambiguous, "
+            f"{am_counts['ambiguous']} ambiguous, {am_counts['benign']} benign."
+        )
+    elif am_source == 'observed':
+        am_view['description'] = (
+            f"AlphaMissense classification at GNOMAD-OBSERVED variant positions only "
+            f"(max across observed substitutions). Run scripts/fetch_alphamissense.py "
+            f"to enable the full theoretical landscape view. "
+            f"{am_counts['pathogenic']} pathogenic, {am_counts['ambiguous']} ambiguous, "
             f"{am_counts['benign']} benign."
         )
     else:
@@ -354,12 +470,23 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
         complete_rrcs = v1._get_complete_rrcs(delta_df, sig_threshold, n=1000)
         rrcs_stats = v1._calc_rrcs_stats(delta_df, sig_threshold)
 
+        # Per-residue metrics — single source for snake-plot views and CSV export
+        residue_metrics = v1._compute_residue_metrics(delta_df, annot_map)
+        if residue_metrics.empty:
+            residue_summary_json = ''
+        else:
+            residue_summary_json = residue_metrics.to_json(orient='records')
+
         snake_svg, snake_json = v1._prepare_snake_plot(gid, delta_df, var_df, sig_threshold)
         has_snake_plot = snake_svg is not None
         if has_snake_plot:
             cons_cache = _load_conservation_cache(gid, output_dir)
+            am_cache = _load_am_landscape_cache(gid, output_dir)
             snake_json = _patch_snake_views(
-                snake_json, annot_map, cfr_generics, var_df, conservation_cache=cons_cache,
+                snake_json, annot_map, cfr_generics, var_df,
+                conservation_cache=cons_cache,
+                residue_metrics=residue_metrics,
+                am_landscape_cache=am_cache,
             )
 
         max_increase = float(delta_df['delta_rrcs'].max()) if not delta_df.empty else 0.0
@@ -404,6 +531,7 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
             total_variants=len(var_df),
             complete_rrcs=complete_rrcs,
             rrcs_stats=rrcs_stats,
+            residue_summary_json=residue_summary_json,
             layout_light_json=layout_light_json,
             layout_dark_json=layout_dark_json,
         )
