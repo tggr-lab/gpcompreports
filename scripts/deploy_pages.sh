@@ -17,7 +17,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT="$ROOT/GPCompReports_v2/output"
+OUTPUT="$ROOT/GPCompaReports_v2/output"
 WORKTREE="$ROOT/.gh-pages-worktree"
 BRANCH="gh-pages"
 
@@ -32,7 +32,7 @@ fi
 
 # 1. Build the site
 echo "==> Building v2 site..."
-python3 "$ROOT/GPCompReports_v2/generate_site.py" "$@"
+python3 "$ROOT/GPCompaReports_v2/generate_site.py" "$@"
 
 if [ ! -f "$OUTPUT/index.html" ]; then
   echo "ERROR: build did not produce $OUTPUT/index.html" >&2

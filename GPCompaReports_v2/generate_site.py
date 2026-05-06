@@ -17,13 +17,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from GPCompReports_v2.website.site_generator import SiteGenerator
+from GPCompaReports_v2.website.site_generator import SiteGenerator
 
 
 def main():
     parser = argparse.ArgumentParser(description='Generate GPCompReports v2 static website')
     parser.add_argument('--output', type=str, default=None,
-                        help='Output directory (default: GPCompReports_v2/output)')
+                        help='Output directory (default: GPCompaReports_v2/output)')
     parser.add_argument('--batch-dir', type=str, default=None,
                         help='Batch analysis directory')
     parser.add_argument('--metadata', type=str, default=None,
