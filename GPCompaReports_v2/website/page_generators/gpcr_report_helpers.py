@@ -545,27 +545,60 @@ def _make_residue_changes(delta_df, annot_map, name):
 
 
 def _make_tm_breakdown(delta_df, annot_map, name):
-    """Bar chart of mean |delta| across TM1-TM7 only."""
-    seg_vals = {s: [] for s in TM_HELICES}
+    """Bar chart of mean ΔRRCS across TM1-TM7. Two traces: absolute (default) and directional (toggleable)."""
+    seg_abs = {s: [] for s in TM_HELICES}
+    seg_sign = {s: [] for s in TM_HELICES}
 
     for _, row in delta_df.iterrows():
+        delta = float(row['delta_rrcs'])
         for res_col in ['res1', 'res2']:
             pos = int(row[res_col])
             seg = annot_map.get(pos, {}).get('protein_segment', '')
-            if seg in seg_vals:
-                seg_vals[seg].append(abs(row['delta_rrcs']))
+            if seg in seg_abs:
+                seg_abs[seg].append(abs(delta))
+                seg_sign[seg].append(delta)
 
-    tm_segs = [s for s in TM_HELICES if seg_vals[s]]
-    tm_means = [float(np.mean(seg_vals[s])) for s in tm_segs]
+    tm_segs = [s for s in TM_HELICES if seg_abs[s]]
+    abs_means = [float(np.mean(seg_abs[s])) for s in tm_segs]
+    sign_means = [float(np.mean(seg_sign[s])) for s in tm_segs]
+
+    def _color(v, theme):
+        if v > 0:
+            return '#DC2626' if theme == 'light' else '#F87171'
+        if v < 0:
+            return '#2563EB' if theme == 'light' else '#60A5FA'
+        return '#6B7280' if theme == 'light' else '#9CA3AF'
+
+    colors_light = [_color(v, 'light') for v in sign_means]
+    colors_dark = [_color(v, 'dark') for v in sign_means]
+    sign_labels = [
+        'net active-favoring' if v > 0 else
+        'net inactive-favoring' if v < 0 else
+        'balanced'
+        for v in sign_means
+    ]
 
     fig = go.Figure()
     if tm_segs:
         fig.add_trace(go.Bar(
-            x=tm_segs, y=tm_means,
+            x=tm_segs, y=abs_means,
             marker_color='#008080',
-            text=[f'{v:.2f}' for v in tm_means],
+            text=[f'{v:.2f}' for v in abs_means],
             textposition='outside',
-            name='TM Helices',
+            name='Absolute',
+            hovertemplate='%{x}<br>Mean |ΔRRCS| = %{y:.2f}<extra></extra>',
+            visible=True,
+        ))
+        fig.add_trace(go.Bar(
+            x=tm_segs, y=sign_means,
+            marker=dict(color=colors_light),
+            text=[f'{v:+.2f}' for v in sign_means],
+            textposition='outside',
+            name='Directional',
+            hovertemplate='%{x}<br>Mean signed ΔRRCS = %{y:+.2f}<br>%{customdata}<extra></extra>',
+            customdata=sign_labels,
+            meta={'colors_light': colors_light, 'colors_dark': colors_dark},
+            visible=False,
         ))
     fig.update_layout(
         title=f'Mean |ΔRRCS| by TM helix: {name}',
@@ -575,6 +608,7 @@ def _make_tm_breakdown(delta_df, annot_map, name):
         margin=dict(l=50, r=20, t=50, b=50),
         template='plotly_white',
         showlegend=False,
+        yaxis=dict(zeroline=True, zerolinecolor='rgba(128,128,128,0.4)', zerolinewidth=1),
     )
     return fig
 

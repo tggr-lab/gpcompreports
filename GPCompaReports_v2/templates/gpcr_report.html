@@ -251,10 +251,20 @@
       {% endif %}
 
       {% if has_tm_chart %}
-      <h3 class="report-chart-head">TM domain breakdown</h3>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <h3 class="report-chart-head" style="margin:0;">TM domain breakdown</h3>
+        <div class="tm-breakdown-toggle" role="radiogroup" aria-label="TM breakdown view">
+          <button type="button" class="btn btn-sm tm-metric-btn active" data-tm-view="absolute" aria-pressed="true"
+                  data-tooltip="Mean |ΔRRCS| per TM helix. Shows magnitude of contact remodelling regardless of direction.">Absolute</button>
+          <button type="button" class="btn btn-sm tm-metric-btn" data-tm-view="directional" aria-pressed="false"
+                  data-tooltip="Mean signed ΔRRCS per TM helix. Red = net active-favoring, blue = net inactive-favoring.">Directional</button>
+        </div>
+      </div>
       <div class="v2-chart" id="tm-breakdown-chart"
            data-chart-layout-light='{{ layout_light_json }}'
-           data-chart-layout-dark='{{ layout_dark_json }}'></div>
+           data-chart-layout-dark='{{ layout_dark_json }}'
+           data-tm-title-absolute="Mean |ΔRRCS| by TM helix: {{ uniprot_name }}"
+           data-tm-title-directional="Mean signed ΔRRCS by TM helix: {{ uniprot_name }}"></div>
       {% endif %}
     </section>
     {% endif %}
@@ -623,9 +633,10 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.35);
     }
 
-    /* TM metric toggle (signed sum / largest single contact) */
-    .tm-metric-toggle { display: inline-flex; gap: 0; }
-    .tm-metric-toggle .tm-metric-btn {
+    /* TM metric toggles (signed/max table view, absolute/directional chart view) */
+    .tm-metric-toggle, .tm-breakdown-toggle { display: inline-flex; gap: 0; }
+    .tm-metric-toggle .tm-metric-btn,
+    .tm-breakdown-toggle .tm-metric-btn {
       border: 1px solid var(--borderColor-muted);
       background: var(--bgColor-default);
       color: var(--fgColor-muted);
@@ -633,9 +644,12 @@
       font-size: 0.78rem;
       cursor: pointer;
     }
-    .tm-metric-toggle .tm-metric-btn:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
-    .tm-metric-toggle .tm-metric-btn:last-child  { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: 0; }
-    .tm-metric-toggle .tm-metric-btn.active {
+    .tm-metric-toggle .tm-metric-btn:first-child,
+    .tm-breakdown-toggle .tm-metric-btn:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+    .tm-metric-toggle .tm-metric-btn:last-child,
+    .tm-breakdown-toggle .tm-metric-btn:last-child  { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: 0; }
+    .tm-metric-toggle .tm-metric-btn.active,
+    .tm-breakdown-toggle .tm-metric-btn.active {
       background: var(--brand-primary);
       color: #fff;
       border-color: var(--brand-primary);
@@ -666,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {# -------- TM-summary metric toggle (signed sum / largest single contact) -------- #}
 <script>
 (function() {
-  var btns = document.querySelectorAll('.tm-metric-btn');
+  var btns = document.querySelectorAll('.tm-metric-toggle .tm-metric-btn');
   var table = document.getElementById('tm-summary-table');
   if (!btns.length || !table) return;
   function setMetric(metric) {
@@ -689,6 +703,65 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 })();
 </script>
+
+{# -------- TM-breakdown chart toggle (absolute / directional) -------- #}
+{% if has_tm_chart %}
+<script>
+(function() {
+  var chartId = 'tm-breakdown-chart';
+  var el = document.getElementById(chartId);
+  var btns = document.querySelectorAll('.tm-breakdown-toggle .tm-metric-btn');
+  if (!el || !btns.length) return;
+
+  function isDark() {
+    return document.documentElement.getAttribute('data-color-mode') === 'dark';
+  }
+
+  function directionalColors() {
+    var gd = document.getElementById(chartId);
+    if (!gd || !gd.data || !gd.data[1] || !gd.data[1].meta) return null;
+    return isDark() ? gd.data[1].meta.colors_dark : gd.data[1].meta.colors_light;
+  }
+
+  function applyView(view) {
+    btns.forEach(function(b) {
+      var on = b.getAttribute('data-tm-view') === view;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (typeof Plotly === 'undefined' || !el.dataset.chartRendered) return;
+    if (view === 'directional') {
+      var colors = directionalColors();
+      if (colors) Plotly.restyle(chartId, { 'marker.color': [colors] }, [1]);
+      Plotly.restyle(chartId, { visible: [false, true] });
+      Plotly.relayout(chartId, {
+        'yaxis.title.text': 'Mean signed ΔRRCS',
+        'title.text': el.dataset.tmTitleDirectional,
+      });
+    } else {
+      Plotly.restyle(chartId, { visible: [true, false] });
+      Plotly.relayout(chartId, {
+        'yaxis.title.text': 'Mean |ΔRRCS|',
+        'title.text': el.dataset.tmTitleAbsolute,
+      });
+    }
+  }
+
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() { applyView(b.getAttribute('data-tm-view')); });
+  });
+
+  document.addEventListener('gpcrsynth-theme-change', function() {
+    var active = document.querySelector('.tm-breakdown-toggle .tm-metric-btn.active');
+    if (!active || active.getAttribute('data-tm-view') !== 'directional') return;
+    var colors = directionalColors();
+    if (colors && el.dataset.chartRendered) {
+      Plotly.restyle(chartId, { 'marker.color': [colors] }, [1]);
+    }
+  });
+})();
+</script>
+{% endif %}
 
 {# -------- Residue summary CSV export -------- #}
 {% if residue_summary_json %}
