@@ -410,7 +410,7 @@ def _patch_snake_views(snake_json_str, annot_map, cfr_generic_numbers, var_df,
     return json.dumps(data)
 
 
-def generate_all_reports(env: Environment, store, output_dir, analysis_results=None, limit=None):
+def generate_all_reports(env: Environment, store, output_dir, analysis_results=None, only=None):
     reports_dir = output_dir / 'reports'
     reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -420,7 +420,7 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
 
     template = env.get_template('gpcr_report.html')
     total = len(store.gpcr_ids)
-    gpcr_ids = store.gpcr_ids[:limit] if limit else store.gpcr_ids
+    gpcr_ids = only if only is not None else store.gpcr_ids
 
     light, dark = theme_overrides()
     layout_light_json = json.dumps(light, separators=(',', ':'))

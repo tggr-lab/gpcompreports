@@ -30,6 +30,8 @@ def main():
                         help='Path to class_A_all.csv')
     parser.add_argument('--limit', type=int, default=None,
                         help='Only generate N individual reports (for testing)')
+    parser.add_argument('--only', type=str, default=None,
+                        help='Comma-separated gpcr ids to build, e.g. par2_human,adrb2_human')
     args = parser.parse_args()
 
     start = time.time()
@@ -39,6 +41,7 @@ def main():
         metadata_csv=args.metadata,
         output_dir=args.output,
         limit=args.limit,
+        only=[s.strip() for s in args.only.split(',')] if args.only else None,
     )
     generator.run()
 

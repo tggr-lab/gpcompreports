@@ -21,15 +21,34 @@ from .page_generators.gpcr_report_page import generate_all_reports
 from .page_generators.statistics_page import generate_statistics_page
 
 
+def select_gpcr_ids(all_ids, limit=None, only=None):
+    """Pick which receptors get report pages.
+
+    `only` is an explicit ordered list of filesystem ids and wins over `limit`.
+    `limit` takes the first N in the order the store discovered them.
+    """
+    if only:
+        known = set(all_ids)
+        missing = [g for g in only if g not in known]
+        if missing:
+            raise ValueError(
+                "unknown gpcr id(s): %s" % ", ".join(sorted(missing)))
+        return list(only)
+    if limit:
+        return list(all_ids[:limit])
+    return list(all_ids)
+
+
 class SiteGenerator:
     """Orchestrates the v2 pipeline: load -> analyze -> generate pages."""
 
-    def __init__(self, batch_dir=None, metadata_csv=None, output_dir=None, limit=None):
+    def __init__(self, batch_dir=None, metadata_csv=None, output_dir=None, limit=None, only=None):
         self.base_dir = Path(__file__).resolve().parent.parent
         self.output_dir = Path(output_dir) if output_dir else self.base_dir / 'output'
         self.template_dir = self.base_dir / 'templates'
         self.static_dir = self.base_dir / 'static'
         self.limit = limit
+        self.only = only
 
         self.store = GPCRDataStore(batch_dir=batch_dir, metadata_csv=metadata_csv)
         self.analysis_results = {}
@@ -66,12 +85,11 @@ class SiteGenerator:
         print("  Statistics page...")
         generate_statistics_page(env, self.store, self.analysis_results, self.output_dir)
 
-        if self.limit:
-            print(f"  Individual reports (limit: {self.limit} pages)...")
-        else:
-            print(f"  Individual reports ({len(self.store.gpcr_ids)} pages)...")
+        selected = select_gpcr_ids(self.store.gpcr_ids, self.limit, self.only)
+        print(f"  Individual reports ({len(selected)} pages)...")
         generate_all_reports(env, self.store, self.output_dir,
-                             analysis_results=self.analysis_results, limit=self.limit)
+                             analysis_results=self.analysis_results,
+                             only=selected)
 
         print("\n" + "=" * 60)
         print("Site generation complete!")
