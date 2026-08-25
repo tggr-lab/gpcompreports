@@ -34,8 +34,14 @@
     var segs = (k.top_segments || []).map(function (p) {
       return p[0] + ' ' + p[1].toFixed(1) + '%';
     }).join(' · ') || 'no above-threshold contacts with a resolved segment';
+    // "resolved to a named segment" not "annotated": an endpoint can be
+    // annotated with a segment outside the 16 the profile knows, and those
+    // are excluded from the base. Keep this wording in step with the
+    // fingerprint header below.
     wrap.appendChild(tile('Largest segment shares', segs,
-      'shares of annotated endpoints, not of all above-threshold contacts'));
+      (k.top_segments || []).length ?
+        'shares of endpoints that resolved to a named segment, not of all above-threshold contacts' :
+        ''));
 
     if (k.largest_structured) {
       var L = k.largest_structured;
@@ -132,9 +138,9 @@
     var partial = hasMedian ? (coverage < 100 || medianCoverage < 100) : coverage < 100;
     if (partial) {
       headText += hasMedian ?
-        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated, median across receptors: ' +
-          medianCoverage.toFixed(1) + '%)') :
-        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated)');
+        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints resolved to a named segment, ' +
+          'median across receptors: ' + medianCoverage.toFixed(1) + '%)') :
+        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints resolved to a named segment)');
     }
     var headLabel = document.createElement('span');
     headLabel.textContent = headText;
