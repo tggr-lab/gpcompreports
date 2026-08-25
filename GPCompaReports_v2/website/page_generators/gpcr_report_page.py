@@ -16,6 +16,7 @@ from jinja2 import Environment
 
 from . import gpcr_report_helpers as v1
 from ..plotly_theming import theme_overrides
+from ...analysis import receptor_profile as rprofile
 
 
 def _load_conservation_cache(gpcr_id, output_dir):
@@ -492,6 +493,21 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
         max_increase = float(delta_df['delta_rrcs'].max()) if not delta_df.empty else 0.0
         max_decrease = float(delta_df['delta_rrcs'].min()) if not delta_df.empty else 0.0
 
+        cfr_ranks = {}
+        cfr_table = (analysis_results or {}).get('cfr', {}).get('cfr_table')
+        if cfr_table is not None and not cfr_table.empty:
+            cfr_ranks = dict(zip(cfr_table['generic_number'], cfr_table['rank']))
+
+        v3_payload = {
+            'key_numbers': rprofile.key_numbers(delta_df, annot_map, sig_threshold, cfr_ranks),
+            'profile': rprofile.segment_profile(delta_df, annot_map, sig_threshold),
+            'median_profile': (analysis_results or {}).get('median_profile', {}),
+            'segments': rprofile.SEGMENTS,
+            'cfr_ranks': {k: int(v) for k, v in cfr_ranks.items()},
+            'low_confidence_segments': [s for s in rprofile.SEGMENTS
+                                        if rprofile.is_low_confidence(s)],
+        }
+
         html = template.render(
             static_prefix='../',
             active_page='report',
@@ -534,6 +550,7 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
             residue_summary_json=residue_summary_json,
             layout_light_json=layout_light_json,
             layout_dark_json=layout_dark_json,
+            v3_analysis_json=json.dumps(v3_payload, separators=(',', ':')),
         )
 
         out_path = reports_dir / f'{gid}.html'
