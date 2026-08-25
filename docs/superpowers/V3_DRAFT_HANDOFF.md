@@ -100,6 +100,7 @@ All counts were confirmed present, verbatim, in the built
 | 4 | Dataset table, "Excluded"; Methods section names them (GPR26, LGR5, OPSX, RXFP1) | `landing_page.py`: `len(store.metadata) - len(store.gpcr_ids)` |
 | 0.67 / 5.66 / −4.99 / 2.60 / 27 of 776 | PAR2 worked-example table | hand-authored prose in `landing.html`, sourced from `par2_human.html`'s own rendered table; independently re-derived for item 2 above |
 | 30 | "See the ranked Top 30 recurrent positions" and the CFR topology figure caption | `cfr_analysis.py`, dot-plot now uses `.head(30)` (fixed in commit `52afa57` to match the pre-existing "Top 30" heading on the statistics page) |
+| 64% / 8% to 88% | "generic numbering reaches a median of 64% of the above-threshold contact positions in a receptor, ranging from 8% to 88%" | hand-authored prose in `landing.html`, added in commit `6b6fcaa`; not independently re-derived by this fix wave (out of scope, no code in this branch computes it, see item 12) |
 | 1,000 | "up to 1,000 rows" in the report-contents list | hardcoded `n=1000` default in `_get_complete_rrcs()`, `gpcr_report_helpers.py` |
 | 279 | "for the 279 receptors that have variant data" | derived count: 283 `*_rrcs_delta.csv` files minus 4 receptors with no matching `*_variants.csv` (see item 10); hardcoded prose in `landing.html` |
 | 2 | "two AlphaFold-Multistate models per receptor" | restates `n_models = 2 * total_gpcrs`; constant in the prose |
@@ -140,9 +141,13 @@ earlier sentence describing M159 as "the methionine of the xMY motif,"
 removed in commit `2445658`; see item 12 for why that label did not hold up.
 
 **Core Functional Residues across Class A GPCRs**: defines a receptor-level
-CFR, explains recurrence across at least three receptors, states that no
-motif was picked in advance and the analysis recovers DRY/NPxxY/CWxP
-machinery on its own, and links to the ranked Top 30 table.
+CFR, explains recurrence across at least three receptors, states that
+recurrence counts are lower bounds because generic numbering reaches only
+a median 64% (range 8% to 88%) of a receptor's above-threshold contact
+positions, states that no motif was picked in advance and the analysis
+recovers DRY/NPxxY/CWxP machinery on its own, and links to the ranked
+Top 30 table. The lower-bounds caveat was added in commit `6b6fcaa`,
+after item 4 of this handoff was first drafted; see item 12.
 
 **What each receptor report contains**: a nine-item list (interactive snake
 plot; ranked contact pairs up to 1,000 rows; receptor threshold; CFRs;
@@ -625,6 +630,14 @@ of these blocks this draft; they are recorded so they are not lost.
   inconsistency today.)
 - A stale docstring on `identify_cfrs` claimed it truncated to the top 50
   CFR positions; it never truncated at all. Fixed.
+- A fifth landing-page change arrived after this document's item 4 was
+  first drafted and independently of this fix wave: commit `6b6fcaa`
+  added a paragraph to the CFR section stating that recurrence counts are
+  lower bounds, because GPCRdb generic numbering reaches only a median
+  64% (range 8% to 88%) of a receptor's above-threshold contact
+  positions. Item 4's CFR summary and item 3's count table have been
+  updated to include it. That 64%/8%/88% figure is hand-authored prose,
+  not something this fix wave independently re-derived.
 - The Contact page's placeholder text originally pointed readers at
   `docs/superpowers/EXTERNAL_SETUP.md`, an internal repository path, and
   would have leaked the internal working-directory name onto a page meant
