@@ -28,7 +28,18 @@
     }
   }
 
-  function applyHash() {
+  // `sec` just scrolls to a report section and has no dependency on the snake
+  // plot, so it is applied on its own and must work even when SnakeAPI never
+  // loads (e.g. a page whose snake plot build failed).
+  function applySectionHash() {
+    var h = parseHash();
+    if (h.sec) {
+      var target = document.getElementById(h.sec);
+      if (target) target.scrollIntoView();
+    }
+  }
+
+  function applySnakeHash() {
     var h = parseHash();
     if (!window.SnakeAPI) return;
     if (h.view) window.SnakeAPI.setView(h.view);
@@ -41,10 +52,11 @@
         h.max ? parseFloat(h.max) : undefined);
     }
     if (h.dir) window.SnakeAPI.setDirection(h.dir);
-    if (h.sec) {
-      var target = document.getElementById(h.sec);
-      if (target) target.scrollIntoView();
-    }
+  }
+
+  function applyHash() {
+    applySnakeHash();
+    applySectionHash();
   }
 
   function watch() {
@@ -61,11 +73,15 @@
     });
   }
 
-  function start() {
-    applyHash();
+  function startSnake() {
+    applySnakeHash();
     watch();
-    window.addEventListener('hashchange', applyHash);
   }
+
+  // `sec` has no SnakeAPI dependency, so it applies immediately and
+  // unconditionally, once, regardless of whether a snake plot exists on this
+  // page.
+  applySectionHash();
 
   // Ordering: the snake plot's code is an INLINE script, so it runs at parse
   // time. This module is deferred, so it runs after parsing, by which point
@@ -73,8 +89,12 @@
   // object first and only fall back to the event, otherwise a listener attached
   // here would wait for an event that already happened and never apply a hash.
   if (window.SnakeAPI) {
-    start();
+    startSnake();
   } else {
-    document.addEventListener('snake-ready', start);
+    document.addEventListener('snake-ready', startSnake);
   }
+
+  // Registered exactly once, unconditionally, so both halves of the grammar
+  // stay live on hashchange whether or not a snake plot exists on this page.
+  window.addEventListener('hashchange', applyHash);
 })();
