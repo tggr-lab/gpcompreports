@@ -72,6 +72,12 @@
 
   function applyCompact(on) {
     document.querySelectorAll('.report-section[data-section-title]').forEach(function (sec) {
+      // Only fold sections that have a .report-section-head to reopen them with.
+      // sec-understanding has no such head, it collapses through its own
+      // .collapsible control instead, so it is already compact and folding it
+      // here would hide it with no way back. Turning compact off still clears
+      // v3-folded from every section below, so nothing can be left stranded.
+      if (on && !sec.querySelector('.report-section-head')) return;
       sec.classList.toggle('v3-folded', on);
     });
   }
