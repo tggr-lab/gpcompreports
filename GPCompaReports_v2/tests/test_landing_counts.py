@@ -4,6 +4,7 @@ server side, never animated from a placeholder.
 Every intermediate frame of a count-up animation is a wrong number on a page whose
 whole purpose is to be quoted, so the animation is gone and this pins it.
 """
+import re
 from pathlib import Path
 
 import pytest
@@ -16,7 +17,7 @@ LANDING_JS = BASE / 'static' / 'js' / 'landing.js'
 # the dataset changed and that is a release event, not a test to update.
 FROZEN = {
     '283': 'receptors',
-    '60': 'receptor families',
+    # '60' alone occurs many times in the page, so pin it to its own row instead.
     '213,456': 'contact-pair records',
     '23,025': 'threshold-passing changes',
     '566': 'models',
@@ -28,6 +29,10 @@ def test_frozen_counts_appear_verbatim():
     html = INDEX.read_text(encoding='utf-8')
     for value, what in FROZEN.items():
         assert value in html, 'missing %s count: %s' % (what, value)
+    # A bare '60' appears all over the page, so a substring check cannot pin the
+    # family count. Anchor it to its own table row.
+    assert re.search(r'Receptor families</th>\s*<td>60</td>', html), \
+        'the receptor-family count is not 60'
 
 
 @pytest.mark.skipif(not INDEX.exists(), reason='needs a demo build on disk')
