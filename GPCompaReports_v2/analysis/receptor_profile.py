@@ -20,10 +20,13 @@ SEGMENTS = [
 # marked low confidence and excluded from "largest structured change".
 STRUCTURED = {'TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'}
 
-# A rank of 50 or better is the only bracket the CFR badge (and this count)
-# claim to have verified; cfr_ranks holds ranks well past this on a full
-# cfr_table, so anything worse than this cutoff does not count as a CFR.
-CFR_RANK_CUTOFF = 50
+# 30, not some larger number: the Statistics page publishes only the Top 30
+# Core Functional Residue Positions (statistics_page.py head(30), see
+# templates/statistics.html), and the report's own snake plot CFR view is
+# built from the same top_n=30 (gpcr_report_page.py). A badge citing a rank
+# past 30 would point a reader to a residue neither of those views shows, so
+# the cutoff tracks what the site actually publishes, not what cfr_ranks holds.
+CFR_RANK_CUTOFF = 30
 
 
 def is_low_confidence(segment):

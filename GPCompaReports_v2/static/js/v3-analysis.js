@@ -5,10 +5,10 @@
   'use strict';
   var KEY = 'gpcompare-analysis';
   var data = null;
-  // A rank of 50 or better is the only bracket the CFR badge claims to have
-  // verified; cfr_ranks holds ranks up into the hundreds, so anything worse
-  // than this cutoff must not be badged as a CFR at all.
-  var CFR_RANK_CUTOFF = 50;
+  // 30, matching the site's own published Top 30 (Statistics page and the
+  // report's Core Functional snake-plot view both use 30); a badge citing a
+  // rank past this would point a reader to a residue neither view shows.
+  var CFR_RANK_CUTOFF = 30;
 
   function load() {
     var el = document.getElementById('v3-analysis-data');

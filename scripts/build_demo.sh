@@ -49,3 +49,12 @@ python3 "$ROOT/GPCompaReports_v2/generate_site.py" --output "$OUT" --only "$RECE
 echo ""
 echo "==> Done. Open:"
 echo "    $OUT/index.html"
+
+echo ""
+echo "======================================================================"
+echo " Demo report pages built (5):"
+for gid in ${RECEPTORS//,/ }; do
+  echo "    $OUT/reports/${gid}.html"
+done
+echo "======================================================================"
+echo "The landing and browse pages list all 283 receptors, but only these five have pages in this demo, so links to the others will not resolve."

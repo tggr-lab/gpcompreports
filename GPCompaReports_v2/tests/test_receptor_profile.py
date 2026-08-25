@@ -149,19 +149,19 @@ def test_key_numbers_cfr_top_movers_never_exceeds_top_mover_count():
     assert kn['cfr_top_movers'] <= kn['top_mover_count']
 
 
-def test_key_numbers_cfr_top_movers_excludes_rank_worse_than_50():
+def test_key_numbers_cfr_top_movers_excludes_rank_worse_than_30():
     # A CFR ranked worse than the cutoff must not count.
     df = _delta([(1, 2, 5.0)])
-    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 51})
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 31})
     assert kn['cfr_top_movers'] == 0
     assert kn['top_mover_count'] == 1
 
 
-def test_key_numbers_cfr_top_movers_includes_rank_exactly_50():
-    # Rank 50 is the boundary itself ("50 or better"): it must count. This
+def test_key_numbers_cfr_top_movers_includes_rank_exactly_30():
+    # Rank 30 is the boundary itself ("30 or better"): it must count. This
     # is the one rank value that distinguishes `<=` from `<` in the cutoff
-    # check, so it must be pinned directly rather than only tested at 51.
+    # check, so it must be pinned directly rather than only tested at 31.
     df = _delta([(1, 2, 5.0)])
-    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 50})
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 30})
     assert kn['cfr_top_movers'] == 1
     assert kn['top_mover_count'] == 1
