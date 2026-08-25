@@ -9,6 +9,36 @@ Running ledger kept during the work: `.superpowers/sdd/progress.md`.
 
 ---
 
+## 0. Read this first: this is a five-receptor demo, not the full site
+
+**Scope.** `scripts/build_demo.sh` builds only five receptors
+(`par2_human`, `par1_human`, `adrb2_human`, `5ht2a_human`, `cxcr4_human`),
+so `GPCompaReports_v2/output_v3_demo/reports/` contains only those five
+report pages. The landing hero, the browse page and the search index are
+unchanged production content: they still list and index all 283
+receptors. **278 of the 283 receptor links in this draft do not
+resolve.** `scripts/build_demo.sh` already prints this warning at the end
+of its own output; this handoff did not previously say so, and it is the
+most likely way a reader misjudges the scope of what they are looking at.
+
+**How to open it.** `output_v3_demo/` is gitignored, so a fresh clone has
+nothing to open until it is built:
+
+```bash
+bash scripts/build_demo.sh
+```
+
+Then open directly as local files, no server needed:
+
+- `GPCompaReports_v2/output_v3_demo/index.html` (landing page)
+- `GPCompaReports_v2/output_v3_demo/reports/par2_human.html`
+- `GPCompaReports_v2/output_v3_demo/reports/par1_human.html`
+- `GPCompaReports_v2/output_v3_demo/reports/adrb2_human.html`
+- `GPCompaReports_v2/output_v3_demo/reports/5ht2a_human.html`
+- `GPCompaReports_v2/output_v3_demo/reports/cxcr4_human.html`
+- `GPCompaReports_v2/output_v3_demo/contact.html`
+- `GPCompaReports_v2/output_v3_demo/downloads.html`
+
 ## 1. Nothing merged, deployed or pushed
 
 Verified directly before writing this document, not assumed:
@@ -103,8 +133,11 @@ statement:
 explaining RRCS as a contact score computed in both models, ΔRRCS defined
 as active minus inactive, the verification table from item 2, a statement
 that this contact is stronger in the inactive model (blue) versus active
-(red), a note that M159 is the methionine of the xMY motif and F300 is the
-6.48 toggle-switch aromatic, and a link to the PAR2 snake plot.
+(red), a note that F300 occupies the aromatic 6.48 toggle-switch position
+(one of the canonical activation landmarks) and that both residues sit in
+transmembrane helices, and a link to the PAR2 snake plot. This replaces an
+earlier sentence describing M159 as "the methionine of the xMY motif,"
+removed in commit `2445658`; see item 12 for why that label did not hold up.
 
 **Core Functional Residues across Class A GPCRs**: defines a receptor-level
 CFR, explains recurrence across at least three receptors, states that no
@@ -117,9 +150,14 @@ generic numbering; conservation; gnomAD variants for the 279 receptors that
 have them; AlphaMissense; CSV export), plus example-report links to ADRB2
 and PAR2.
 
-**Analysing your own structures**: states GPCompaRe includes a program for
-analysing user-supplied paired structures, that local analyses stay local
-and are not added to the public database, with a link to Downloads.
+**Analysing your own structures**: states that GPCompaRe covers analysis
+of user-supplied paired active and inactive structures using the same
+RRCS comparison, that a releasable version of that program is not yet
+available, and that local analyses stay local and are not added to the
+public database, with a link to Downloads. This replaces an earlier
+sentence saying GPCompaRe "also includes" the program, which contradicted
+the Downloads page's own statement that no releasable version exists;
+resolved in commit `38c5d1b`, see item 12.
 
 **Methods and data sources**: attributes structures to AlphaFold-Multistate,
 scoring to RRCS, generic numbering to GPCRdb, variation to gnomAD v4,
@@ -176,19 +214,30 @@ reproducibility. It is not the analysis program."
 Derived directly from `git diff --stat 3a10a53..HEAD`, where `3a10a53` is
 this branch's actual base (the merge-base with
 `feature/site-updates-2026-04-30`, the live site branch, and the same
-commit the brief's own verification command uses).
+commit the brief's own verification command uses). Regenerated for this
+fix wave: the table below no longer lists
+`GPCompaReports_v2/scripts/build_par_dossier_csvs.py`, `poster_figures.py`
+and `preview_par2.py` (665 lines combined). Commit `03c94a3` untracked all
+three after an earlier over-broad `git add -A GPCompaReports_v2/` had
+swept them into history by mistake. They remain on disk unchanged; only
+their git tracking changed. Verified that the branch now tracks nothing
+beyond its own work:
 
 ```
-$ git diff --stat 3a10a53..HEAD
+$ comm -13 <(git ls-tree -r --name-only 3a10a53 | sort) <(git ls-files | sort)
+```
+
+returns exactly this branch's own added and changed files, none of the
+three scripts among them.
+
+```
+$ git diff --stat 3a10a53..HEAD -- . ':!docs/superpowers/V3_DRAFT_HANDOFF.md' ':!docs/superpowers/screenshots'
  .gitignore                                                    |    3 +
  GPCompaReports_v2/analysis/cfr_analysis.py                    |   14 +-
  GPCompaReports_v2/generate_site.py                             |    3 +
- GPCompaReports_v2/scripts/build_par_dossier_csvs.py            |  257 ++++
- GPCompaReports_v2/scripts/poster_figures.py                    |  319 ++++
- GPCompaReports_v2/scripts/preview_par2.py                      |   89 ++
  GPCompaReports_v2/static/css/landing.css                       |  281 +---
- GPCompaReports_v2/static/css/site.css                          |  138 +-
- GPCompaReports_v2/static/css/v3.css                            |   49 +
+ GPCompaReports_v2/static/css/site.css                          |  139 +-
+ GPCompaReports_v2/static/css/v3.css                             |   49 +
  GPCompaReports_v2/static/img/fig-cfr-topology.png              |  Bin 0 -> 406319 bytes
  GPCompaReports_v2/static/img/par2-explainer-snake.png          |  Bin 0 -> 257868 bytes
  GPCompaReports_v2/static/js/landing.js                         |   38 +-
@@ -200,7 +249,7 @@ $ git diff --stat 3a10a53..HEAD
  GPCompaReports_v2/templates/contact.html                       |  102 ++
  GPCompaReports_v2/templates/downloads.html                     |   90 ++
  GPCompaReports_v2/templates/gpcr_report.html                   |   56 +-
- GPCompaReports_v2/templates/landing.html                       |  297 ++--
+ GPCompaReports_v2/templates/landing.html                       |  303 ++--
  GPCompaReports_v2/tests/__init__.py                            |    0
  GPCompaReports_v2/tests/test_brand.py                          |   23 +
  GPCompaReports_v2/tests/test_freeze.py                         |   61 +
@@ -222,13 +271,14 @@ $ git diff --stat 3a10a53..HEAD
  docs/superpowers/specs/2026-08-24-v3-report-layouts.html        |  308 ++
  docs/superpowers/specs/2026-08-25-v3-open-questions-brief.md    |  136 ++
  scripts/build_demo.sh                                           |   66 +
- 42 files changed, 5336 insertions(+), 431 deletions(-)
+ 39 files changed, 4678 insertions(+), 431 deletions(-)
 ```
 
-This does not yet include the two files created by this task,
-`docs/superpowers/V3_DRAFT_HANDOFF.md` and the ten files under
-`docs/superpowers/screenshots/`, which are staged and committed as a
-separate change on top of the above.
+This excludes `docs/superpowers/V3_DRAFT_HANDOFF.md` itself and the ten
+files under `docs/superpowers/screenshots/` (this fix wave's edits to the
+document and the four re-captured screenshots), staged and committed as a
+separate change on top of the above, the same convention this item used
+when the document was first written.
 
 Deleted in this range and not shown above because they no longer exist to
 diff: `GPCompaReports_v2/analysis/receptor_profile.py`,
@@ -268,8 +318,15 @@ GPCompaReports_v2/tests/test_selection.py::test_unknown_id_raises_with_the_bad_n
 Caveat: most of these tests are skipped, not run, unless
 `GPCompaReports_v2/output_v3_demo/` exists on disk (built by
 `scripts/build_demo.sh`). That build was present when this run was taken.
-There is no CI for this project, so this suite only protects against
-regressions when someone remembers to build the demo first. See item 12.
+Verified directly what happens without one: with `output_v3_demo/` moved
+aside, 9 of these 20 tests still run and pass. `test_brand.py` (3 tests)
+and `test_selection.py` (5 tests) carry no skip guard at all, and
+`test_landing_counts.py::test_no_count_up_animation_remains` reads
+`static/js/landing.js` directly rather than the build, so it runs too.
+The other 11, all of `test_freeze.py` and `test_new_pages.py` plus the
+three remaining `test_landing_counts.py` tests, skip. There is no CI for
+this project, so those 11 only protect against regressions when someone
+remembers to build the demo first. See item 12.
 
 ## 7. The analysis layer is completely removed
 
@@ -302,10 +359,12 @@ Sticky section nav, Compact view, and the snake-plot deep link (`sec=`,
 
 ## 8. Approved report content is unchanged by default
 
-`GPCompaReports_v2/tests/test_freeze.py` builds the PAR2 report with every
-V3 toggle off and compares it, section by section, to
-`GPCompaReports_v2/output/reports/par2_human.html`, the last full build the
-PI approved. Two assertions:
+`GPCompaReports_v2/tests/test_freeze.py` does not build anything itself:
+it reads whatever PAR2 report happens to be sitting at
+`GPCompaReports_v2/output_v3_demo/reports/par2_human.html` (built with
+every V3 toggle off by `scripts/build_demo.sh`) and compares it, section
+by section, to `GPCompaReports_v2/output/reports/par2_human.html`, the
+last full build the PI approved. Two assertions:
 
 - `test_report_sections_are_unchanged_with_features_off`: strips tags from
   every `<section class="report-section">` block and requires the text to
@@ -323,23 +382,63 @@ sticky nav and deep links), a `v3.css` stylesheet link, and a
 existing inline script. No heading, label, or paragraph text inside any
 `report-section` was touched.
 
+**What this does not prove.** Both assertions are static-markup checks
+against the built HTML; neither one loads a page or runs a browser, so
+the freeze test is silent on runtime JavaScript behaviour. This branch
+adds two script files that run on every report page, `v3-nav.js` (builds
+the sticky section nav and the Compact-view toggle from
+`[data-section-title]`) and `v3-deeplink.js` (reads and writes snake-plot
+view state in the URL hash). Neither is covered by this test or any other
+(see item 12). Separately, "unchanged by default" is only true for a
+first-time visitor: `v3-nav.js` persists its Compact-view toggle to
+`localStorage` under the key `gpcompare-compact`, so a reader who once
+switched Compact view on will see it on again on a later visit to any
+report page, with no toggle interaction in between.
+
 See item 10 for a caveat on how this baseline file itself is sourced.
 
 ## 9. Screenshots
 
-Ten PNGs under `docs/superpowers/screenshots/`, light theme forced, desktop
-1440x900 and mobile 390x844, one pair per target:
+Ten PNGs under `docs/superpowers/screenshots/`, light theme forced, one
+pair per target. Desktop is 1440px wide and mobile 390px wide throughout;
+the six landing/PAR2/CFR captures use a fixed 900px/844px-tall viewport,
+and the four Contact/Downloads captures (re-taken in this fix wave) use a
+full-page capture trimmed to actual content height, since both pages are
+short enough to show whole rather than cropped.
 
 | File | Captures |
 |---|---|
 | `landing-hero-desktop.png` / `-mobile.png` | Landing page top: hero, nav, dataset table start |
 | `par2-worked-example-desktop.png` / `-mobile.png` | "How to read a GPCompaRe contact" section, full |
 | `cfr-section-desktop.png` / `-mobile.png` | "Core Functional Residues across Class A GPCRs" section, full |
-| `contact-page-desktop.png` / `-mobile.png` | Contact page, form and lab panel |
-| `downloads-page-desktop.png` / `-mobile.png` | Downloads page, both archive panels |
+| `contact-page-desktop.png` / `-mobile.png` | Contact page, full: heading, all seven form fields, both standing notes, the "not connected yet" warning, the disabled Send button, and the Lab panel |
+| `downloads-page-desktop.png` / `-mobile.png` | Downloads page, full: release metadata, both archive panels including the complete provisional callout, and the footer note |
 
-All ten were opened and visually reviewed as PNGs before being accepted;
-none is blank, clipped, or showing the wrong content.
+**Four of the ten were clipped in an earlier pass and have been
+re-captured.** The Contact and Downloads pairs were first captured at a
+fixed viewport height (900px desktop, 844px mobile) with no scrolling, so
+each image stopped at the fold: `contact-page-desktop.png` cut off the
+disabled Send button and the "not connected" warning, the two most
+decision-relevant things on that page; `contact-page-mobile.png` stopped
+mid-form with no Message field, standing notes, warning, Send button, or
+Lab panel; `downloads-page-desktop.png` cut mid-sentence through the
+provisional callout; `downloads-page-mobile.png` showed only the top
+third of the Database release panel, with the Analysis software panel
+entirely off-frame. All four were re-captured as full-page images (a tall
+off-screen viewport, auto-trimmed to the actual content height) and
+re-verified by eye; the row descriptions above reflect what they now
+show, not what an earlier draft of this table claimed.
+
+The re-capture also needed one flag not in the original recipe:
+`--allow-file-access-from-files`. Without it, headless Chromium loads the
+page's own stylesheets as if the `file://` origin were unset (this
+appears to be specific to this machine's snap-confined Chromium build)
+and the screenshot comes back as unstyled default-browser HTML, no error
+printed. This was caught by eye, not by tooling; every re-capture in this
+pass was taken with the flag and confirmed styled correctly.
+
+All ten screenshots were opened and visually reviewed as PNGs before
+being accepted for this fix wave.
 
 **A capture bug was found and worked around, not just used as given.** The
 proven recipe from `.superpowers/sdd/progress.md` (forcing light theme with
@@ -363,6 +462,14 @@ crops were re-verified by eye afterward. This is a capture-tooling issue
 only; it does not reflect anything about the site's own anchor or deep-link
 behaviour, which is untouched by this task.
 
+**No dark-theme evidence.** All ten screenshots were forced to light
+theme (`--blink-settings=preferredColorScheme=1`). The site ships a
+light/dark theme toggle in the topbar (visible in every capture above),
+and the templates carry a dark palette (`primitives-dark.css`), but no
+screenshot in this set shows it rendered. Nothing in this branch's diff
+touches theme logic, so this is a gap in visual evidence, not a known or
+suspected defect; it is listed as an open item in item 12.
+
 ## 10. Concerns affecting scientific accuracy, reproducibility, or the manuscript-to-site match
 
 **The Y160 numbering mismatch, corrected form.** The manuscript's Figure 4
@@ -383,15 +490,17 @@ or the annotation file to resolve this. It needs a human decision about
 which numbering source is authoritative.
 
 **Four receptors have contact data but no gnomAD variant data.** The batch
-run has 283 `*_rrcs_delta.csv` files but only 279 `*_variants.csv` files.
-`gp182_human`, `npy6r_human`, `p2ry8_human` and `taar3_human` have no
-variants file, so those four report pages render no variants section at
-all (confirmed during Task 6 of this effort: zero hits for "gnomAD missense
-variants located" on any of the four built pages). The landing page's copy
-already reflects this ("for the 279 receptors that have variant data").
-Whether those four receptors should have variant data, and if so why the
-pipeline did not produce it, is a pre-release question for the lab, not
-something resolved by this draft.
+run has 283 `*_rrcs_delta.csv` files (in
+`The_batch_RRCS_analyzer/batch_analysis_full/batch_analysis_20260202_151051/csv_data/`)
+but only 279 `*_variants.csv` files (in that same run's `variants/`
+subdirectory, not `csv_data/`). `gp182_human`, `npy6r_human`, `p2ry8_human`
+and `taar3_human` have no variants file, so those four report pages render
+no variants section at all (confirmed during Task 6 of this effort: zero
+hits for "gnomAD missense variants located" on any of the four built
+pages). The landing page's copy already reflects this ("for the 279
+receptors that have variant data"). Whether those four receptors should
+have variant data, and if so why the pipeline did not produce it, is a
+pre-release question for the lab, not something resolved by this draft.
 
 **"Complete RRCS results" is capped at 1,000 rows.** The report section
 heading calls this "Complete," but `_get_complete_rrcs()` truncates at
@@ -399,9 +508,13 @@ heading calls this "Complete," but `_get_complete_rrcs()` truncates at
 delta table (verified directly against the batch CSVs: `lgr4_human`
 2,490 rows, `lgr6_human` 2,382, `tshr_human` 1,864, `rxfp2_human` 1,767,
 `lshr_human` 1,704, `fshr_human` 1,688, `gp149_human` 1,139), so the
-heading is inaccurate for those seven. The proposed correction, "RRCS
-results, up to 1,000 contact pairs," is pending PI approval and is
-deliberately not applied in this draft.
+heading is inaccurate for those seven. That said, the section's own
+subtitle already reads "Top 1000 contact pairs ranked by |ΔRRCS|"
+(`gpcr_report.html:329`), which softens the case: a reader who continues
+past the heading to the subtitle is told the true scope, so no reader is
+left with a wrong number, only a heading that overstates it in isolation.
+The proposed correction, "RRCS results, up to 1,000 contact pairs," is
+pending PI approval and is deliberately not applied in this draft.
 
 **The freeze test's baseline is unpinned.** `test_freeze.py` compares the
 new build against `GPCompaReports_v2/output/reports/par2_human.html`,
@@ -467,10 +580,46 @@ of these blocks this draft; they are recorded so they are not lost.
   added to `.gitignore`. The plan was updated to forbid broad `git add`,
   and this task followed that rule (explicit paths only, see item 5's
   closing note).
+- A second, later instance of the same mistake: an over-broad
+  `git add -A GPCompaReports_v2/` swept three local tooling scripts
+  (`scripts/build_par_dossier_csvs.py`, `poster_figures.py`,
+  `preview_par2.py`, 665 lines) into history. Untracked again in commit
+  `03c94a3`; they remain on disk, unaffected. See item 5 for the
+  verification command and the regenerated files-changed table.
+- The landing page's worked-example prose called M159 "the methionine of
+  the xMY motif." The project's own fact-check rejects that label: the
+  adjacent Tyr3.37 fails both magnitude and presence under two separate
+  aggregations, so it cannot anchor an "xMY" motif read off this data, and
+  the label this dataset does support, M3.36, is itself flagged elsewhere
+  as a reconstruction, not a directly observed motif. Stating "xMY" on the
+  public landing page asserted a specific residue identity beyond what the
+  underlying analysis defends. Fixed in commit `2445658`: the sentence now
+  describes F300 as occupying the 6.48 toggle-switch position instead,
+  which is uncontested, and states only that both residues sit in
+  transmembrane helices. See item 4 for the copy as it now reads.
+- The landing page's "Analysing your own structures" section said
+  GPCompaRe "also includes" a program for analysing user-supplied
+  structures, while the Downloads page says no releasable version exists.
+  A visitor reading only the landing page would expect a working tool the
+  Downloads page has never offered. Fixed in commit `38c5d1b`: the landing
+  page now says a releasable version is not yet available, matching
+  Downloads. See item 4.
+- The Downloads page's `.downloads-block-head` row (heading, status badge,
+  and on the software panel also the version string) did not wrap. At a
+  390px viewport its combined minimum width exceeded the available space,
+  and because both panels share one CSS grid track, the overflow applied
+  to both, not only the panel with the extra child. Found while
+  re-capturing `downloads-page-mobile.png` for this fix wave (the earlier
+  clipped capture had cut off the affected area, hiding it). Fixed by
+  adding `flex-wrap: wrap` to `.downloads-block-head` in `site.css`;
+  confirmed by eye in the re-captured screenshot. This did not touch
+  `.badge`, the shared badge class that also appears in `gpcr_report.html`;
+  only the Downloads-specific head row changed, so the approved report
+  pages are unaffected.
 - The statistics page carried both a "Top 50" dot-plot title and a "Top 30"
   table heading for the same Core Functional Residue ranking. The dot plot
   was changed to `.head(30)` and retitled to match, since the new landing
-  CFR section links to it saying "Top 30." (`cfr_analysis.py:132`, a
+  CFR section links to it saying "Top 30." (`cfr_analysis.py:138`, a
   different function, `build_cfr_network`, still uses `.head(50)`, but it
   renders no "Top 50" claim on any built page, so it is not a live
   inconsistency today.)
@@ -496,18 +645,30 @@ of these blocks this draft; they are recorded so they are not lost.
 
 **Still open, not blocking, worth carrying forward:**
 
-- `_prepare_output` (`GPCompaReports_v2/website/site_generator.py:99-108`)
+- `_prepare_output` (`GPCompaReports_v2/website/site_generator.py:107-116`)
   never cleans a pre-existing output directory before copying `static/`
   into it, so a deleted static asset persists in that directory forever.
   `scripts/build_demo.sh` works around this by clearing `$OUT/static`
   first; a durable fix belongs in the generator itself, as separate work.
-- Three of the four new landing-count tests, and in fact every test module
-  in this suite, are skipped rather than run when
-  `GPCompaReports_v2/output_v3_demo/` does not exist on disk. This project
-  has no CI, so in practice a regression these tests would catch is only
-  caught when someone has run `scripts/build_demo.sh` first. A CI run
-  without a preceding build reports the whole suite as skipped, not
-  failed, which could look deceptively clean.
+- Three of the four new landing-count tests are skipped rather than run
+  when `GPCompaReports_v2/output_v3_demo/` does not exist on disk, and so
+  is every test in `test_freeze.py` and `test_new_pages.py`, 11 tests in
+  total. `test_brand.py` (3 tests), `test_selection.py` (5 tests), and
+  `test_landing_counts.py::test_no_count_up_animation_remains` carry no
+  such guard and run regardless, so 9 of 20 tests run and pass with no
+  demo build present (verified directly, see item 6). This project has no
+  CI, so in practice a regression among the skipped 11 is only caught when
+  someone has run `scripts/build_demo.sh` first. A CI run without a
+  preceding build reports 9 passed and 11 skipped, not the whole suite
+  failed, and not the whole suite skipped either; a reviewer who does not
+  check which 11 skipped could still wave that through as clean.
+- Neither `v3-nav.js` nor `v3-deeplink.js`, the two script files this
+  branch adds that run on every report page (item 8), has any test
+  coverage, and this project has no JavaScript test harness at all, only
+  the Python/pytest suite under `GPCompaReports_v2/tests/`. Adding one is
+  out of scope for this draft but is the natural next step before relying
+  on either script's behaviour for a release.
+- No screenshot in this draft shows the site's dark theme; see item 9.
 - Round 2 of this effort reused round 1's task-brief and task-report
   filenames under `.superpowers/sdd/`, so round 1's working files were
   overwritten as round 2 proceeded. Round 1 is complete and was committed
@@ -530,3 +691,44 @@ of these blocks this draft; they are recorded so they are not lost.
 Full blow-by-blow detail, including exact image-crop parameters used for
 the CFR topology and PAR2 snake-plot figures, is in
 `.superpowers/sdd/progress.md`.
+
+## 13. Decisions needed from the owner
+
+Everything above is a finding. This is what those findings are asking the
+owner to decide, in priority order, with what each decision blocks.
+
+1. **Which numbering source is authoritative for PAR2 position 160.** The
+   manuscript's Figure 4 and the report's snake plot both use `3.37x37`
+   for Y160; the annotation CSV that feeds the report's tables has no
+   entry for that position (item 10). Blocks correcting the annotation
+   file and closing out the manuscript-to-site match for this receptor.
+2. **Whether "Complete RRCS results" should be relabelled** to "RRCS
+   results, up to 1,000 contact pairs" (item 10). A drafted correction
+   exists and is deliberately not applied. Blocks a one-line template
+   change; nothing else depends on it.
+3. **Whether the four receptors missing gnomAD variant data**
+   (`gp182_human`, `npy6r_human`, `p2ry8_human`, `taar3_human`) should
+   have it, and if so, whether the batch pipeline needs a re-run for them
+   (item 10). Blocks whether those four report pages stay as they are or
+   get a variants section added later.
+4. **Data licensing, software licensing, and a Zenodo deposit and DOI**
+   (item 11). Blocks replacing the Downloads page's "Not yet available"
+   database placeholder with a real archive, which item 10 identifies as
+   required before public release. The software placeholder may remain
+   past release regardless of this decision.
+5. **A Formspree account, reCAPTCHA keys, a domain restriction, and named
+   scientific/technical contacts** for the Contact page (item 11). Blocks
+   enabling the Send button and replacing the current placeholder contact
+   paragraph. The Contact page is otherwise safe to ship as-is in the
+   meantime (item 11).
+6. **Whether to pin `test_freeze.py`'s baseline** rather than leave it as
+   whatever build happens to sit in the gitignored `output/` directory
+   (item 10). Blocks keeping the one property this whole draft protects,
+   the frozen approved report content, reliable across future builds
+   without anyone noticing if it silently stopped being checked.
+7. **Whether to scale this draft to the full 283-receptor build** for the
+   next review pass, rather than the five receptors it currently covers
+   (item 0). Blocks giving the owner a look at the real site instead of a
+   five-receptor sample; everything else in this document was verified
+   against that five-receptor sample and would need re-verifying at full
+   scale.
