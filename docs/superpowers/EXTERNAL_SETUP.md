@@ -48,6 +48,18 @@ TGGR team to close them before the Contact and Downloads pages go live.
    release (and optionally the software), obtain a DOI, and record it on
    the landing page (`Version, downloads and citation` section currently
    says "DOI pending release") and on the Downloads page once it exists.
+9. **The two Downloads placeholders are not equivalent.** `downloads.html`
+   (`GPCompaReports_v2/website/page_generators/downloads_page.py`) currently
+   marks both the database archive and the software archive "Not yet
+   available", with no `.zip`/`.tar.gz` link and no Zenodo record. Only the
+   software half may ship that way at publication: there is no releasable
+   user-facing analysis program yet, and that placeholder may stand until
+   there is, possibly well after publication. The database half must not:
+   a paper companion that offers no data is not a companion, so before the
+   final public release, item 6 (data license) and item 8 (Zenodo DOI) above
+   must be closed and the "Not yet available" database block replaced with a
+   real archive link. Do not let the database placeholder ship as final
+   because the software placeholder was allowed to.
 
 ## What is safe to ship without these
 
@@ -57,3 +69,8 @@ visitors the form is not connected, so no message can be silently lost.
 Shipping the page in this state is a documentation gap, not a functional
 bug. Publishing it with real Formspree/reCAPTCHA credentials and named
 contacts is a separate release step gated on the items above.
+
+The Downloads page can likewise be built and deployed with both archives
+marked "Not yet available": it invents no file, link, or DOI, so nothing is
+promised that does not exist. That is a safe *draft* state, not a safe
+*publication* state for the database half; see item 9.

@@ -20,6 +20,7 @@ from .page_generators.gpcr_index import generate_gpcr_index
 from .page_generators.gpcr_report_page import generate_all_reports
 from .page_generators.statistics_page import generate_statistics_page
 from .page_generators.contact_page import generate_contact_page
+from .page_generators.downloads_page import generate_downloads_page
 
 
 def select_gpcr_ids(all_ids, limit=None, only=None):
@@ -88,6 +89,9 @@ class SiteGenerator:
 
         print("  Contact page...")
         generate_contact_page(env, self.store, self.output_dir)
+
+        print("  Downloads page...")
+        generate_downloads_page(env, self.store, self.output_dir)
 
         selected = select_gpcr_ids(self.store.gpcr_ids, self.limit, self.only)
         print(f"  Individual reports ({len(selected)} pages)...")
