@@ -25,9 +25,17 @@ def _section_text(html):
     return out
 
 
-@pytest.mark.skipif(not OLD.exists() or not NEW.exists(),
-                    reason='needs both a full build and a demo build on disk')
+@pytest.mark.skipif(not NEW.exists(),
+                    reason='no demo build on disk, run scripts/build_demo.sh')
 def test_report_sections_are_unchanged_with_features_off():
+    # Skipping when there is no demo build is fine: there is nothing to check.
+    # Skipping when the demo EXISTS but the baseline does not is not fine. That
+    # is the case where a green run would mean "we never looked" while reading
+    # as "the freeze holds", on the one property this whole branch preserves.
+    # output/ is gitignored, so this is the likely state on a fresh clone.
+    assert OLD.exists(), (
+        'demo build present but no baseline at %s. Run a full build first, '
+        'this test cannot vouch for the freeze without one.' % OLD)
     old = _section_text(OLD.read_text(encoding='utf-8'))
     new = _section_text(NEW.read_text(encoding='utf-8'))
     assert old, 'baseline produced no sections, the regex or the fixture is wrong'
