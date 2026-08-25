@@ -1,5 +1,33 @@
 # GPCompaRe V3 review draft: handoff
 
+## STOP: a full site build destroys this branch's safeguard
+
+The freeze test, `GPCompaReports_v2/tests/test_freeze.py`, is the safeguard this
+whole draft exists to protect: it proves the approved report pages have not
+changed. It works by comparing a fresh build against
+`GPCompaReports_v2/output/reports/par2_human.html`, the last full build the PI
+approved. That directory is gitignored (`.gitignore:17`), so it is not version
+controlled, and its contents currently predate this branch.
+
+**Running `python3 GPCompaReports_v2/generate_site.py` with no `--output`
+argument writes into `GPCompaReports_v2/output/` and overwrites that
+baseline.** `--output` defaults to exactly that directory
+(`generate_site.py:25-26`), the same one the freeze test reads from. Once it is
+overwritten, the freeze test is comparing this branch's build against itself.
+It will pass forever after that, and the property this entire draft protects
+stops being checked, silently, with no error anywhere.
+
+**Do this instead.** `bash scripts/build_demo.sh` is safe: it writes only to
+`GPCompaReports_v2/output_v3_demo/`, and the only thing it does with
+`GPCompaReports_v2/output/` is read from `output/data/`, to seed the
+conservation and AlphaMissense caches. It never writes into `output/`.
+
+The final whole-branch review judged this effectively blocking, because
+rebuilding the full site is a plausible first action for anyone opening this
+draft.
+
+---
+
 Branch `feature/v3-demo`. This document is the record for the project owner
 of what this draft contains, what was verified and how, and what is not
 resolved yet. It is a draft review artifact, not a release.
@@ -100,7 +128,7 @@ All counts were confirmed present, verbatim, in the built
 | 4 | Dataset table, "Excluded"; Methods section names them (GPR26, LGR5, OPSX, RXFP1) | `landing_page.py`: `len(store.metadata) - len(store.gpcr_ids)` |
 | 0.67 / 5.66 / −4.99 / 2.60 / 27 of 776 | PAR2 worked-example table | hand-authored prose in `landing.html`, sourced from `par2_human.html`'s own rendered table; independently re-derived for item 2 above |
 | 30 | "See the ranked Top 30 recurrent positions" and the CFR topology figure caption | `cfr_analysis.py`, dot-plot now uses `.head(30)` (fixed in commit `52afa57` to match the pre-existing "Top 30" heading on the statistics page) |
-| 64% / 8% to 88% | "generic numbering reaches a median of 64% of the above-threshold contact positions in a receptor, ranging from 8% to 88%" | hand-authored prose in `landing.html`, added in commit `6b6fcaa`; not independently re-derived by this fix wave (out of scope, no code in this branch computes it, see item 12) |
+| 58% / 9% to 88% | "generic numbering reaches a median of 58% of the distinct above-threshold contact positions in a receptor, ranging from 9% to 88%" | hand-authored prose in `landing.html`; added in commit `6b6fcaa` as an occurrence-weighted 64% (range 8% to 88%), then corrected in commit `608362c` to the more conservative position-based 58% (range 9% to 88%); the underlying number is still not independently re-derived by any code in this branch, see item 12 |
 | 1,000 | "up to 1,000 rows" in the report-contents list | hardcoded `n=1000` default in `_get_complete_rrcs()`, `gpcr_report_helpers.py` |
 | 279 | "for the 279 receptors that have variant data" | derived count: 283 `*_rrcs_delta.csv` files minus 4 receptors with no matching `*_variants.csv` (see item 10); hardcoded prose in `landing.html` |
 | 2 | "two AlphaFold-Multistate models per receptor" | restates `n_models = 2 * total_gpcrs`; constant in the prose |
@@ -115,9 +143,18 @@ existing approved report section was changed (see item 8).
 **Hero**
 > Paired active and inactive AlphaFold-Multistate models for 283 human
 > Class A GPCRs, compared using residue-residue contact scores (RRCS). Each
-> report links the structural result to GPCRdb generic numbering, Core
-> Functional Residues, conservation, gnomAD variation and AlphaMissense
-> predictions.
+> report links the structural result to GPCRdb generic numbering,
+> conservation, AlphaMissense predictions, cross-family Core Functional
+> Residue positions, and gnomAD variation for the 279 receptors that have
+> it.
+
+The hero previously claimed every report links gnomAD variation. Four
+receptors (`gp182_human`, `npy6r_human`, `p2ry8_human`, `taar3_human`) have
+no variants section at all (item 10). The correct scoping to 279 receptors
+already existed further down the same page; the hero was never carried up
+to match it. Fixed in commit `608362c`, which also credits cross-family CFR
+positions here instead of the unqualified "Core Functional Residues" the
+hero previously implied every report computed on its own.
 
 Buttons: "Browse 283 GPCRs", "Database statistics". Search placeholder:
 "Search 283 GPCRs. Try ADRB2, 5HT2A, CXCR4..."
@@ -143,17 +180,23 @@ removed in commit `2445658`; see item 12 for why that label did not hold up.
 **Core Functional Residues across Class A GPCRs**: defines a receptor-level
 CFR, explains recurrence across at least three receptors, states that
 recurrence counts are lower bounds because generic numbering reaches only
-a median 64% (range 8% to 88%) of a receptor's above-threshold contact
-positions, states that no motif was picked in advance and the analysis
-recovers DRY/NPxxY/CWxP machinery on its own, and links to the ranked
-Top 30 table. The lower-bounds caveat was added in commit `6b6fcaa`,
-after item 4 of this handoff was first drafted; see item 12.
+a median 58% (range 9% to 88%) of a receptor's distinct above-threshold
+contact positions, states that no motif was picked in advance and the
+analysis recovers DRY/NPxxY/CWxP machinery on its own, and links to the
+ranked Top 30 table. The lower-bounds caveat was added in commit `6b6fcaa`
+(originally an occurrence-weighted 64%, range 8% to 88%) and corrected in
+commit `608362c` to the position-based 58% (range 9% to 88%); see item 12.
 
 **What each receptor report contains**: a nine-item list (interactive snake
-plot; ranked contact pairs up to 1,000 rows; receptor threshold; CFRs;
-generic numbering; conservation; gnomAD variants for the 279 receptors that
-have them; AlphaMissense; CSV export), plus example-report links to ADRB2
-and PAR2.
+plot; ranked contact pairs up to 1,000 rows; receptor threshold;
+cross-family CFR positions mapped onto the receptor; generic numbering;
+conservation; gnomAD variants for the 279 receptors that have them;
+AlphaMissense; CSV export), plus example-report links to ADRB2 and PAR2.
+The CFR bullet previously read "Receptor-level Core Functional Residues,"
+which named the wrong set: a report shows the family-scope CFR list mapped
+onto that one receptor, not something computed at the receptor level.
+Fixed in commit `608362c` to "Cross-family Core Functional Residue
+positions mapped onto this receptor."
 
 **Analysing your own structures**: states that GPCompaRe covers analysis
 of user-supplied paired active and inactive structures using the same
@@ -225,8 +268,12 @@ fix wave: the table below no longer lists
 and `preview_par2.py` (665 lines combined). Commit `03c94a3` untracked all
 three after an earlier over-broad `git add -A GPCompaReports_v2/` had
 swept them into history by mistake. They remain on disk unchanged; only
-their git tracking changed. Verified that the branch now tracks nothing
-beyond its own work:
+their git tracking changed. Also regenerated to add
+`GPCompaReports_v2/templates/statistics.html`, touched for the first time
+by commits `608362c` and `cc8ae9b` (the CFR tooltip fix and the lower-bounds
+callout, item 12). File count moved from 39 to 40, insertions from 4,678 to
+4,697, deletions from 431 to 436. Verified that the branch now tracks
+nothing beyond its own work:
 
 ```
 $ comm -13 <(git ls-tree -r --name-only 3a10a53 | sort) <(git ls-files | sort)
@@ -237,53 +284,54 @@ three scripts among them.
 
 ```
 $ git diff --stat 3a10a53..HEAD -- . ':!docs/superpowers/V3_DRAFT_HANDOFF.md' ':!docs/superpowers/screenshots'
- .gitignore                                                    |    3 +
- GPCompaReports_v2/analysis/cfr_analysis.py                    |   14 +-
- GPCompaReports_v2/generate_site.py                             |    3 +
- GPCompaReports_v2/static/css/landing.css                       |  281 +---
- GPCompaReports_v2/static/css/site.css                          |  139 +-
- GPCompaReports_v2/static/css/v3.css                             |   49 +
- GPCompaReports_v2/static/img/fig-cfr-topology.png              |  Bin 0 -> 406319 bytes
- GPCompaReports_v2/static/img/par2-explainer-snake.png          |  Bin 0 -> 257868 bytes
- GPCompaReports_v2/static/js/landing.js                         |   38 +-
- GPCompaReports_v2/static/js/v3-deeplink.js                     |  100 ++
- GPCompaReports_v2/static/js/v3-nav.js                          |  117 ++
- GPCompaReports_v2/templates/_partials/footer.html              |    2 +-
- GPCompaReports_v2/templates/_partials/topbar.html               |   12 +-
- GPCompaReports_v2/templates/base.html                          |    7 +-
- GPCompaReports_v2/templates/contact.html                       |  102 ++
- GPCompaReports_v2/templates/downloads.html                     |   90 ++
- GPCompaReports_v2/templates/gpcr_report.html                   |   56 +-
- GPCompaReports_v2/templates/landing.html                       |  303 ++--
- GPCompaReports_v2/tests/__init__.py                            |    0
- GPCompaReports_v2/tests/test_brand.py                          |   23 +
- GPCompaReports_v2/tests/test_freeze.py                         |   61 +
- GPCompaReports_v2/tests/test_landing_counts.py                 |   51 +
- GPCompaReports_v2/tests/test_new_pages.py                      |   57 +
- GPCompaReports_v2/tests/test_selection.py                      |   27 +
- GPCompaReports_v2/website/brand.py                              |    8 +
- GPCompaReports_v2/website/page_generators/contact_page.py       |   28 +
- GPCompaReports_v2/website/page_generators/downloads_page.py     |   36 +
- GPCompaReports_v2/website/page_generators/gpcr_index.py         |    4 +-
- GPCompaReports_v2/website/page_generators/gpcr_report_page.py   |    8 +-
- GPCompaReports_v2/website/page_generators/landing_page.py       |   55 +-
- GPCompaReports_v2/website/page_generators/statistics_page.py    |    4 +-
- GPCompaReports_v2/website/site_generator.py                     |   38 +-
- docs/superpowers/EXTERNAL_SETUP.md                              |   76 +
- docs/superpowers/plans/2026-08-24-gpcompare-v3-demo.md          | 1566 ++++++++
- docs/superpowers/plans/2026-08-25-v3-review-draft.md            | 1079 +++++
- docs/superpowers/specs/2026-08-24-gpcompare-v3-design.md        |  162 ++
- docs/superpowers/specs/2026-08-24-v3-report-layouts.html        |  308 ++
- docs/superpowers/specs/2026-08-25-v3-open-questions-brief.md    |  136 ++
- scripts/build_demo.sh                                           |   66 +
- 39 files changed, 4678 insertions(+), 431 deletions(-)
+ .gitignore                                         |    3 +
+ GPCompaReports_v2/analysis/cfr_analysis.py         |   14 +-
+ GPCompaReports_v2/generate_site.py                 |    3 +
+ GPCompaReports_v2/static/css/landing.css           |  281 +---
+ GPCompaReports_v2/static/css/site.css              |  139 +-
+ GPCompaReports_v2/static/css/v3.css                |   55 +
+ GPCompaReports_v2/static/img/fig-cfr-topology.png  |  Bin 0 -> 406319 bytes
+ .../static/img/par2-explainer-snake.png            |  Bin 0 -> 257868 bytes
+ GPCompaReports_v2/static/js/landing.js             |   38 +-
+ GPCompaReports_v2/static/js/v3-deeplink.js         |  100 ++
+ GPCompaReports_v2/static/js/v3-nav.js              |  117 ++
+ GPCompaReports_v2/templates/_partials/footer.html  |    2 +-
+ GPCompaReports_v2/templates/_partials/topbar.html  |   12 +-
+ GPCompaReports_v2/templates/base.html              |    7 +-
+ GPCompaReports_v2/templates/contact.html           |  102 ++
+ GPCompaReports_v2/templates/downloads.html         |   90 ++
+ GPCompaReports_v2/templates/gpcr_report.html       |   56 +-
+ GPCompaReports_v2/templates/landing.html           |  304 ++--
+ GPCompaReports_v2/templates/statistics.html        |   12 +-
+ GPCompaReports_v2/tests/__init__.py                |    0
+ GPCompaReports_v2/tests/test_brand.py              |   23 +
+ GPCompaReports_v2/tests/test_freeze.py             |   61 +
+ GPCompaReports_v2/tests/test_landing_counts.py     |   56 +
+ GPCompaReports_v2/tests/test_new_pages.py          |   57 +
+ GPCompaReports_v2/tests/test_selection.py          |   27 +
+ GPCompaReports_v2/website/brand.py                 |    8 +
+ .../website/page_generators/contact_page.py        |   28 +
+ .../website/page_generators/downloads_page.py      |   36 +
+ .../website/page_generators/gpcr_index.py          |    4 +-
+ .../website/page_generators/gpcr_report_page.py    |    8 +-
+ .../website/page_generators/landing_page.py        |   55 +-
+ .../website/page_generators/statistics_page.py     |    4 +-
+ GPCompaReports_v2/website/site_generator.py        |   38 +-
+ docs/superpowers/EXTERNAL_SETUP.md                 |   76 +
+ .../plans/2026-08-24-gpcompare-v3-demo.md          | 1566 ++++++++++++++++++++
+ .../plans/2026-08-25-v3-review-draft.md            | 1079 ++++++++++++++
+ .../specs/2026-08-24-gpcompare-v3-design.md        |  162 ++
+ .../specs/2026-08-24-v3-report-layouts.html        |  308 ++++
+ .../specs/2026-08-25-v3-open-questions-brief.md    |  136 ++
+ scripts/build_demo.sh                              |   66 +
+ 40 files changed, 4697 insertions(+), 436 deletions(-)
 ```
 
 This excludes `docs/superpowers/V3_DRAFT_HANDOFF.md` itself and the ten
-files under `docs/superpowers/screenshots/` (this fix wave's edits to the
-document and the four re-captured screenshots), staged and committed as a
-separate change on top of the above, the same convention this item used
-when the document was first written.
+files under `docs/superpowers/screenshots/`. Every revision of this document,
+including this one, is staged and committed as a docs-only change on top of
+the diff above, the same convention this item used when the document was
+first written.
 
 Deleted in this range and not shown above because they no longer exist to
 diff: `GPCompaReports_v2/analysis/receptor_profile.py`,
@@ -319,6 +367,11 @@ GPCompaReports_v2/tests/test_selection.py::test_unknown_id_raises_with_the_bad_n
 
 ============================== 20 passed in 0.76s ==============================
 ```
+
+Re-run for this fix wave: same 20 tests, same names, all still pass. Test count
+is unchanged; `test_frozen_counts_appear_verbatim` (`test_landing_counts.py`)
+was strengthened in commit `608362c` rather than replaced, since the family
+count of 60 could no longer be pinned with a bare substring check (item 12).
 
 Caveat: most of these tests are skipped, not run, unless
 `GPCompaReports_v2/output_v3_demo/` exists on disk (built by
@@ -387,18 +440,36 @@ sticky nav and deep links), a `v3.css` stylesheet link, and a
 existing inline script. No heading, label, or paragraph text inside any
 `report-section` was touched.
 
+**Checked beyond the suite, by the final whole-branch review.** The
+automated test only reads PAR2. The freeze property was also checked by
+hand across all five demo receptors (`par2_human`, `par1_human`,
+`adrb2_human`, `5ht2a_human`, `cxcr4_human`), using the same
+section-by-section text comparison the test itself runs, and every one
+came back byte-identical to its pre-branch baseline. Re-confirmed directly
+while writing this revision of the document: comparing
+`GPCompaReports_v2/output/reports/*.html` against
+`GPCompaReports_v2/output_v3_demo/reports/*.html` for all five gives zero
+section mismatches. Separately, the injected sticky nav and toolbar
+(`v3-nav.js`) were confirmed at runtime, in headless Chromium, to render
+outside every `<section class="report-section">` on all five report
+pages, closing part of the runtime gap the next paragraph describes. That
+check was manual; it added no automated coverage, and `test_freeze.py`
+itself was not changed to run a browser.
+
 **What this does not prove.** Both assertions are static-markup checks
 against the built HTML; neither one loads a page or runs a browser, so
-the freeze test is silent on runtime JavaScript behaviour. This branch
-adds two script files that run on every report page, `v3-nav.js` (builds
-the sticky section nav and the Compact-view toggle from
-`[data-section-title]`) and `v3-deeplink.js` (reads and writes snake-plot
-view state in the URL hash). Neither is covered by this test or any other
-(see item 12). Separately, "unchanged by default" is only true for a
-first-time visitor: `v3-nav.js` persists its Compact-view toggle to
-`localStorage` under the key `gpcompare-compact`, so a reader who once
-switched Compact view on will see it on again on a later visit to any
-report page, with no toggle interaction in between.
+the freeze test itself is silent on runtime JavaScript behaviour (the
+manual check above covers only where the injected markup renders, not
+what it does). This branch adds two script files that run on every
+report page, `v3-nav.js` (builds the sticky section nav and the
+Compact-view toggle from `[data-section-title]`) and `v3-deeplink.js`
+(reads and writes snake-plot view state in the URL hash). Neither is
+covered by this test or any other (see item 12). Separately, "unchanged
+by default" is only true for a first-time visitor: `v3-nav.js` persists
+its Compact-view toggle to `localStorage` under the key
+`gpcompare-compact`, so a reader who once switched Compact view on will
+see it on again on a later visit to any report page, with no toggle
+interaction in between.
 
 See item 10 for a caveat on how this baseline file itself is sourced.
 
@@ -467,13 +538,17 @@ crops were re-verified by eye afterward. This is a capture-tooling issue
 only; it does not reflect anything about the site's own anchor or deep-link
 behaviour, which is untouched by this task.
 
-**No dark-theme evidence.** All ten screenshots were forced to light
-theme (`--blink-settings=preferredColorScheme=1`). The site ships a
-light/dark theme toggle in the topbar (visible in every capture above),
-and the templates carry a dark palette (`primitives-dark.css`), but no
-screenshot in this set shows it rendered. Nothing in this branch's diff
-touches theme logic, so this is a gap in visual evidence, not a known or
-suspected defect; it is listed as an open item in item 12.
+**Dark theme, closed.** All ten committed screenshots were forced to
+light theme (`--blink-settings=preferredColorScheme=1`); none of them show
+the site's dark palette (`primitives-dark.css`), and that has not changed
+in this fix wave. The open question this originally raised, whether dark
+theme even renders correctly, is now closed: the final whole-branch review
+captured and checked dark theme separately, on four page types, and it
+renders correctly with no defect found. That check was a throwaway
+capture, not saved to `docs/superpowers/screenshots/`, so there is still
+no persisted dark-theme image in this repository, only the confirmation
+that it works. See item 12; the "still open" list there no longer carries
+this item.
 
 ## 10. Concerns affecting scientific accuracy, reproducibility, or the manuscript-to-site match
 
@@ -521,7 +596,8 @@ left with a wrong number, only a heading that overstates it in isolation.
 The proposed correction, "RRCS results, up to 1,000 contact pairs," is
 pending PI approval and is deliberately not applied in this draft.
 
-**The freeze test's baseline is unpinned.** `test_freeze.py` compares the
+**The freeze test's baseline is unpinned.** (Restated as the blocking
+warning at the very top of this document; full detail here.) `test_freeze.py` compares the
 new build against `GPCompaReports_v2/output/reports/par2_human.html`,
 whichever build happens to be sitting in that directory. `output/` is
 gitignored (`.gitignore:17`), so that baseline is not itself version
@@ -533,6 +609,46 @@ built to preserve. This needs pinning, for example a checked-in fixture or
 a build tagged and preserved outside `output/`, before this stops being a
 draft.
 
+**"CFR" denotes two different sets on the statistics page.** The ranked
+CFR table and its dot plot both take the top 30 of the full ranked table:
+`cfr_analysis.make_cfr_dotplot` (`cfr_analysis.py:112`) and
+`statistics_page.generate_statistics_page` (`statistics_page.py:43`) both
+call `.head(30)`, matching the "Top 30 Core Functional Residue Positions"
+heading and the landing page's "ranked Top 30 recurrent positions" link.
+But `cfr_analysis.build_cfr_network` (`cfr_analysis.py:138`) and
+`variant_correlation._get_cfr_position_map` (`variant_correlation.py:41`)
+still call `.head(50)`. Two consequences follow directly: the table headed
+"Top CFR Contact Pairs (both residues are CFRs)" (`statistics.html:129`)
+can list, and does list, pairs where a residue ranks between 31 and 50, so
+some rows are not actually pairs of Top 30 CFRs despite the page's own
+heading; and the AlphaMissense pathogenicity enrichment percentages and
+the chi-squared statistic shown in the pathogenicity chart on the same
+page are computed against the top 50 CFR positions, not the top 30.
+
+This split was deliberately not changed. Aligning both functions on 30
+would change the published enrichment percentages and the chi-squared
+p-value, and those numbers may already be quoted in the manuscript;
+changing the underlying population is a scientific call, not a copy fix,
+and is not something a documentation or bug-fix pass should decide on its
+own. Two options for the owner:
+
+- **Align on 30.** Change `build_cfr_network` and `_get_cfr_position_map`
+  to `.head(30)`, so every use of "CFR" on the statistics page means the
+  same 30 positions the landing page links to. This changes the
+  contact-pair table's contents, the pathogenicity enrichment percentages,
+  and the chi-squared p-value; any manuscript citation of the current
+  numbers would need to be re-verified against the new ones.
+- **Leave the populations different, but say so.** Keep `.head(50)` where
+  it is and add a line to the statistics page stating that the contact-pair
+  table and the pathogenicity statistics are computed over the top 50 CFR
+  positions, a broader set than the top 30 shown in the ranked table above.
+  This preserves the numbers as currently quoted, at the cost of "CFR"
+  meaning two different things on one page unless a reader notices the new
+  disclaimer.
+
+No default is proposed here; this is a decision being surfaced, not one
+resolved in this draft. See item 13.
+
 **The database download must be a real archive before public release.**
 `downloads.html` currently marks both the database archive and the
 software archive "Not yet available," and that is a safe *draft* state
@@ -542,8 +658,8 @@ because it invents no file, link, or DOI (verified by
 state for the database half.
 Only the software placeholder may persist past publication, since there is
 no releasable user-facing analysis program yet. The database placeholder
-must be replaced with a real, licensed archive (see item 11, items 6 and
-8) before the site is published for the paper. `downloads_page.py`'s own
+must be replaced with a real, licensed archive (see item 13, decision 4)
+before the site is published for the paper. `downloads_page.py`'s own
 module docstring already states this ordering; this item exists so it is
 not missed at review time.
 
@@ -631,13 +747,21 @@ of these blocks this draft; they are recorded so they are not lost.
 - A stale docstring on `identify_cfrs` claimed it truncated to the top 50
   CFR positions; it never truncated at all. Fixed.
 - A fifth landing-page change arrived after this document's item 4 was
-  first drafted and independently of this fix wave: commit `6b6fcaa`
-  added a paragraph to the CFR section stating that recurrence counts are
-  lower bounds, because GPCRdb generic numbering reaches only a median
-  64% (range 8% to 88%) of a receptor's above-threshold contact
-  positions. Item 4's CFR summary and item 3's count table have been
-  updated to include it. That 64%/8%/88% figure is hand-authored prose,
-  not something this fix wave independently re-derived.
+  first drafted and independently of the fix wave that first recorded it
+  here: commit `6b6fcaa` added a paragraph to the CFR section stating that
+  recurrence counts are lower bounds, because GPCRdb generic numbering
+  reaches only a median 64% (range 8% to 88%) of a receptor's
+  above-threshold contact positions. That figure counted contact-position
+  *occurrences*, weighting a position once per receptor where it recurs;
+  commit `608362c` corrected it to a median 58% (range 9% to 88%) of
+  *distinct* above-threshold contact positions, the more conservative,
+  position-based count. Commit `cc8ae9b` then added the same lower-bounds
+  caveat, at 58%, to the statistics page's own CFR callout
+  (`statistics.html:66-73`), which previously claimed every residue is
+  mapped "across all 283 GPCRs," contradicting the landing page. Item 4's
+  CFR summary and item 3's count table now carry the corrected 58%/9%/88%
+  figure. That figure is still hand-authored prose, not something any code
+  in this branch independently re-derives.
 - The Contact page's placeholder text originally pointed readers at
   `docs/superpowers/EXTERNAL_SETUP.md`, an internal repository path, and
   would have leaked the internal working-directory name onto a page meant
@@ -655,6 +779,83 @@ of these blocks this draft; they are recorded so they are not lost.
   companion") was trimmed from the Downloads placeholder note as
   out-of-register phrasing that had leaked from a work-in-progress draft
   into public copy; the substantive commitment sentence was kept.
+- The final whole-branch review forced a further wave of fixes, commit
+  `608362c`, that this document did not yet reflect until this revision:
+  - The hero claimed every report links gnomAD variation. Four receptors
+    have none (item 10). The correct scoping already existed further down
+    the same page; the hero was never brought in line with it. Item 4 has
+    the corrected hero text.
+  - "Receptor-level Core Functional Residues," in the report-contents
+    list, named the wrong set: a report shows the family-scope CFR list
+    mapped onto that one receptor, not something computed at the receptor
+    level. Reworded to "Cross-family Core Functional Residue positions
+    mapped onto this receptor." Item 4 has the corrected bullet.
+  - The statistics page's CFR score tooltip said "frequency × mean
+    absolute delta." The code (`cfr_analysis.py:91-96`) computes the mean
+    of normalised frequency and normalised mean delta, not a product.
+    Tooltip corrected to describe the actual formula
+    (`statistics.html:105`).
+  - Compact view folded a report section's body but left the snake plot
+    rendered while hiding its legend and controls, so an approved figure
+    appeared without its colour key. Cause: `#snake-plot-container`
+    carries `display: flex` from an id selector in `site.css`, which
+    outranks the `.report-section.v3-folded > *` attribute rule used to
+    hide folded content. Fixed with an id-matching rule in `v3.css` that
+    hides the plot and its legend specifically when folded.
+  - The dataset table's "Contact-pair records" note said "residue pairs
+    scored in both states." Only 60.1% of the 213,456 rows are actually
+    non-zero in both states; the rest are zero in one. Reworded to
+    "residue pairs detected in either state," matching the wording the
+    approved browse page already uses for the same population.
+  - `test_landing_counts.py::test_frozen_counts_appear_verbatim` pinned
+    the receptor-family count with a bare `'60' in html` check. The
+    string "60" occurs many times on the landing page, so a rebuild that
+    changed the family count to 61 would still have passed. Anchored to
+    the count's own table row instead, and proven able to fail (item 6).
+- Commit `cc8ae9b` fixed one further false claim the same review caught:
+  the statistics page's CFR callout said every residue is mapped "across
+  all 283 GPCRs." Generic numbering does not cover every residue; the
+  callout now states the same 58% median lower-bound caveat the landing
+  page carries (`statistics.html:66-73`, item 3, item 4).
+
+**Verified independently by the final whole-branch review, recorded here
+for the first time:**
+
+- The freeze property holds under a stronger check than `test_freeze.py`
+  itself runs: byte-identical approved sections across all five demo
+  receptors, not only PAR2. Re-confirmed directly while writing this
+  revision; see item 8.
+- The injected sticky nav and toolbar were confirmed at runtime, in
+  headless Chromium, to render outside every approved report section on
+  all five report pages. A manual check, not automated coverage; see
+  item 8.
+- Every frozen figure and the entire PAR2 worked example reproduce
+  exactly from the underlying batch CSVs, corroborating item 2's
+  independently re-derived verification table.
+- Dark theme was captured and checked on four page types and renders
+  correctly with no defect found. See item 9, which previously listed
+  this as unreviewed and now records it as closed.
+- The DRY, NPxxY and CWxP recovery claim on the landing page holds under
+  direct inspection of the built Top 30 table
+  (`GPCompaReports_v2/output_v3_demo/statistics.html`): `3.50x50` (the DRY
+  arginine) ranks 1, `7.53x53` (the NPxxY tyrosine) ranks 2, and `6.48x48`
+  (the CWxP tryptophan) ranks 3. Re-confirmed directly for this revision.
+  The hedge word "parts" in that landing-page sentence is accurate:
+  `N7.49` (NPxxY) and both `C6.47` and `P6.50` (CWxP) do not appear
+  anywhere in the Top 30, so no one motif is recovered in full, only
+  parts of each.
+
+**A pattern worth naming before the next review pass.** Three of the
+false claims the final review caught, the hero's unscoped gnomAD claim,
+the "Receptor-level Core Functional Residues" bullet, and the
+occurrence-weighted 64% coverage figure, were sentences lifted verbatim
+from the implementation plan and never checked against the pipeline that
+actually produces the numbers. Each earlier review in this branch's
+history fixed only the single instance directly in front of it, not the
+pattern behind all three. Recommendation for whoever runs the next pass:
+before reviewing prose, walk the plan's copy blocks against the built
+site as a checklist, one sentence-to-code check per claim, rather than
+reacting to whichever sentence a reviewer happens to notice first.
 
 **Still open, not blocking, worth carrying forward:**
 
@@ -681,7 +882,6 @@ of these blocks this draft; they are recorded so they are not lost.
   the Python/pytest suite under `GPCompaReports_v2/tests/`. Adding one is
   out of scope for this draft but is the natural next step before relying
   on either script's behaviour for a release.
-- No screenshot in this draft shows the site's dark theme; see item 9.
 - Round 2 of this effort reused round 1's task-brief and task-report
   filenames under `.superpowers/sdd/`, so round 1's working files were
   overwritten as round 2 proceeded. Round 1 is complete and was committed
@@ -738,10 +938,22 @@ owner to decide, in priority order, with what each decision blocks.
    whatever build happens to sit in the gitignored `output/` directory
    (item 10). Blocks keeping the one property this whole draft protects,
    the frozen approved report content, reliable across future builds
-   without anyone noticing if it silently stopped being checked.
+   without anyone noticing if it silently stopped being checked. The final
+   whole-branch review judged this effectively blocking already: see the
+   warning at the very top of this document for what happens if a full
+   build runs before this is pinned.
 7. **Whether to scale this draft to the full 283-receptor build** for the
    next review pass, rather than the five receptors it currently covers
    (item 0). Blocks giving the owner a look at the real site instead of a
    five-receptor sample; everything else in this document was verified
    against that five-receptor sample and would need re-verifying at full
    scale.
+8. **Whether to align the statistics page's two CFR populations, top 30
+   versus top 50, or document the split instead** (item 10). The ranked
+   table and dot plot use the top 30; the "Top CFR Contact Pairs" table
+   and the pathogenicity enrichment/chi-squared statistics still use the
+   top 50. Aligning on 30 would change the published enrichment
+   percentages and the chi-squared result, which may already be quoted in
+   the manuscript, so this was deliberately left as a decision rather than
+   a fix applied in this draft. Blocks nothing else in this document; it
+   is scoped to the statistics page alone.
