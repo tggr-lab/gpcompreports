@@ -34,7 +34,8 @@
     var segs = (k.top_segments || []).map(function (p) {
       return p[0] + ' ' + p[1].toFixed(1) + '%';
     }).join(' · ') || 'no above-threshold contacts with a resolved segment';
-    wrap.appendChild(tile('Largest segment shares', segs));
+    wrap.appendChild(tile('Largest segment shares', segs,
+      'shares of annotated endpoints, not of all above-threshold contacts'));
 
     if (k.largest_structured) {
       var L = k.largest_structured;
@@ -55,9 +56,14 @@
 
   function buildFingerprint(profile, median, segments, coverage, medianCoverage) {
     var W = 640, H = 116, padB = 20, plot = H - padB;
+    // A median profile that is absent or empty (e.g. a preview build whose
+    // analysis dict never computed one) is not the same thing as a database
+    // median measured at zero in every segment. Treat it as absent and omit
+    // the comparator entirely, rather than drawing it flat along the axis.
+    var hasMedian = !!median && Object.keys(median).length > 0;
     var max = 0;
     segments.forEach(function (s) {
-      max = Math.max(max, profile[s] || 0, median[s] || 0);
+      max = Math.max(max, profile[s] || 0, hasMedian ? (median[s] || 0) : 0);
     });
     max = Math.max(max, 1) * 1.15;
     var bw = W / segments.length;
@@ -65,10 +71,12 @@
     var svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', 'Above-threshold contact distribution by segment, this receptor against the median of the database');
+    svg.setAttribute('aria-label', hasMedian ?
+      'Above-threshold contact distribution by segment, this receptor against the per-segment median across receptors' :
+      'Above-threshold contact distribution by segment, this receptor');
 
     segments.forEach(function (s, i) {
-      var x = i * bw, v = profile[s] || 0, m = median[s] || 0;
+      var x = i * bw, v = profile[s] || 0, m = hasMedian ? (median[s] || 0) : 0;
       var h = v / max * plot, mh = m / max * plot;
       var structured = /^TM[1-7]$/.test(s) || s === 'H8';
       var bar = document.createElementNS(NS, 'rect');
@@ -78,17 +86,21 @@
       bar.setAttribute('fill', structured ? 'var(--brand-primary)' : 'var(--fgColor-muted)');
       bar.setAttribute('opacity', structured ? '1' : '0.45');
       var t = document.createElementNS(NS, 'title');
-      t.textContent = s + ': ' + v.toFixed(1) + '% here, ' + m.toFixed(1) + '% median';
+      t.textContent = hasMedian ?
+        (s + ': ' + v.toFixed(1) + '% here, ' + m.toFixed(1) + '% median') :
+        (s + ': ' + v.toFixed(1) + '% here');
       bar.appendChild(t);
       svg.appendChild(bar);
 
-      var line = document.createElementNS(NS, 'line');
-      line.setAttribute('x1', x + bw * 0.10); line.setAttribute('x2', x + bw * 0.78);
-      line.setAttribute('y1', plot - mh); line.setAttribute('y2', plot - mh);
-      line.setAttribute('stroke', 'var(--fgColor-muted)');
-      line.setAttribute('stroke-width', '1.4');
-      line.setAttribute('stroke-dasharray', '3 2');
-      svg.appendChild(line);
+      if (hasMedian) {
+        var line = document.createElementNS(NS, 'line');
+        line.setAttribute('x1', x + bw * 0.10); line.setAttribute('x2', x + bw * 0.78);
+        line.setAttribute('y1', plot - mh); line.setAttribute('y2', plot - mh);
+        line.setAttribute('stroke', 'var(--fgColor-muted)');
+        line.setAttribute('stroke-width', '1.4');
+        line.setAttribute('stroke-dasharray', '3 2');
+        svg.appendChild(line);
+      }
 
       var lab = document.createElementNS(NS, 'text');
       lab.setAttribute('x', x + bw * 0.43); lab.setAttribute('y', H - 6);
@@ -102,7 +114,10 @@
     // receptor_profile.segment_profile). `coverage` and `medianCoverage`,
     // computed server side, say how much of each side's above-threshold
     // contacts that base actually covers. Disclose both, factually, only
-    // when either falls short of full coverage.
+    // when either falls short of full coverage. The comparator is a
+    // per-segment median across receptors, not a receptor itself, so it has
+    // no coverage of its own: medianCoverage is worded as a median across
+    // receptors, never as a property of the dashed line.
     coverage = coverage || 0;
     medianCoverage = medianCoverage || 0;
 
@@ -111,22 +126,31 @@
     box.id = 'v3-fp';
     var head = document.createElement('div');
     head.className = 'v3-fp-head';
-    var headText = 'Where above-threshold contacts sit, against the median of the database';
-    var partial = coverage < 100 || medianCoverage < 100;
+    var headText = hasMedian ?
+      'Where above-threshold contacts sit, against the per-segment median across receptors (not itself a profile)' :
+      'Where above-threshold contacts sit';
+    var partial = hasMedian ? (coverage < 100 || medianCoverage < 100) : coverage < 100;
     if (partial) {
-      headText += ' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated, median: ' +
-        medianCoverage.toFixed(1) + '%)';
+      headText += hasMedian ?
+        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated, median across receptors: ' +
+          medianCoverage.toFixed(1) + '%)') :
+        (' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated)');
     }
     var headLabel = document.createElement('span');
     headLabel.textContent = headText;
     if (partial) {
-      headLabel.title = 'Bars are shares of above-threshold contact endpoints that resolved to ' +
-        'a named segment, not of all endpoints. Coverage is the percentage that resolved: ' +
-        coverage.toFixed(1) + '% for this receptor, ' + medianCoverage.toFixed(1) + '% for the median.';
+      headLabel.title = hasMedian ?
+        ('Bars are shares of above-threshold contact endpoints that resolved to a named segment, not of all ' +
+          'endpoints. Coverage is the percentage that resolved: ' + coverage.toFixed(1) + '% for this receptor. ' +
+          'Median across receptors: ' + medianCoverage.toFixed(1) + '%.') :
+        ('Bars are shares of above-threshold contact endpoints that resolved to a named segment, not of all ' +
+          'endpoints. Coverage is the percentage that resolved: ' + coverage.toFixed(1) + '% for this receptor.');
     }
     var legend = document.createElement('span');
     legend.className = 'v3-legend';
-    legend.innerHTML = '<i class="bar"></i>this receptor <i class="med"></i>median';
+    legend.innerHTML = hasMedian ?
+      '<i class="bar"></i>this receptor <i class="med"></i>median' :
+      '<i class="bar"></i>this receptor';
     head.appendChild(headLabel);
     head.appendChild(legend);
     box.appendChild(head);

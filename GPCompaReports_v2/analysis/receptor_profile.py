@@ -78,7 +78,7 @@ def segment_profile(delta_df, annot_map, threshold):
     for _, row in sig.iterrows():
         for col in ('res1', 'res2'):
             seg = _seg(annot_map, row[col])
-            if seg == 'unassigned':
+            if seg not in profile:
                 continue
             counts[seg] = counts.get(seg, 0) + 1
             accounted += 1
@@ -104,7 +104,7 @@ def segment_coverage(delta_df, annot_map, threshold):
     for _, row in sig.iterrows():
         for col in ('res1', 'res2'):
             total += 1
-            if _seg(annot_map, row[col]) != 'unassigned':
+            if _seg(annot_map, row[col]) in SEGMENTS:
                 accounted += 1
     if not total:
         return 0.0

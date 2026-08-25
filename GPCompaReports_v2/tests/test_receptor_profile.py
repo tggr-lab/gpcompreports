@@ -52,6 +52,22 @@ def test_segment_profile_renormalizes_on_resolved_endpoints_only():
     assert prof['TM3'] == round(100.0 * 1 / 3, 1)
 
 
+def test_segment_profile_excludes_segment_names_outside_the_vocabulary():
+    # ICL4 is a real value the annotation corpus carries (three receptors:
+    # gpr75_human, gpr88_human, pkr2_human) but it is not one of the 16
+    # SEGMENTS keys. _seg() returns it unclamped, so it must be dropped from
+    # both the numerator and the denominator, exactly like a missing
+    # annotation entry, not counted as an accounted endpoint with no bar.
+    annot = dict(ANNOT)
+    annot[5] = {'position': 5, 'amino_acid': 'F', 'protein_segment': 'ICL4', 'display_number': ''}
+    df = _delta([(1, 2, 5.0), (1, 5, 9.0)])
+    prof = rp.segment_profile(df, annot, threshold=1.0)
+    assert round(sum(prof.values()), 1) == 100.0
+    assert prof['TM6'] == round(100.0 * 2 / 3, 1)
+    assert prof['TM3'] == round(100.0 * 1 / 3, 1)
+    assert rp.segment_coverage(df, annot, threshold=1.0) == 75.0
+
+
 def test_segment_coverage_is_full_when_every_endpoint_resolves():
     df = _delta([(1, 2, 5.0), (3, 4, 9.0)])
     assert rp.segment_coverage(df, ANNOT, threshold=1.0) == 100.0
@@ -117,7 +133,7 @@ def test_key_numbers_counts_cfr_top_movers_by_row_not_by_endpoint():
 
 def test_key_numbers_cfr_top_movers_never_exceeds_top_mover_count():
     # Six rows, every endpoint of every row is a CFR: with the old
-    # by-endpoint counting this returned 9 (distinct numbers) against 6 rows.
+    # by-endpoint counting this returned 4 (distinct numbers) against 6 rows.
     annot = {
         1: {'position': 1, 'amino_acid': 'A', 'protein_segment': 'TM6', 'display_number': '6.48x48'},
         2: {'position': 2, 'amino_acid': 'C', 'protein_segment': 'TM3', 'display_number': '3.50x50'},
