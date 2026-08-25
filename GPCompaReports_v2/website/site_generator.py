@@ -6,7 +6,6 @@ data (../The_batch_RRCS_analyzer/batch_analysis_full/).
 """
 
 import shutil
-import statistics
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -16,8 +15,6 @@ from ..analysis.cross_gpcr_analysis import run_cross_gpcr_analysis
 from ..analysis.tm_domain_analysis import run_tm_domain_analysis
 from ..analysis.cfr_analysis import run_cfr_analysis
 from ..analysis.variant_correlation import run_variant_analysis
-from ..analysis import receptor_profile as rprofile
-from .page_generators import gpcr_report_helpers as helpers
 from .page_generators.landing_page import generate_landing_page
 from .page_generators.gpcr_index import generate_gpcr_index
 from .page_generators.gpcr_report_page import generate_all_reports
@@ -72,22 +69,6 @@ class SiteGenerator:
         self.analysis_results['cfr'] = run_cfr_analysis(self.store)
         cfr_table = self.analysis_results['cfr'].get('cfr_table')
         self.analysis_results['variant'] = run_variant_analysis(self.store, cfr_table)
-
-        print("  Computing database median segment profile...")
-        profiles = []
-        coverages = []
-        for gid in self.store.gpcr_ids:
-            delta_df = self.store.delta_data.get(gid)
-            if delta_df is None or delta_df.empty:
-                continue
-            annot_map = self.store.get_annotation_map(gid)
-            thr = helpers._calc_significance_threshold(delta_df)
-            profiles.append(rprofile.segment_profile(delta_df, annot_map, thr))
-            coverages.append(rprofile.segment_coverage(delta_df, annot_map, thr))
-        self.analysis_results['median_profile'] = rprofile.median_profile(profiles)
-        self.analysis_results['median_coverage'] = (
-            round(statistics.median(coverages), 1) if coverages else 0.0
-        )
 
         print("\n[4/5] Preparing output directory...")
         self._prepare_output()
