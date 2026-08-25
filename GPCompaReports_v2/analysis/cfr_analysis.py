@@ -103,14 +103,18 @@ def make_cfr_dotplot(cfr_table):
     if cfr_table.empty:
         return go.Figure()
 
-    top50 = cfr_table.head(50)
+    # 30, not 50: the published ranked subset is the Top 30, and the table
+    # directly below this chart on the statistics page is headed "Top 30 Core
+    # Functional Residue Positions". Plotting 50 here put two different ranked
+    # claims on one page, and the landing page links here saying "Top 30".
+    top30 = cfr_table.head(30)
 
     fig = px.scatter(
-        top50, x='mean_abs_delta', y='frequency',
+        top30, x='mean_abs_delta', y='frequency',
         size='cfr_score', color='segment',
         hover_data=['generic_number', 'rank'],
         text='generic_number',
-        title='Top 50 Core Functional Residue Positions',
+        title='Top 30 Core Functional Residue Positions',
         labels={
             'mean_abs_delta': 'Mean |ΔRRCS|',
             'frequency': 'GPCRs with above-threshold change',
