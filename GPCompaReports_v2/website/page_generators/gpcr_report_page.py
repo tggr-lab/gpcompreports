@@ -502,6 +502,8 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
             'key_numbers': rprofile.key_numbers(delta_df, annot_map, sig_threshold, cfr_ranks),
             'profile': rprofile.segment_profile(delta_df, annot_map, sig_threshold),
             'median_profile': (analysis_results or {}).get('median_profile', {}),
+            'coverage': rprofile.segment_coverage(delta_df, annot_map, sig_threshold),
+            'median_coverage': (analysis_results or {}).get('median_coverage', 0.0),
             'segments': rprofile.SEGMENTS,
             'cfr_ranks': {k: int(v) for k, v in cfr_ranks.items()},
             'low_confidence_segments': [s for s in rprofile.SEGMENTS

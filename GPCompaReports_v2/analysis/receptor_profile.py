@@ -53,18 +53,19 @@ def _aa(annot_map, position):
 
 
 def segment_profile(delta_df, annot_map, threshold):
-    """Percent of above-threshold contact endpoints falling in each segment.
+    """Percent of above-threshold, annotated contact endpoints in each segment.
 
     Both ends of every above-threshold contact are counted, so a TM6-TM3
     contact contributes one to each. Returns a value for all 16 segments.
 
-    Caveat for callers: endpoints whose segment does not resolve to one of the
-    16 names are counted in the denominator but get no bucket, so the returned
-    percentages can sum to well under 100. A receptor with poor annotation
-    coverage reads uniformly low, and one where nothing resolves reads as all
-    zeros even though above-threshold contacts exist. Anything rendering these
-    numbers should say what fraction is unaccounted for rather than implying
-    the bars are a whole.
+    Percentages are shares of endpoints that resolve to one of the 16 named
+    segments only: an endpoint with no segment assignment is dropped from
+    both the numerator and the denominator, not just the numerator. When at
+    least one endpoint resolves, the 16 values sum to 100 within rounding;
+    when none do, this returns all zeros. Because the base (annotated
+    endpoints) differs from receptor to receptor, callers should report how
+    much of the receptor that base actually covers via `segment_coverage`
+    alongside these percentages, rather than presenting the bars alone.
     """
     profile = {s: 0.0 for s in SEGMENTS}
     if delta_df is None or delta_df.empty:
@@ -73,17 +74,41 @@ def segment_profile(delta_df, annot_map, threshold):
     if sig.empty:
         return profile
     counts = {}
-    total = 0
+    accounted = 0
     for _, row in sig.iterrows():
         for col in ('res1', 'res2'):
             seg = _seg(annot_map, row[col])
+            if seg == 'unassigned':
+                continue
             counts[seg] = counts.get(seg, 0) + 1
-            total += 1
-    if not total:
+            accounted += 1
+    if not accounted:
         return profile
     for seg in SEGMENTS:
-        profile[seg] = round(100.0 * counts.get(seg, 0) / total, 1)
+        profile[seg] = round(100.0 * counts.get(seg, 0) / accounted, 1)
     return profile
+
+
+def segment_coverage(delta_df, annot_map, threshold):
+    """Percent of above-threshold contact endpoints that resolved to one of
+    the 16 named segments, i.e. the base that `segment_profile` normalizes
+    on. Returns 0.0 when there are no above-threshold contacts.
+    """
+    if delta_df is None or delta_df.empty:
+        return 0.0
+    sig = delta_df[delta_df['abs_delta'] >= threshold]
+    if sig.empty:
+        return 0.0
+    total = 0
+    accounted = 0
+    for _, row in sig.iterrows():
+        for col in ('res1', 'res2'):
+            total += 1
+            if _seg(annot_map, row[col]) != 'unassigned':
+                accounted += 1
+    if not total:
+        return 0.0
+    return round(100.0 * accounted / total, 1)
 
 
 def median_profile(profiles):

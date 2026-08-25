@@ -33,8 +33,8 @@
 
     var segs = (k.top_segments || []).map(function (p) {
       return p[0] + ' ' + p[1].toFixed(1) + '%';
-    }).join(' · ') || 'no above-threshold contacts';
-    wrap.appendChild(tile('Change concentrates in', segs));
+    }).join(' · ') || 'no above-threshold contacts with a resolved segment';
+    wrap.appendChild(tile('Largest segment shares', segs));
 
     if (k.largest_structured) {
       var L = k.largest_structured;
@@ -44,7 +44,7 @@
         L.label1 + ' (' + L.seg1 + ') / ' + L.label2 + ' (' + L.seg2 + ')  |Δ| ' + L.abs_delta));
     } else {
       wrap.appendChild(tile('Largest change, structured region', 'none',
-        'every above-threshold contact touches a terminus or loop'));
+        'every above-threshold contact has an endpoint in a terminus, a loop, or without a resolved segment'));
     }
 
     wrap.appendChild(tile('Top movers that are CFRs',
@@ -53,7 +53,7 @@
     return wrap;
   }
 
-  function buildFingerprint(profile, median, segments) {
+  function buildFingerprint(profile, median, segments, coverage, medianCoverage) {
     var W = 640, H = 116, padB = 20, plot = H - padB;
     var max = 0;
     segments.forEach(function (s) {
@@ -97,17 +97,14 @@
       svg.appendChild(lab);
     });
 
-    // The 16 named segments do not necessarily account for every above-
-    // threshold contact endpoint: the annotation only covers part of the
-    // sequence, and an endpoint that carries no segment assignment in it
-    // counts toward the receptor's total but draws no bar. That share can be
-    // large (ADRB2 is about 35%), and without a note the bars read as a
-    // complete picture when they are not.
-    // Surface it as a small factual addition to the header, not an
-    // interpretation, only when it is more than rounding noise.
-    var accounted = 0;
-    segments.forEach(function (s) { accounted += profile[s] || 0; });
-    var unaccounted = Math.round(Math.max(0, 100 - accounted) * 10) / 10;
+    // `profile` and `median` are both shares of endpoints that resolved to a
+    // named segment, so the two are on a common, comparable base (see
+    // receptor_profile.segment_profile). `coverage` and `medianCoverage`,
+    // computed server side, say how much of each side's above-threshold
+    // contacts that base actually covers. Disclose both, factually, only
+    // when either falls short of full coverage.
+    coverage = coverage || 0;
+    medianCoverage = medianCoverage || 0;
 
     var box = document.createElement('div');
     box.className = 'v3-fp';
@@ -115,15 +112,17 @@
     var head = document.createElement('div');
     head.className = 'v3-fp-head';
     var headText = 'Where above-threshold contacts sit, against the median of the database';
-    if (unaccounted >= 1) {
-      headText += ' (' + unaccounted.toFixed(1) + '% of endpoints are unassigned, not shown)';
+    var partial = coverage < 100 || medianCoverage < 100;
+    if (partial) {
+      headText += ' (this receptor: ' + coverage.toFixed(1) + '% of endpoints annotated, median: ' +
+        medianCoverage.toFixed(1) + '%)';
     }
     var headLabel = document.createElement('span');
     headLabel.textContent = headText;
-    if (unaccounted >= 1) {
-      headLabel.title = 'The annotation covers only part of this receptor\'s sequence: ' +
-        unaccounted.toFixed(1) + '% of above-threshold contact endpoints carry no segment ' +
-        'assignment in it, so they are counted in the totals but do not appear as a bar.';
+    if (partial) {
+      headLabel.title = 'Bars are shares of above-threshold contact endpoints that resolved to ' +
+        'a named segment, not of all endpoints. Coverage is the percentage that resolved: ' +
+        coverage.toFixed(1) + '% for this receptor, ' + medianCoverage.toFixed(1) + '% for the median.';
     }
     var legend = document.createElement('span');
     legend.className = 'v3-legend';
@@ -144,6 +143,10 @@
     // any of those. aria-label keeps the label available to assistive tech.
     s.setAttribute('data-label', text);
     s.setAttribute('aria-label', text);
+    // aria-label is ignored on an element whose implicit role is `generic`
+    // (a bare <span>); role="img" gives it an accessible-name-bearing role
+    // so screen readers announce the label.
+    s.setAttribute('role', 'img');
     return s;
   }
 
@@ -192,7 +195,8 @@
     if (!bar) return;
 
     var strip = buildStrip(data.key_numbers);
-    var fp = buildFingerprint(data.profile, data.median_profile, data.segments);
+    var fp = buildFingerprint(data.profile, data.median_profile, data.segments,
+      data.coverage, data.median_coverage);
     var host = document.createElement('div');
     host.className = 'v3-layer';
     host.appendChild(strip);

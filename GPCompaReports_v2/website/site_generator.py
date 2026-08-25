@@ -6,6 +6,7 @@ data (../The_batch_RRCS_analyzer/batch_analysis_full/).
 """
 
 import shutil
+import statistics
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -74,6 +75,7 @@ class SiteGenerator:
 
         print("  Computing database median segment profile...")
         profiles = []
+        coverages = []
         for gid in self.store.gpcr_ids:
             delta_df = self.store.delta_data.get(gid)
             if delta_df is None or delta_df.empty:
@@ -81,7 +83,11 @@ class SiteGenerator:
             annot_map = self.store.get_annotation_map(gid)
             thr = helpers._calc_significance_threshold(delta_df)
             profiles.append(rprofile.segment_profile(delta_df, annot_map, thr))
+            coverages.append(rprofile.segment_coverage(delta_df, annot_map, thr))
         self.analysis_results['median_profile'] = rprofile.median_profile(profiles)
+        self.analysis_results['median_coverage'] = (
+            round(statistics.median(coverages), 1) if coverages else 0.0
+        )
 
         print("\n[4/5] Preparing output directory...")
         self._prepare_output()

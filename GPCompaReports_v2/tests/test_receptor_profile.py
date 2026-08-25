@@ -39,6 +39,37 @@ def test_segment_profile_of_empty_frame_is_all_zero():
     assert sum(prof.values()) == 0.0
 
 
+def test_segment_profile_renormalizes_on_resolved_endpoints_only():
+    # Position 5 has no annotation entry, so its endpoint doesn't resolve.
+    # Endpoints: (1=TM6, 2=TM3) from the first row, (1=TM6, 5=unassigned)
+    # from the second. Only 3 of the 4 endpoints resolve: TM6 x2, TM3 x1.
+    df = _delta([(1, 2, 5.0), (1, 5, 9.0)])
+    prof = rp.segment_profile(df, ANNOT, threshold=1.0)
+    assert round(sum(prof.values()), 1) == 100.0
+    # Under the old total-endpoints denominator this would be 50.0/25.0 —
+    # the unresolved endpoint must not dilute the bars.
+    assert prof['TM6'] == round(100.0 * 2 / 3, 1)
+    assert prof['TM3'] == round(100.0 * 1 / 3, 1)
+
+
+def test_segment_coverage_is_full_when_every_endpoint_resolves():
+    df = _delta([(1, 2, 5.0), (3, 4, 9.0)])
+    assert rp.segment_coverage(df, ANNOT, threshold=1.0) == 100.0
+
+
+def test_segment_coverage_is_partial_when_some_endpoints_do_not_resolve():
+    # 4 endpoints total, 3 resolve (position 5 has no annotation entry).
+    df = _delta([(1, 2, 5.0), (1, 5, 9.0)])
+    assert rp.segment_coverage(df, ANNOT, threshold=1.0) == 75.0
+
+
+def test_segment_coverage_is_zero_with_no_above_threshold_contacts():
+    assert rp.segment_coverage(_delta([]), ANNOT, threshold=1.0) == 0.0
+    # Contacts exist but none clear the threshold.
+    df = _delta([(1, 2, 0.1)])
+    assert rp.segment_coverage(df, ANNOT, threshold=1.0) == 0.0
+
+
 def test_median_profile_is_per_segment():
     a = {s: 0.0 for s in rp.SEGMENTS}
     b = {s: 0.0 for s in rp.SEGMENTS}
@@ -107,4 +138,14 @@ def test_key_numbers_cfr_top_movers_excludes_rank_worse_than_50():
     df = _delta([(1, 2, 5.0)])
     kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 51})
     assert kn['cfr_top_movers'] == 0
+    assert kn['top_mover_count'] == 1
+
+
+def test_key_numbers_cfr_top_movers_includes_rank_exactly_50():
+    # Rank 50 is the boundary itself ("50 or better"): it must count. This
+    # is the one rank value that distinguishes `<=` from `<` in the cutoff
+    # check, so it must be pinned directly rather than only tested at 51.
+    df = _delta([(1, 2, 5.0)])
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 50})
+    assert kn['cfr_top_movers'] == 1
     assert kn['top_mover_count'] == 1
