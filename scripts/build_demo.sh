@@ -43,6 +43,12 @@ if [ "$SEEDED" -eq 0 ]; then
 fi
 echo "    seeded $SEEDED cache files"
 
+# The generator copies static/ in but never removes files that have disappeared
+# from source, so a deleted asset would linger here across rebuilds and make this
+# directory misleading evidence. Clear static/ only: data/ holds the caches we
+# just seeded and must survive.
+rm -rf "$OUT/static"
+
 echo "==> Building demo..."
 python3 "$ROOT/GPCompaReports_v2/generate_site.py" --output "$OUT" --only "$RECEPTORS"
 
