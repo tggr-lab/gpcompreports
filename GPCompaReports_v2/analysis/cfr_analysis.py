@@ -23,7 +23,9 @@ def run_cfr_analysis(store):
 def identify_cfrs(store):
     """For each generic number, count how many GPCRs show it as significant.
 
-    Rank by frequency + mean abs_delta -> top 50 CFR positions.
+    Returns the FULL ranked table, sorted by cfr_score descending. Callers
+    truncate: the statistics page's chart and table both take the published
+    top 30. This function does not truncate and never did.
     """
     gn_stats = {}  # generic_number -> {count, deltas, segments, gpcr_ids}
     total_gpcrs = 0
