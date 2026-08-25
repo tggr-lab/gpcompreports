@@ -52,6 +52,14 @@ def segment_profile(delta_df, annot_map, threshold):
 
     Both ends of every above-threshold contact are counted, so a TM6-TM3
     contact contributes one to each. Returns a value for all 16 segments.
+
+    Caveat for callers: endpoints whose segment does not resolve to one of the
+    16 names are counted in the denominator but get no bucket, so the returned
+    percentages can sum to well under 100. A receptor with poor annotation
+    coverage reads uniformly low, and one where nothing resolves reads as all
+    zeros even though above-threshold contacts exist. Anything rendering these
+    numbers should say what fraction is unaccounted for rather than implying
+    the bars are a whole.
     """
     profile = {s: 0.0 for s in SEGMENTS}
     if delta_df is None or delta_df.empty:
