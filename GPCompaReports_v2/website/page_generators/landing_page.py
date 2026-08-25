@@ -28,13 +28,25 @@ def bin_signed_delta(values, n_bins=SPARKLINE_BINS, clip=DELTA_CLIP):
 
 def generate_landing_page(env: Environment, store, output_dir: Path):
     """Render the landing to output/index.html."""
+    from ..page_generators import gpcr_report_helpers as helpers
+
     info_df = store.get_all_info_df()
 
     total_gpcrs = len(store.gpcr_ids)
     n_families = info_df['receptor_family'].nunique()
-    n_ligand_types = info_df['ligand_type'].nunique()
-    total_contacts = int(info_df['total_contacts'].sum())
-    total_contacts_k = f"{total_contacts // 1000}"
+
+    n_contact_records = 0
+    n_threshold_changes = 0
+    for gid in store.gpcr_ids:
+        delta_df = store.delta_data.get(gid)
+        if delta_df is None or delta_df.empty:
+            continue
+        n_contact_records += len(delta_df)
+        thr = helpers._calc_significance_threshold(delta_df)
+        n_threshold_changes += int((delta_df['abs_delta'] >= thr).sum())
+
+    n_models = 2 * len(store.gpcr_ids)
+    n_excluded = len(store.metadata) - len(store.gpcr_ids)
 
     top5 = info_df.nlargest(5, 'sum_abs_delta').to_dict('records')
     for g in top5:
@@ -61,8 +73,10 @@ def generate_landing_page(env: Environment, store, output_dir: Path):
         extra_css=['static/css/landing.css'],
         total_gpcrs=total_gpcrs,
         n_families=n_families,
-        n_ligand_types=n_ligand_types,
-        total_contacts_k=total_contacts_k,
+        n_contact_records=n_contact_records,
+        n_threshold_changes=n_threshold_changes,
+        n_models=n_models,
+        n_excluded=n_excluded,
         top5=top5,
         search_json=json.dumps(search_records, separators=(',', ':')),
         sparkline_bins=SPARKLINE_BINS,

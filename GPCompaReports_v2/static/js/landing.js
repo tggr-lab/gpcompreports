@@ -1,44 +1,8 @@
-// landing.js — landing-only behaviors: stat count-up + search teaser.
+// landing.js: landing-only behaviors, the search teaser.
 // Theme toggle, tooltips, collapsibles, reveals live in site.js.
 
 (function() {
   'use strict';
-
-  var reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // ------------------ Stat count-up on scroll-into-view ------------------
-  var statNums = document.querySelectorAll('.stat-num[data-target]');
-  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
-  function animateCount(el) {
-    var target = parseFloat(el.getAttribute('data-target'));
-    var suffix = el.getAttribute('data-suffix') || '';
-    if (!isFinite(target)) return;
-    if (reduceMotion) { el.textContent = target + suffix; return; }
-    var duration = 1200;
-    var start = performance.now();
-    function tick(now) {
-      var t = Math.min(1, (now - start) / duration);
-      var value = Math.round(target * easeOutQuart(t));
-      el.textContent = value + suffix;
-      if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-  if ('IntersectionObserver' in window && statNums.length) {
-    var statObs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          animateCount(entry.target);
-          statObs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.5 });
-    statNums.forEach(function(el) { statObs.observe(el); });
-  } else {
-    statNums.forEach(function(el) {
-      el.textContent = el.getAttribute('data-target') + (el.getAttribute('data-suffix') || '');
-    });
-  }
 
   // ------------------ Search teaser ------------------
   var input = document.getElementById('search-input');
