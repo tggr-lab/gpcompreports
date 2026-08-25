@@ -68,6 +68,8 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         nav_home_url='index.html',
         nav_browse_url='browse/index.html',
         nav_stats_url='statistics.html',
+        nav_downloads_url='downloads.html',
+        nav_contact_url='contact.html',
         page_title='Database Statistics · GPCompaRe',
         total_gpcrs=len(store.gpcr_ids),
         charts=charts,

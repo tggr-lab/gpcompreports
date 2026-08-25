@@ -41,6 +41,8 @@ def generate_landing_page(env: Environment, store, output_dir: Path):
         nav_home_url='index.html',
         nav_browse_url='browse/index.html',
         nav_stats_url='statistics.html',
+        nav_downloads_url='downloads.html',
+        nav_contact_url='contact.html',
         page_title='GPCompaRe database: active-inactive contact changes across human Class A GPCRs',
         extra_css=['static/css/landing.css'],
         total_gpcrs=total_gpcrs,
