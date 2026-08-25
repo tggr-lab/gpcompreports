@@ -20,6 +20,11 @@ SEGMENTS = [
 # marked low confidence and excluded from "largest structured change".
 STRUCTURED = {'TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7', 'H8'}
 
+# A rank of 50 or better is the only bracket the CFR badge (and this count)
+# claim to have verified; cfr_ranks holds ranks well past this on a full
+# cfr_table, so anything worse than this cutoff does not count as a CFR.
+CFR_RANK_CUTOFF = 50
+
 
 def is_low_confidence(segment):
     """True for termini and loops, False for the seven helices and H8."""
@@ -96,6 +101,9 @@ def key_numbers(delta_df, annot_map, threshold, cfr_ranks, top_n=6):
     `cfr_ranks` maps a display_number to its cross-receptor CFR rank.
     `largest_structured` is the biggest |delta| whose two endpoints are both
     in a helix or H8, or None if the receptor has no such contact.
+    `cfr_top_movers` counts top-mover ROWS (not endpoints), so it can never
+    exceed `top_mover_count`: a row counts once if at least one of its two
+    endpoints has a GPCRdb number ranked `CFR_RANK_CUTOFF` or better.
     """
     total = 0 if delta_df is None else len(delta_df)
     if delta_df is None or delta_df.empty:
@@ -126,13 +134,17 @@ def key_numbers(delta_df, annot_map, threshold, cfr_ranks, top_n=6):
             break
 
     movers = sig.sort_values('abs_delta', ascending=False).head(top_n)
-    mover_numbers = set()
+    cfr_hits = 0
     for _, row in movers.iterrows():
+        row_is_cfr = False
         for col in ('res1', 'res2'):
             num = _num(annot_map, row[col])
-            if num:
-                mover_numbers.add(num)
-    cfr_hits = len([n for n in mover_numbers if n in cfr_ranks])
+            rank = cfr_ranks.get(num) if num else None
+            if rank is not None and rank <= CFR_RANK_CUTOFF:
+                row_is_cfr = True
+                break
+        if row_is_cfr:
+            cfr_hits += 1
 
     return {
         'total_contacts': total,

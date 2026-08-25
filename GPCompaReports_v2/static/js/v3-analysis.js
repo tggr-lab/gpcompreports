@@ -5,6 +5,10 @@
   'use strict';
   var KEY = 'gpcompare-analysis';
   var data = null;
+  // A rank of 50 or better is the only bracket the CFR badge claims to have
+  // verified; cfr_ranks holds ranks up into the hundreds, so anything worse
+  // than this cutoff must not be badged as a CFR at all.
+  var CFR_RANK_CUTOFF = 50;
 
   function load() {
     var el = document.getElementById('v3-analysis-data');
@@ -94,10 +98,11 @@
     });
 
     // The 16 named segments do not necessarily account for every above-
-    // threshold contact endpoint: an endpoint whose residue has no resolved
-    // segment (no GPCRdb generic number) counts toward the receptor's total
-    // but draws no bar. That share can be large (ADRB2 is about 35%), and
-    // without a note the bars read as a complete picture when they are not.
+    // threshold contact endpoint: the annotation only covers part of the
+    // sequence, and an endpoint that carries no segment assignment in it
+    // counts toward the receptor's total but draws no bar. That share can be
+    // large (ADRB2 is about 35%), and without a note the bars read as a
+    // complete picture when they are not.
     // Surface it as a small factual addition to the header, not an
     // interpretation, only when it is more than rounding noise.
     var accounted = 0;
@@ -116,9 +121,9 @@
     var headLabel = document.createElement('span');
     headLabel.textContent = headText;
     if (unaccounted >= 1) {
-      headLabel.title = unaccounted.toFixed(1) + '% of this receptor\'s above-threshold ' +
-        'contact endpoints have no resolved segment (no GPCRdb generic number), so they are ' +
-        'counted in the totals but do not appear as a bar.';
+      headLabel.title = 'The annotation covers only part of this receptor\'s sequence: ' +
+        unaccounted.toFixed(1) + '% of above-threshold contact endpoints carry no segment ' +
+        'assignment in it, so they are counted in the totals but do not appear as a bar.';
     }
     var legend = document.createElement('span');
     legend.className = 'v3-legend';
@@ -133,14 +138,18 @@
   function badge(text, cls) {
     var s = document.createElement('span');
     s.className = 'v3-badge ' + cls;
-    s.textContent = text;
+    // The visible label lives in CSS (`::after { content: attr(data-label) }`
+    // in v3.css), never in textContent: site.js reads textContent for CSV
+    // export, search, and column sort, and this label must not contaminate
+    // any of those. aria-label keeps the label available to assistive tech.
+    s.setAttribute('data-label', text);
+    s.setAttribute('aria-label', text);
     return s;
   }
 
   function decorateChangesTable() {
     var table = document.getElementById('top-changes-table');
     if (!table) return;
-    var lowSegs = data.low_confidence_segments || [];
     Array.prototype.forEach.call(table.tBodies[0].rows, function (tr) {
       if (tr.querySelector('.v3-badge')) return;
       var cells = tr.cells;
@@ -155,16 +164,16 @@
         var r = data.cfr_ranks[n];
         if (r && (best === null || r < best)) best = r;
       });
-      if (best !== null) {
-        holder.appendChild(badge(best <= 30 ? 'CFR #' + best : 'CFR top 50', 'v3-b-cfr'));
+      if (best !== null && best <= CFR_RANK_CUTOFF) {
+        holder.appendChild(badge('CFR #' + best, 'v3-b-cfr'));
       }
-      // A residue with no GPCRdb generic number is outside the helices, which
-      // means a terminus or a loop: exactly where the model is least reliable.
-      // lowSegs is carried in the payload for the tooltip text below.
+      // Neither endpoint has a GPCRdb generic number in this receptor's
+      // annotation. That alone does not tell us where the residue sits: the
+      // annotation file simply may not cover it. State only what is known.
       if (!nums.length) {
-        var b = badge('low confidence', 'v3-b-low');
-        b.title = 'Outside the helices (' + lowSegs.join(', ') + '). ' +
-                  'Predicted conformations are least reliable there.';
+        var b = badge('no GPCRdb number', 'v3-b-low');
+        b.title = 'Neither endpoint has a GPCRdb generic number, so its ' +
+                  'position cannot be placed in the reference numbering.';
         holder.appendChild(b);
       }
       if (holder.children.length) cells[cells.length - 1].appendChild(holder);

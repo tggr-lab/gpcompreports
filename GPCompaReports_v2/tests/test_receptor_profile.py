@@ -70,9 +70,41 @@ def test_largest_structured_is_none_when_every_contact_is_low_confidence():
     assert kn['largest_structured'] is None
 
 
-def test_key_numbers_counts_cfr_top_movers_by_display_number():
+def test_key_numbers_counts_cfr_top_movers_by_row_not_by_endpoint():
+    # Both endpoints of this one row are CFRs. The row must still count once,
+    # not twice: numerator and denominator are both row counts.
     df = _delta([(1, 2, 5.0)])
-    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'3.50x50': 4})
+    kn = rp.key_numbers(
+        df, ANNOT, threshold=1.0,
+        cfr_ranks={'3.50x50': 4, '6.48x48': 7},
+    )
     assert kn['cfr_top_movers'] == 1
+    assert kn['top_mover_count'] == 1
     assert kn['above_threshold'] == 1
     assert kn['total_contacts'] == 1
+
+
+def test_key_numbers_cfr_top_movers_never_exceeds_top_mover_count():
+    # Six rows, every endpoint of every row is a CFR: with the old
+    # by-endpoint counting this returned 9 (distinct numbers) against 6 rows.
+    annot = {
+        1: {'position': 1, 'amino_acid': 'A', 'protein_segment': 'TM6', 'display_number': '6.48x48'},
+        2: {'position': 2, 'amino_acid': 'C', 'protein_segment': 'TM3', 'display_number': '3.50x50'},
+        3: {'position': 3, 'amino_acid': 'D', 'protein_segment': 'TM2', 'display_number': '2.50x50'},
+        4: {'position': 4, 'amino_acid': 'E', 'protein_segment': 'TM7', 'display_number': '7.53x53'},
+    }
+    ranks = {'6.48x48': 1, '3.50x50': 2, '2.50x50': 3, '7.53x53': 4}
+    rows = [(1, 2, 9.0), (1, 2, 8.0), (1, 2, 7.0), (3, 4, 6.0), (3, 4, 5.0), (3, 4, 4.0)]
+    df = _delta(rows)
+    kn = rp.key_numbers(df, annot, threshold=1.0, cfr_ranks=ranks, top_n=6)
+    assert kn['top_mover_count'] == 6
+    assert kn['cfr_top_movers'] == 6
+    assert kn['cfr_top_movers'] <= kn['top_mover_count']
+
+
+def test_key_numbers_cfr_top_movers_excludes_rank_worse_than_50():
+    # A CFR ranked worse than the cutoff must not count.
+    df = _delta([(1, 2, 5.0)])
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'6.48x48': 51})
+    assert kn['cfr_top_movers'] == 0
+    assert kn['top_mover_count'] == 1
