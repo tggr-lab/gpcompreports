@@ -1,0 +1,78 @@
+import pandas as pd
+
+from GPCompaReports_v2.analysis import receptor_profile as rp
+
+
+def _delta(rows):
+    df = pd.DataFrame(rows, columns=['res1', 'res2', 'delta_rrcs'])
+    df['abs_delta'] = df['delta_rrcs'].abs()
+    return df
+
+
+ANNOT = {
+    1: {'position': 1, 'amino_acid': 'A', 'protein_segment': 'TM6', 'display_number': '6.48x48'},
+    2: {'position': 2, 'amino_acid': 'C', 'protein_segment': 'TM3', 'display_number': '3.50x50'},
+    3: {'position': 3, 'amino_acid': 'D', 'protein_segment': 'N-term', 'display_number': ''},
+    4: {'position': 4, 'amino_acid': 'E', 'protein_segment': 'ECL3', 'display_number': ''},
+}
+
+
+def test_segment_profile_counts_both_endpoints_of_each_contact():
+    df = _delta([(1, 2, 5.0), (3, 4, 9.0)])
+    prof = rp.segment_profile(df, ANNOT, threshold=1.0)
+    assert prof['TM6'] == 25.0
+    assert prof['TM3'] == 25.0
+    assert prof['N-term'] == 25.0
+    assert prof['ECL3'] == 25.0
+
+
+def test_segment_profile_ignores_below_threshold_contacts():
+    df = _delta([(1, 2, 5.0), (3, 4, 0.5)])
+    prof = rp.segment_profile(df, ANNOT, threshold=1.0)
+    assert prof['TM6'] == 50.0
+    assert prof['N-term'] == 0.0
+
+
+def test_segment_profile_of_empty_frame_is_all_zero():
+    prof = rp.segment_profile(_delta([]), ANNOT, threshold=1.0)
+    assert set(prof) == set(rp.SEGMENTS)
+    assert sum(prof.values()) == 0.0
+
+
+def test_median_profile_is_per_segment():
+    a = {s: 0.0 for s in rp.SEGMENTS}
+    b = {s: 0.0 for s in rp.SEGMENTS}
+    c = {s: 0.0 for s in rp.SEGMENTS}
+    a['TM6'], b['TM6'], c['TM6'] = 10.0, 20.0, 30.0
+    assert rp.median_profile([a, b, c])['TM6'] == 20.0
+
+
+def test_low_confidence_covers_termini_and_loops_but_not_helices():
+    assert rp.is_low_confidence('N-term')
+    assert rp.is_low_confidence('C-term')
+    assert rp.is_low_confidence('ECL3')
+    assert rp.is_low_confidence('ICL1')
+    assert not rp.is_low_confidence('TM6')
+    assert not rp.is_low_confidence('H8')
+
+
+def test_largest_structured_skips_the_terminus_artifact():
+    # The 9.0 contact is N-term to ECL3 and must not win.
+    df = _delta([(1, 2, 5.0), (3, 4, 9.0)])
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={})
+    assert kn['largest_structured']['abs_delta'] == 5.0
+    assert kn['largest_structured']['seg1'] == 'TM6'
+
+
+def test_largest_structured_is_none_when_every_contact_is_low_confidence():
+    df = _delta([(3, 4, 9.0)])
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={})
+    assert kn['largest_structured'] is None
+
+
+def test_key_numbers_counts_cfr_top_movers_by_display_number():
+    df = _delta([(1, 2, 5.0)])
+    kn = rp.key_numbers(df, ANNOT, threshold=1.0, cfr_ranks={'3.50x50': 4})
+    assert kn['cfr_top_movers'] == 1
+    assert kn['above_threshold'] == 1
+    assert kn['total_contacts'] == 1
