@@ -8,6 +8,10 @@ TGGR team to close them before the Contact and Downloads pages go live.
 ## Contact page
 
 1. **Formspree account and endpoint.** Create a Formspree account for the lab
+   The account's notification recipient MUST be `tggrlab@gmail.com`, or forward to it.
+   That is the only address the Contact page shows visitors, so an account created under
+   any other address would silently send submissions somewhere nobody is watching.
+
    (or the corresponding author) and add a new form for the GPCompaRe contact
    page. Replace `FORMSPREE_ENDPOINT_PLACEHOLDER` in
    `GPCompaReports_v2/website/page_generators/contact_page.py` with the real
