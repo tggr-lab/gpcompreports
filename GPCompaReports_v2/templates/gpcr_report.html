@@ -1078,6 +1078,41 @@ document.addEventListener('DOMContentLoaded', function() {
   window.switchSnakeView = switchSnakeView;
   window.toggleSnakeLinks = toggleSnakeLinks;
   window.toggleLoop = toggleLoop;
+  window.SnakeAPI = {
+    setView: switchSnakeView,
+    getView: function () {
+      var b = document.querySelector('.snake-btn.active');
+      return b ? b.dataset.view : 'delta_rrcs';
+    },
+    setMagRange: function (lo, hi) {
+      var minSlider = document.getElementById('snake-mag-min');
+      var maxSlider = document.getElementById('snake-mag-max');
+      if (typeof lo === 'number' && !isNaN(lo)) {
+        filterState.magMin = Math.max(minAbsDelta, Math.min(lo, maxAbsDelta));
+        if (minSlider) minSlider.value = String(filterState.magMin);
+      }
+      if (typeof hi === 'number' && !isNaN(hi)) {
+        filterState.magMax = Math.max(minAbsDelta, Math.min(hi, maxAbsDelta));
+        if (maxSlider) maxSlider.value = String(filterState.magMax);
+      }
+      if (filterState.magMin > filterState.magMax) filterState.magMin = filterState.magMax;
+      updateMagDisplays();
+      redrawSnakeLinks();
+    },
+    setDirection: setDirection,
+    setLinksVisible: toggleSnakeLinks,
+    getState: function () {
+      return {
+        view: window.SnakeAPI.getView(),
+        min: filterState.magMin,
+        max: filterState.magMax,
+        dir: filterState.direction,
+        links: filterState.visible
+      };
+    },
+    bounds: function () { return { lo: minAbsDelta, hi: maxAbsDelta }; }
+  };
+  document.dispatchEvent(new CustomEvent('snake-ready'));
   switchSnakeView('delta_rrcs');
   initFilterControls();
   attachResidueClicks();
@@ -1085,4 +1120,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endif %}
 <script src="{{ static_prefix }}static/js/v3-nav.js" defer></script>
+<script src="{{ static_prefix }}static/js/v3-deeplink.js" defer></script>
 {% endblock %}
