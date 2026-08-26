@@ -17,11 +17,6 @@ from ..plotly_theming import theme_overrides
 #: many of the ranked pairs fit on the page, not where the CFR cutoff sits.
 NETWORK_ROWS_SHOWN = 20
 
-#: Rows shown in the high-impact variant table. Also unrelated to CFR_TOP_N:
-#: these are the N highest-impact VARIANTS, not the N highest-ranked CFR
-#: positions. The heading used to read "(Top 30)" directly beneath a CFR table
-#: headed "Top 30", which invited exactly the wrong reading.
-HIGH_IMPACT_ROWS_SHOWN = 30
 
 
 def generate_statistics_page(env: Environment, store, analysis_results, output_dir):
@@ -68,10 +63,13 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
     fig3_decisive = panel_a.get('decisive_pathogenic_pct', {})
     fig3_adjusted = fig3.get('conservation_adjusted', {})
 
-    hi_variants = variant.get('high_impact_variants')
-    hi_variant_data = []
-    if hi_variants is not None and not hi_variants.empty:
-        hi_variant_data = hi_variants.head(HIGH_IMPACT_ROWS_SHOWN).to_dict('records')
+    # There is deliberately no per-variant table here. The published
+    # enrichment result (Figure 3) is an aggregate over AlphaMissense classes;
+    # the submission package carries no family-wide listing of the individual
+    # variants behind it. The site could list its own, but that would be the
+    # site's data under a manuscript-defined position set, which is a hybrid
+    # this page should not present. Per-variant evidence in the submission is
+    # PAR-specific (Supplementary Tables S14 and S15), not family-wide.
 
     light, dark = theme_overrides()
 
@@ -95,12 +93,10 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         fig3_ci_low=panel_a.get('ci_low'),
         fig3_ci_high=panel_a.get('ci_high'),
         fig3_adjusted=fig3_adjusted,
-        high_impact_variants=hi_variant_data,
         cfr_top_n=CFR_TOP_N,
         cfr_total_positions=manuscript.get('n_recurrent_positions', 0),
         cfr_network_total=manuscript.get('n_pairs_universe', 0),
         cfr_network_shown=len(cfr_network_data),
-        high_impact_shown=len(hi_variant_data),
         layout_light_json=json.dumps(light, separators=(',', ':')),
         layout_dark_json=json.dumps(dark, separators=(',', ':')),
     )

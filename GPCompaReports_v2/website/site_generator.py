@@ -80,10 +80,12 @@ class SiteGenerator:
         manuscript = load_manuscript_stats()
         self.analysis_results['manuscript'] = manuscript
 
-        # The variant tables on the statistics page describe the manuscript's
-        # recurrent positions, so they select on that list, not the site's.
+        # The statistics page consumes only the conservation-versus-magnitude
+        # scatter from this, which does not depend on the CFR list. The
+        # enrichment figures come from the manuscript block above, and no
+        # per-variant table is rendered, so this keeps the site's own list.
         self.analysis_results['variant'] = run_variant_analysis(
-            self.store, manuscript['top50'])
+            self.store, self.analysis_results['cfr'].get('cfr_table'))
 
         print("\n[4/5] Preparing output directory...")
         self._prepare_output()

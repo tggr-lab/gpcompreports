@@ -196,3 +196,26 @@ def test_the_page_says_where_the_cross_receptor_numbers_come_from():
     assert re.search(r'[Ii]ndividual receptor reports are unchanged', html), (
         'the statistics page does not record that report pages keep their own '
         'report-generation data')
+
+
+@needs_build
+def test_no_hybrid_per_variant_table_is_presented():
+    """The published enrichment result is an aggregate.
+
+    A per-variant listing here could only be the site's own variant data
+    filtered by a manuscript-defined position set. The submission carries no
+    family-wide table of the variants behind Figure 3: its per-variant tables
+    (S14, S15) are PAR-specific. So the page shows no such table rather than
+    showing a mixed-provenance one with a disclaimer.
+    """
+    html = STATS.read_text(encoding='utf-8')
+    for marker in ('High-impact pathogenic variants',
+                   'highest-impact variants'):
+        assert marker not in html, (
+            'the statistics page presents a per-variant table (%r) that no '
+            'submitted table backs' % marker)
+    # The aggregate result must still be there, so this cannot pass by the
+    # whole enrichment section having been dropped.
+    assert 'odds ratio' in html.lower(), (
+        'the enrichment result itself has gone missing'
+    )
