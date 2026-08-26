@@ -161,6 +161,18 @@ def build_manifest(source_dir):
 
     return {
         'schema_version': SCHEMA_VERSION,
+        # The definition of "approved content" is recorded here so the test can
+        # assert its own copy matches. Without this, the generator and the test
+        # each hold their own regex and separator, and a change to one would
+        # silently redefine what is being frozen: the exact silent-failure mode
+        # this manifest replaced.
+        'content_definition': {
+            'section_regex': SECTION_RE.pattern,
+            'separator_hex': SECTION_SEP.hex(),
+            'hash_algorithm': 'sha256',
+            'scope': 'inner HTML of each <section class="report-section">, '
+                     'in document order, excluding the opening tag',
+        },
         'provenance': {
             'source_dir': str(source_dir),
             'branch_base_commit': BRANCH_BASE_COMMIT,

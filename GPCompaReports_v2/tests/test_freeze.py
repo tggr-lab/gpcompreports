@@ -84,6 +84,30 @@ def _build_reports():
     return {path.stem: path for path in sorted(reports_dir.glob('*.html'))}
 
 
+def test_manifest_and_test_agree_on_what_is_frozen():
+    """Guard against silent drift between the two copies of the extraction rule.
+
+    The generator and this test each hold a section regex and a separator. If
+    one changes and the other does not, they quietly disagree about what
+    "approved content" means, and the freeze stops measuring what it claims to.
+    The manifest records the definition it was built with; this asserts ours
+    still matches it.
+    """
+    manifest = _load_manifest()
+    definition = manifest.get('content_definition')
+    assert definition, (
+        'manifest records no content_definition, so this test cannot confirm '
+        'it still extracts approved content the same way the manifest did. '
+        'Regenerate the manifest with scripts/build_freeze_manifest.py.')
+    assert definition['section_regex'] == SECTION_RE.pattern, (
+        'the section regex in this test no longer matches the one the manifest '
+        'was built with:\n  manifest: %s\n  test:     %s'
+        % (definition['section_regex'], SECTION_RE.pattern))
+    assert definition['separator_hex'] == SECTION_SEP.hex(), (
+        'the section separator no longer matches the one the manifest was '
+        'built with')
+
+
 def test_freeze_manifest_exists():
     """Standalone and unconditional: this must fail whenever the manifest is
     missing, regardless of whether any build is present to compare against.
