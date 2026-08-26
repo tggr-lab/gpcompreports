@@ -219,3 +219,20 @@ def test_no_hybrid_per_variant_table_is_presented():
     assert 'odds ratio' in html.lower(), (
         'the enrichment result itself has gone missing'
     )
+
+
+@needs_build
+def test_the_methods_note_states_the_generic_numbering_limitation():
+    """The scope limit has to be stated, not left to be inferred.
+
+    Saying that mapping "needs a GPCRdb number" describes the mechanism. It
+    does not tell a reader that residues without one, in loops and terminal
+    regions, are absent from every number on this page.
+    """
+    html = STATS.read_text(encoding='utf-8')
+    text = re.sub(r'<[^>]+>', ' ', html)
+    text = re.sub(r'\s+', ' ', text)
+    assert ('Cross-receptor recurrence analyses are limited to residues '
+            'assigned GPCRdb generic numbers.') in text, (
+        'the statistics methods note does not state that cross-receptor '
+        'recurrence is limited to residues with GPCRdb generic numbers')
