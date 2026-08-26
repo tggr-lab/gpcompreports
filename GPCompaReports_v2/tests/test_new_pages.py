@@ -47,11 +47,18 @@ def test_contact_page_invents_no_credentials():
 
 
 def test_downloads_page_offers_no_dead_links():
+    """No archive may be linked, and no download control may be shown disabled.
+
+    The page presents both items as planned releases, so there is nothing to
+    download yet. The DOI line this test used to require is gone: the page no
+    longer shows a DOI, pending or otherwise.
+    """
     html = DOWNLOADS.read_text(encoding='utf-8')
     lowered = html.lower()
     for ext in ('.zip', '.tar.gz', '.tgz', '.7z'):
         assert ext not in lowered, 'a download link was invented: %s' % ext
-    assert 'DOI pending release' in html
+    body = html[html.find('downloads-page'):html.find('</section>')]
+    assert 'disabled' not in body, 'a disabled download control is shown'
 
 
 def test_downloads_page_invents_no_doi():
