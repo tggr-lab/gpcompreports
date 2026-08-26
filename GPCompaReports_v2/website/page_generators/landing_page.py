@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from jinja2 import Environment
+from ...analysis.cfr_analysis import CFR_TOP_N
 
 
 def generate_landing_page(env: Environment, store, output_dir: Path):
@@ -45,6 +46,7 @@ def generate_landing_page(env: Environment, store, output_dir: Path):
         nav_contact_url='contact.html',
         page_title='GPCompaRe database: active-inactive contact changes across human Class A GPCRs',
         extra_css=['static/css/landing.css'],
+        cfr_top_n=CFR_TOP_N,
         total_gpcrs=total_gpcrs,
         n_families=n_families,
         n_contact_records=n_contact_records,

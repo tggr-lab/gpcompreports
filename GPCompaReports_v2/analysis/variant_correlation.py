@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy import stats
 
+from .cfr_analysis import CFR_TOP_N
 from ..website.format_helpers import fmt_sci, fmt_decimal
 
 
@@ -31,14 +32,17 @@ def run_variant_analysis(store, cfr_table):
 
 
 def _get_cfr_position_map(store, cfr_table):
-    """Build mapping: for each GPCR, which positions are CFR positions.
+    """Map each GPCR to the positions carrying a top-CFR_TOP_N generic number.
 
-    Returns dict: gpcr_id -> set of positions that map to top-50 CFR generic numbers.
+    The comparison group in the enrichment test below is therefore "positions
+    outside the top CFR_TOP_N recurrent CFR positions", not "positions that
+    are not CFRs". Many excluded positions are still recurrent CFR positions,
+    just below the reporting cutoff.
     """
     if cfr_table.empty:
         return {}
 
-    cfr_gns = set(cfr_table.head(50)['generic_number'].tolist())
+    cfr_gns = set(cfr_table.head(CFR_TOP_N)['generic_number'].tolist())
     result = {}
 
     for gid in store.gpcr_ids:
@@ -112,7 +116,7 @@ def pathogenicity_enrichment(store, cfr_positions):
 
 
 def make_pathogenicity_bar(path_result):
-    """Stacked bar chart: pathogenicity class distribution at CFR vs non-CFR."""
+    """Stacked bar: pathogenicity distribution inside vs outside the top CFRs."""
     cfr = path_result['cfr_counts']
     non_cfr = path_result['non_cfr_counts']
     cfr_total = path_result['cfr_total']
@@ -130,7 +134,8 @@ def make_pathogenicity_bar(path_result):
     fig = go.Figure()
     for i, cat in enumerate(categories):
         fig.add_trace(go.Bar(
-            name=cat, x=['CFR Positions', 'Non-CFR Positions'],
+            name=cat, x=['Top %d CFR positions' % CFR_TOP_N,
+                         'Outside the top %d' % CFR_TOP_N],
             y=[cfr_pcts[i], non_cfr_pcts[i]],
             marker_color=colors[cat],
             text=[f'{cfr_pcts[i]:.1f}%', f'{non_cfr_pcts[i]:.1f}%'],
@@ -138,7 +143,8 @@ def make_pathogenicity_bar(path_result):
         ))
 
     stat = path_result.get('stats', {})
-    title = 'AlphaMissense pathogenicity tier: CFR vs non-CFR positions'
+    title = ('AlphaMissense pathogenicity tier: top %d recurrent CFR '
+             'positions vs positions outside them' % CFR_TOP_N)
     if stat:
         title += f" (chi-squared p = {stat['p_value']:.2e})"
 

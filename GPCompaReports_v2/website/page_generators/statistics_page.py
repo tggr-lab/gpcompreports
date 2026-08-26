@@ -10,7 +10,18 @@ import json
 
 from jinja2 import Environment
 
+from ...analysis.cfr_analysis import CFR_TOP_N
 from ..plotly_theming import theme_overrides
+
+#: Rows shown in the contact-pair table. Unrelated to CFR_TOP_N: this is how
+#: many of the ranked pairs fit on the page, not where the CFR cutoff sits.
+NETWORK_ROWS_SHOWN = 20
+
+#: Rows shown in the high-impact variant table. Also unrelated to CFR_TOP_N:
+#: these are the N highest-impact VARIANTS, not the N highest-ranked CFR
+#: positions. The heading used to read "(Top 30)" directly beneath a CFR table
+#: headed "Top 30", which invited exactly the wrong reading.
+HIGH_IMPACT_ROWS_SHOWN = 30
 
 
 def generate_statistics_page(env: Environment, store, analysis_results, output_dir):
@@ -40,12 +51,12 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
     cfr_table = cfr.get('cfr_table')
     cfr_table_data = []
     if cfr_table is not None and not cfr_table.empty:
-        cfr_table_data = cfr_table.head(30).to_dict('records')
+        cfr_table_data = cfr_table.head(CFR_TOP_N).to_dict('records')
 
     cfr_network = cfr.get('cfr_network')
     cfr_network_data = []
     if cfr_network is not None and not cfr_network.empty:
-        cfr_network_data = cfr_network.head(20).to_dict('records')
+        cfr_network_data = cfr_network.head(NETWORK_ROWS_SHOWN).to_dict('records')
 
     path_result = variant.get('pathogenicity', {})
     path_stats = path_result.get('stats', {})
@@ -57,7 +68,7 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
     hi_variants = variant.get('high_impact_variants')
     hi_variant_data = []
     if hi_variants is not None and not hi_variants.empty:
-        hi_variant_data = hi_variants.head(30).to_dict('records')
+        hi_variant_data = hi_variants.head(HIGH_IMPACT_ROWS_SHOWN).to_dict('records')
 
     light, dark = theme_overrides()
 
@@ -83,6 +94,13 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         cfr_total_n=cfr_total_n,
         non_cfr_total_n=non_cfr_total_n,
         high_impact_variants=hi_variant_data,
+        cfr_top_n=CFR_TOP_N,
+        cfr_total_positions=(0 if cfr_table is None or cfr_table.empty
+                             else len(cfr_table)),
+        cfr_network_total=(0 if cfr_network is None or cfr_network.empty
+                           else len(cfr_network)),
+        cfr_network_shown=len(cfr_network_data),
+        high_impact_shown=len(hi_variant_data),
         layout_light_json=json.dumps(light, separators=(',', ':')),
         layout_dark_json=json.dumps(dark, separators=(',', ':')),
     )

@@ -5,6 +5,24 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+#: How many of the ranked recurrent positions the site reports on.
+#:
+#: 50 because that is the cutoff the manuscript's variant-enrichment analysis
+#: uses, and the reported chi-squared and p-value come from it. The website
+#: follows the manuscript rather than the other way round.
+#:
+#: This is a REPORTING threshold, not a definition. It does not decide what is
+#: or is not a Core Functional Residue: every position recurring in at least
+#: three receptors meets the CFR criterion, and there are far more than 50 of
+#: them. Rank 51 is not "not a CFR", it is simply below the line this analysis
+#: draws.
+#:
+#: One constant on purpose. The ranked table, the contact network and the
+#: variant enrichment all read it, so the number a reader sees and the number
+#: the statistics are computed from cannot drift apart. tests/test_cfr_cutoff.py
+#: fails if they do.
+CFR_TOP_N = 50
+
 
 def run_cfr_analysis(store):
     """Identify Core Functional Residues and build CFR contact network."""
@@ -23,9 +41,10 @@ def run_cfr_analysis(store):
 def identify_cfrs(store):
     """For each generic number, count how many GPCRs show it as significant.
 
-    Returns the FULL ranked table, sorted by cfr_score descending. Callers
-    truncate: the statistics page's chart and table both take the published
-    top 30. This function does not truncate and never did.
+    Returns the FULL ranked table, sorted by cfr_score descending, of every
+    position meeting the CFR criterion (recurring in at least 3 receptors).
+    This function does not truncate and never did. Callers that report a
+    ranked subset take CFR_TOP_N from it.
     """
     gn_stats = {}  # generic_number -> {count, deltas, segments, gpcr_ids}
     total_gpcrs = 0
@@ -105,18 +124,16 @@ def make_cfr_dotplot(cfr_table):
     if cfr_table.empty:
         return go.Figure()
 
-    # 30, not 50: the published ranked subset is the Top 30, and the table
-    # directly below this chart on the statistics page is headed "Top 30 Core
-    # Functional Residue Positions". Plotting 50 here put two different ranked
-    # claims on one page, and the landing page links here saying "Top 30".
-    top30 = cfr_table.head(30)
+    # Read from the shared constant so this chart, the table beneath it and
+    # the analyses below it can never state different cutoffs.
+    top_n = cfr_table.head(CFR_TOP_N)
 
     fig = px.scatter(
-        top30, x='mean_abs_delta', y='frequency',
+        top_n, x='mean_abs_delta', y='frequency',
         size='cfr_score', color='segment',
         hover_data=['generic_number', 'rank'],
         text='generic_number',
-        title='Top 30 Core Functional Residue Positions',
+        title='Top %d Core Functional Residue Positions' % CFR_TOP_N,
         labels={
             'mean_abs_delta': 'Mean |ΔRRCS|',
             'frequency': 'GPCRs with above-threshold change',
@@ -131,11 +148,17 @@ def make_cfr_dotplot(cfr_table):
 
 
 def build_cfr_network(store, cfr_table):
-    """Find contact pairs where both residues are CFR positions."""
+    """Contact pairs in which BOTH residues are among the top CFR_TOP_N
+    recurrent CFR positions.
+
+    Not "pairs of CFRs" in general: a pair where one residue ranks 60th is
+    excluded, even though rank 60 still meets the CFR criterion. The returned
+    table is sorted by how many receptors show the pair, descending.
+    """
     if cfr_table.empty:
         return pd.DataFrame()
 
-    cfr_gns = set(cfr_table.head(50)['generic_number'].tolist())
+    cfr_gns = set(cfr_table.head(CFR_TOP_N)['generic_number'].tolist())
     pair_counts = {}  # (gn1, gn2) -> count of GPCRs
 
     for gid in store.gpcr_ids:
