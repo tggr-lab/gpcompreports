@@ -587,18 +587,39 @@ PAR2's own threshold (\|ΔRRCS\| 1.78 against 2.60, item 2), matching Figure 4e.
 No report or annotation change was made, because the report content is
 frozen.
 
-**Four receptors have contact data but no gnomAD variant data.** The batch
-run has 283 `*_rrcs_delta.csv` files (in
-`The_batch_RRCS_analyzer/batch_analysis_full/batch_analysis_20260202_151051/csv_data/`)
+**Four receptors have contact data but are absent from the variant dataset,
+for two different reasons.** The batch run has 283 `*_rrcs_delta.csv` files
+(in `The_batch_RRCS_analyzer/batch_analysis_full/batch_analysis_20260202_151051/csv_data/`)
 but only 279 `*_variants.csv` files (in that same run's `variants/`
 subdirectory, not `csv_data/`). `gp182_human`, `npy6r_human`, `p2ry8_human`
 and `taar3_human` have no variants file, so those four report pages render
 no variants section at all (confirmed during Task 6 of this effort: zero
-hits for "gnomAD missense variants located" on any of the four built
-pages). The landing page's copy already reflects this ("for the 279
-receptors that have variant data"). Whether those four receptors should
-have variant data, and if so why the pipeline did not produce it, is a
-pre-release question for the lab, not something resolved by this draft.
+hits for "gnomAD missense variants located" on any of the four built pages).
+
+An earlier version of this paragraph was headed "no gnomAD variant data".
+That is wrong for two of the four, and the trace of 2026-08-26 replaced it:
+
+- `npy6r_human` and `taar3_human` resolve to annotated pseudogene loci
+  (`NPY6RP` `ENSG00000226306`, `TAAR3P` `ENSG00000179073`). gnomAD carries
+  1,567 and 568 variants there and **zero missense** in each, so no variant
+  can be placed on a residue. Their absence is expected and correct.
+- `gp182_human` and `p2ry8_human` **do** have gnomAD missense variants:
+  `ENSG00000166856` (indexed by gnomAD as ACKR5) has 953, and
+  `ENSG00000182162` has 526. They are absent because their identifiers were
+  not resolved during data collection. The pipeline queried GP182 as `ACKR5`,
+  a symbol HGNC withdrew, and P2RY8 is protein coding in the pseudoautosomal
+  region where UniProt lists a second Ensembl ID, `ENSG00000292333`, that
+  gnomAD does not recognise. The pipeline's log cannot distinguish these from
+  a genuine zero: an Ensembl symbol-lookup failure and an empty gnomAD result
+  both return `[]` and log "No gnomAD variants found".
+
+The statistics page states both causes separately, and a test rejects any
+wording that collapses the four into one "no data available" line. The site
+keeps the submitted 279-receptor dataset unchanged: repairing the two would
+add variants sections to frozen report pages, move the 279 count away from
+submitted Supplementary Table S1, which carries the identical gap, and change
+Figure 3's denominators. **Known release limitation carried to the later
+manuscript revision, not an open website bug.**
 
 **"Complete RRCS results" is capped at 1,000 rows.** The report section
 heading calls this "Complete," but `_get_complete_rrcs()` truncates at
@@ -937,11 +958,18 @@ owner to decide, in priority order, with what each decision blocks.
    results, up to 1,000 contact pairs" (item 10). A drafted correction
    exists and is deliberately not applied. Blocks a one-line template
    change; nothing else depends on it.
-3. **Whether the four receptors missing gnomAD variant data**
-   (`gp182_human`, `npy6r_human`, `p2ry8_human`, `taar3_human`) should
-   have it, and if so, whether the batch pipeline needs a re-run for them
-   (item 10). Blocks whether those four report pages stay as they are or
-   get a variants section added later.
+3. ~~**Whether the four receptors missing gnomAD variant data should have
+   it**~~ **RESOLVED for this release, 2026-08-26.** Traced to two distinct
+   causes. `npy6r_human` and `taar3_human` are annotated pseudogene loci with
+   zero missense variants in gnomAD, so their absence is expected and correct.
+   `gp182_human` and `p2ry8_human` do have gnomAD missense variants (953 and
+   526) and are absent because their identifiers were not resolved during data
+   collection. The website records both causes separately on the statistics
+   page and keeps the submitted 279-receptor dataset. The two identifier
+   failures are a **known release limitation carried to the later manuscript
+   revision**, not an open website bug: fixing them would add variants sections
+   to two frozen report pages, move the 279 count and change Figure 3's
+   denominators. No website work is blocked.
 4. **Data licensing, software licensing, and a Zenodo deposit and DOI**
    (item 11). Blocks replacing the Downloads page's "Not yet available"
    database placeholder with a real archive, which item 10 identifies as

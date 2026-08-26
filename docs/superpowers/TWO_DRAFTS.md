@@ -137,8 +137,17 @@ In rough priority order.
 4. **The "Complete RRCS results" heading**, capped at 1,000 rows and therefore incomplete for
    7 of 283 receptors. Proposed correction, pending your PI's approval and deliberately not
    applied: "RRCS results, up to 1,000 contact pairs".
-5. **Four receptors with no gnomAD variant data**: `gp182_human`, `npy6r_human`, `p2ry8_human`,
-   `taar3_human`. Whether they should have it is a question for the lab.
+5. **Four receptors absent from the variant dataset. Traced 2026-08-26, and it is two
+   different causes, not one.** `npy6r_human` and `taar3_human` resolve to annotated pseudogene
+   loci (`NPY6RP`, `TAAR3P`): gnomAD carries variants there but **zero missense**, so nothing can
+   be placed on a residue and zero is correct. `gp182_human` and `p2ry8_human` are a
+   data-collection limitation: gnomAD does hold missense variants for both (953 and 526), and
+   they are absent because their identifiers were not resolved when the dataset was collected.
+   P2RY8 is protein coding and sits in the pseudoautosomal region, where UniProt lists a second
+   Ensembl ID that gnomAD does not recognise. **Known release limitation, not an open website
+   bug**: the site keeps the submitted 279-receptor dataset and states both causes separately on
+   the statistics page. Repairing the two would change frozen report pages, the 279 count and
+   Figure 3's denominators, so it is recorded for the later manuscript revision.
 6. **The database download must become a real archive before publication.** The software
    placeholder may persist.
 7. **External setup nobody can do but you**: Formspree account routed to `tggrlab@gmail.com`,
