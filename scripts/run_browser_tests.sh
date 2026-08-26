@@ -18,15 +18,17 @@ BUILD="${SMOKE_BUILD_DIR:-output_v3_demo}"
 if [ ! -x "$VENV/bin/python" ]; then
   echo "No test venv at $VENV. Create it once with:" >&2
   echo "    python3 -m venv \"$VENV\"" >&2
-  echo "    \"$VENV/bin/python\" -m pip install playwright pytest" >&2
+  echo "    \"$VENV/bin/python\" -m pip install -r GPCompaReports_v2/requirements-test.txt" >&2
   echo "    \"$VENV/bin/python\" -m playwright install chromium" >&2
+  echo "  (pins playwright==1.62.0; the browser download is a separate step)" >&2
   exit 1
 fi
 
 if ! "$VENV/bin/python" -c "import playwright" 2>/dev/null; then
   echo "The venv exists but Playwright is missing. Install it with:" >&2
-  echo "    \"$VENV/bin/python\" -m pip install playwright" >&2
+  echo "    \"$VENV/bin/python\" -m pip install -r GPCompaReports_v2/requirements-test.txt" >&2
   echo "    \"$VENV/bin/python\" -m playwright install chromium" >&2
+  echo "  (pins playwright==1.62.0; the browser download is a separate step)" >&2
   exit 1
 fi
 

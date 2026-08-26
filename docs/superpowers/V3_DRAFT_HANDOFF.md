@@ -341,6 +341,18 @@ layer, see item 7).
 
 ## 6. Test results
 
+> **Release gate (added after this section was written).** The counts below
+> are a snapshot from an earlier commit and are no longer current: the suite
+> is now 23 Python tests plus a 15-test browser suite for `v3-nav.js` and
+> `v3-deeplink.js`. More importantly, the concern this section raises about
+> skipped tests is now written down and enforced. See
+> `docs/superpowers/RELEASE_CHECKLIST.md`. `bash scripts/run_browser_tests.sh`
+> is a required pre-release and pre-deployment check, it runs automatically
+> inside `scripts/deploy_pages.sh` against the freshly built site before
+> anything is pushed, and a skipped run is treated as a failure rather than
+> a pass.
+
+
 ```
 $ python3 -m pytest GPCompaReports_v2/tests -v
 ...
