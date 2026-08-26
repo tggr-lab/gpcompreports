@@ -532,6 +532,9 @@ def generate_all_reports(env: Environment, store, output_dir, analysis_results=N
             variants=variants,
             total_variants=len(var_df),
             complete_rrcs=complete_rrcs,
+            # Total modelled contact pairs for this receptor, so the
+            # section can say how many of them the table shows.
+            rrcs_total_pairs=int(len(delta_df)),
             rrcs_stats=rrcs_stats,
             residue_summary_json=residue_summary_json,
             layout_light_json=layout_light_json,

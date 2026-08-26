@@ -32,6 +32,12 @@ import pytest
 BASE = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = BASE / 'tests' / 'fixtures' / 'freeze_manifest.json'
 
+# One PI-approved edit to report content lives here, expressed as the exact
+# reversal that undoes it. The baseline manifest above is NOT regenerated: it
+# stays the pre-V3 record. Sections are reversed back to that baseline before
+# hashing, so the approved edit passes and anything else still fails.
+DELTAS_PATH = BASE / 'tests' / 'fixtures' / 'freeze_approved_deltas.json'
+
 # Overridable so the same test can be pointed at a full 283-receptor build
 # instead of the five-receptor demo, e.g.:
 #   FREEZE_BUILD_DIR=output_v3_alt python3 -m pytest tests/test_freeze.py
@@ -53,8 +59,32 @@ SECTION_SEP = b'\x00SECTION\x00'
 V3_TOKEN_RE = re.compile(r'v3-[a-z-]+')
 
 
+def _load_deltas():
+    if not DELTAS_PATH.exists():
+        return []
+    return json.loads(DELTAS_PATH.read_text(encoding='utf-8')).get('reversal', [])
+
+
+_REVERSAL = _load_deltas()
+
+
+def _reverse_approved_edits(body):
+    """Undo the approved edits so the section can be compared to the baseline.
+
+    Deliberately narrow. The literal rule rewrites one exact heading string,
+    and the delete rule matches one exact element with its own class. Neither
+    can absorb an unrelated change.
+    """
+    for rule in _REVERSAL:
+        if rule['kind'] == 'literal':
+            body = body.replace(rule['after'], rule['before'])
+        elif rule['kind'] == 'regex_delete':
+            body = re.sub(rule['pattern'], '', body)
+    return body
+
+
 def _approved_sections(html):
-    return SECTION_RE.findall(html)
+    return [_reverse_approved_edits(b) for b in SECTION_RE.findall(html)]
 
 
 def _approved_content_hash(html):
