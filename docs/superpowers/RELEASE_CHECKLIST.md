@@ -69,6 +69,12 @@ SMOKE_BUILD_DIR=output bash scripts/run_browser_tests.sh
 `scripts/deploy_pages.sh` runs this automatically against the freshly built
 site, after the build and before anything is pushed.
 
+There is no bypass flag, by design. This is a publication companion site, not
+an operational service, so no emergency justifies publishing JavaScript that
+was never exercised in a browser. If an exceptional case ever needs the gate
+lifted, edit `scripts/deploy_pages.sh` and commit that change: it leaves an
+auditable record, which an environment variable set at the shell would not.
+
 ## 3. Freeze baseline intact
 
 The PI approved the v2 report content. `tests/fixtures/freeze_manifest.json`

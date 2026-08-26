@@ -16,7 +16,8 @@
 #   - The browser smoke tests must be runnable: see
 #     docs/superpowers/RELEASE_CHECKLIST.md for the one-time venv setup.
 #     They run automatically below, against the freshly built site, before
-#     anything is pushed. A skipped run is treated as a failure, not a pass.
+#     anything is pushed. A skipped run is treated as a failure, not a pass,
+#     and there is no flag to bypass them.
 
 set -euo pipefail
 
@@ -51,27 +52,21 @@ fi
 #     the venv is missing, if Playwright is not installed, if there is no
 #     build, or if pytest collects nothing, so a skip cannot masquerade as a
 #     pass here.
-if [ "${SKIP_BROWSER_TESTS:-0}" = "1" ]; then
+#
+#     There is deliberately no bypass flag. This is a publication companion
+#     site, so no emergency justifies publishing unverified JavaScript. If an
+#     exceptional case ever needs one, edit this script: that leaves a record
+#     in git, which an environment variable would not.
+echo "==> Required pre-deployment check: browser smoke tests..."
+if ! SMOKE_BUILD_DIR=output bash "$ROOT/scripts/run_browser_tests.sh" -q; then
   echo "" >&2
-  echo "######################################################################" >&2
-  echo "# WARNING: browser smoke tests DELIBERATELY SKIPPED for this deploy." >&2
-  echo "# v3-nav.js and v3-deeplink.js are going out UNVERIFIED." >&2
-  echo "# This is not a passing check. It is an unchecked one." >&2
-  echo "######################################################################" >&2
+  echo "ERROR: browser smoke tests did not pass against the build." >&2
+  echo "       Nothing has been pushed. The gh-pages branch is untouched." >&2
   echo "" >&2
-else
-  echo "==> Required pre-deployment check: browser smoke tests..."
-  if ! SMOKE_BUILD_DIR=output bash "$ROOT/scripts/run_browser_tests.sh" -q; then
-    echo "" >&2
-    echo "ERROR: browser smoke tests did not pass against the build." >&2
-    echo "       Nothing has been pushed. The gh-pages branch is untouched." >&2
-    echo "" >&2
-    echo "       If they could not run at all, that is still a failure: see" >&2
-    echo "       docs/superpowers/RELEASE_CHECKLIST.md for the venv setup." >&2
-    echo "       To deploy anyway, knowing the JavaScript is unverified:" >&2
-    echo "           SKIP_BROWSER_TESTS=1 scripts/deploy_pages.sh" >&2
-    exit 1
-  fi
+  echo "       If they could not run at all, that is still a failure, not a" >&2
+  echo "       pass: see docs/superpowers/RELEASE_CHECKLIST.md for the" >&2
+  echo "       one-time venv setup." >&2
+  exit 1
 fi
 
 # 2. Clean any previous worktree
