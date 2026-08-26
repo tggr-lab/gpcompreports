@@ -179,6 +179,7 @@ def test_the_network_table_says_what_it_contains_and_how_much_it_shows():
     assert 'both residues are among the %d highest-ranked' % CFR_TOP_N in html, (
         'the contact-pair table does not state that both residues come from '
         'the top %d' % CFR_TOP_N)
-    assert re.search(r'Showing the \d+ highest-ranked pairs\s+of \d+', html), (
-        'the contact-pair table does not say how many of how many pairs it '
-        'shows')
+    assert re.search(r'Showing the \d+ highest-ranked pairs,\s+ranked across '
+                     r'[\d,]+ unique contact pairs', html), (
+        'the contact-pair table does not say how many pairs it shows, out of '
+        'how large a pair universe')

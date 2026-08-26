@@ -14,6 +14,7 @@ from ..analysis.data_loader import GPCRDataStore
 from ..analysis.cross_gpcr_analysis import run_cross_gpcr_analysis
 from ..analysis.tm_domain_analysis import run_tm_domain_analysis
 from ..analysis.cfr_analysis import run_cfr_analysis
+from ..analysis.manuscript_stats import load_manuscript_stats
 from ..analysis.variant_correlation import run_variant_analysis
 from .page_generators.landing_page import generate_landing_page
 from .page_generators.gpcr_index import generate_gpcr_index
@@ -68,9 +69,21 @@ class SiteGenerator:
 
         print("\n[3/5] Running TM domain, CFR, and variant analysis...")
         self.analysis_results['tm_domain'] = run_tm_domain_analysis(self.store)
+        # Feeds the report pages' snake-plot Core Functional colouring. Those
+        # 283 pages are frozen, so this stays computed from the site's own
+        # per-receptor annotation and must not be repointed.
         self.analysis_results['cfr'] = run_cfr_analysis(self.store)
-        cfr_table = self.analysis_results['cfr'].get('cfr_table')
-        self.analysis_results['variant'] = run_variant_analysis(self.store, cfr_table)
+
+        # Feeds the statistics page only: cross-receptor recurrence as
+        # submitted with the manuscript, computed there on the full GPCRdb
+        # residue maps. See analysis/manuscript_stats.py.
+        manuscript = load_manuscript_stats()
+        self.analysis_results['manuscript'] = manuscript
+
+        # The variant tables on the statistics page describe the manuscript's
+        # recurrent positions, so they select on that list, not the site's.
+        self.analysis_results['variant'] = run_variant_analysis(
+            self.store, manuscript['top50'])
 
         print("\n[4/5] Preparing output directory...")
         self._prepare_output()

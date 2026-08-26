@@ -28,6 +28,7 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
     cross = analysis_results.get('cross_gpcr', {})
     tm = analysis_results.get('tm_domain', {})
     cfr = analysis_results.get('cfr', {})
+    manuscript = analysis_results.get('manuscript', {})
     variant = analysis_results.get('variant', {})
 
     chart_map = {
@@ -38,8 +39,8 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         'chart-tm-bar': tm.get('fig_tm_bar'),
         'chart-tm-heatmap': tm.get('fig_tm_heatmap'),
         'chart-cv-scatter': tm.get('fig_conserved_variable'),
-        'chart-cfr-dotplot': cfr.get('fig_cfr_dotplot'),
-        'chart-pathogenicity': variant.get('fig_pathogenicity_bar'),
+        'chart-cfr-dotplot': manuscript.get('fig_recurrence_dotplot'),
+        'chart-pathogenicity': manuscript.get('fig_enrichment_bar'),
         'chart-conservation': variant.get('fig_conservation_scatter'),
     }
 
@@ -48,22 +49,24 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         if fig is not None:
             charts[chart_id] = fig.to_json()
 
-    cfr_table = cfr.get('cfr_table')
-    cfr_table_data = []
-    if cfr_table is not None and not cfr_table.empty:
-        cfr_table_data = cfr_table.head(CFR_TOP_N).to_dict('records')
+    # The ranked table, the chart and the pair table are the submitted
+    # manuscript results, not a site recomputation. Order is taken as given.
+    top50 = manuscript.get('top50')
+    cfr_table_data = [] if top50 is None else top50.to_dict('records')
 
-    cfr_network = cfr.get('cfr_network')
-    cfr_network_data = []
-    if cfr_network is not None and not cfr_network.empty:
-        cfr_network_data = cfr_network.head(NETWORK_ROWS_SHOWN).to_dict('records')
+    pairs = manuscript.get('pairs')
+    cfr_network_data = ([] if pairs is None
+                        else pairs.head(NETWORK_ROWS_SHOWN).to_dict('records'))
 
-    path_result = variant.get('pathogenicity', {})
-    path_stats = path_result.get('stats', {})
-    cfr_pathogenic_n = path_result.get('cfr_counts', {}).get('pathogenic', 0)
-    non_cfr_pathogenic_n = path_result.get('non_cfr_counts', {}).get('pathogenic', 0)
-    cfr_total_n = path_result.get('cfr_total', 0)
-    non_cfr_total_n = path_result.get('non_cfr_total', 0)
+    # Figure 3 of the manuscript. The site no longer displays its own
+    # chi-square: the published analysis compares the recurrent positions
+    # against other generic-numbered positions on decisive predictions only,
+    # which is a different contingency table from the one the site can build.
+    fig3 = manuscript.get('figure3', {})
+    panel_a = fig3.get('panel_a', {})
+    fig3_groups = panel_a.get('groups', [])
+    fig3_decisive = panel_a.get('decisive_pathogenic_pct', {})
+    fig3_adjusted = fig3.get('conservation_adjusted', {})
 
     hi_variants = variant.get('high_impact_variants')
     hi_variant_data = []
@@ -86,19 +89,16 @@ def generate_statistics_page(env: Environment, store, analysis_results, output_d
         charts=charts,
         cfr_table=cfr_table_data,
         cfr_network=cfr_network_data,
-        path_stats=path_stats if path_stats else None,
-        cfr_pathogenic_pct=path_result.get('cfr_pathogenic_pct', 0),
-        non_cfr_pathogenic_pct=path_result.get('non_cfr_pathogenic_pct', 0),
-        cfr_pathogenic_n=cfr_pathogenic_n,
-        non_cfr_pathogenic_n=non_cfr_pathogenic_n,
-        cfr_total_n=cfr_total_n,
-        non_cfr_total_n=non_cfr_total_n,
+        fig3_groups=fig3_groups,
+        fig3_decisive=fig3_decisive,
+        fig3_or=panel_a.get('odds_ratio'),
+        fig3_ci_low=panel_a.get('ci_low'),
+        fig3_ci_high=panel_a.get('ci_high'),
+        fig3_adjusted=fig3_adjusted,
         high_impact_variants=hi_variant_data,
         cfr_top_n=CFR_TOP_N,
-        cfr_total_positions=(0 if cfr_table is None or cfr_table.empty
-                             else len(cfr_table)),
-        cfr_network_total=(0 if cfr_network is None or cfr_network.empty
-                           else len(cfr_network)),
+        cfr_total_positions=manuscript.get('n_recurrent_positions', 0),
+        cfr_network_total=manuscript.get('n_pairs_universe', 0),
         cfr_network_shown=len(cfr_network_data),
         high_impact_shown=len(hi_variant_data),
         layout_light_json=json.dumps(light, separators=(',', ':')),

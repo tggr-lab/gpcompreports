@@ -68,23 +68,32 @@
           Residues that carry a GPCRdb generic number are mapped onto that shared position across
           the {{ total_gpcrs }} receptors. A position is flagged as a CFR if it appears in the
           above-threshold contact list of many receptors, meaning that position repeatedly
-          participates in active-inactive contact remodeling across the family. Generic numbering
-          does not cover every residue, reaching a median of 58% of the above-threshold contact
-          positions in a receptor, so these counts are lower bounds.
+          participates in active-inactive contact remodeling across the family. The mapping used
+          here comes from the full GPCRdb residue maps for all {{ total_gpcrs }} receptors, the
+          same maps used for the manuscript analysis.
         </p>
         <p>
-          Positions are ranked by a composite score of (1) how many GPCRs show an above-threshold
-          change at that position (frequency) and (2) the average magnitude of change (mean |ΔRRCS|).
+          Positions are ranked by a composite score of (1) how many receptors show an
+          above-threshold change at that position (recurrence) and (2) the average magnitude of
+          change (mean |ΔRRCS|).
           High-ranking positions mark generic-numbered sites that recur across receptors and may
           reflect conserved components of Class A GPCR activation-associated contact networks.
         </p>
         <p>
-          The ranked list below is cut at the top {{ cfr_top_n }} positions, matching the cutoff
-          used in the manuscript analysis so that the figures reported here and there agree.
-          That cutoff is a reporting threshold, not a definition: {{ cfr_total_positions }}
-          positions meet the CFR criterion of recurring in at least three receptors. A position
-          ranked below {{ cfr_top_n }} is still a recurrent CFR position, it just falls outside
-          the subset reported on this page.
+          The ranked list below is cut at the top {{ cfr_top_n }} positions, the cutoff used in
+          the manuscript analysis. That cutoff is a reporting threshold, not a definition:
+          {{ cfr_total_positions }} positions meet the CFR criterion of recurring in at least
+          three receptors. A position ranked below {{ cfr_top_n }} is still a recurrent CFR
+          position, it just falls outside the subset reported here.
+        </p>
+        <p class="section-sub" style="margin-top: var(--s-3);">
+          <strong>Where these cross-receptor numbers come from.</strong> Recurrence statistics on
+          this page are the results submitted with the manuscript, computed on the full GPCRdb
+          residue maps for all 283 receptors. Mapping a residue onto a shared generic position
+          needs a GPCRdb number, and the per-receptor annotation used to build individual report
+          pages numbers only residues that took part in a high-magnitude contact, so it yields
+          lower recurrence counts. Individual receptor reports are unchanged and keep their own
+          report-generation data.
         </p>
       </div>
 
@@ -104,23 +113,23 @@
           <table class="v2-table">
             <thead>
               <tr>
-                <th>Rank</th>
+                <th data-tooltip="Rank by composite CFR score, as submitted">Rank</th>
                 <th data-tooltip="Ballesteros-Weinstein generic numbering for this position">Generic number</th>
                 <th>Segment</th>
-                <th data-tooltip="Number of GPCRs with an above-threshold ΔRRCS change at this position">Frequency</th>
-                <th data-tooltip="Percentage of all analyzed GPCRs">% of GPCRs</th>
-                <th data-tooltip="Mean |ΔRRCS| across GPCRs with an above-threshold change at this position">Mean |Δ|</th>
-                <th data-tooltip="Composite score: the mean of normalised frequency and normalised mean |ΔRRCS|">CFR score</th>
+                <th data-tooltip="Number of the 283 receptors with an above-threshold ΔRRCS change at this position">Receptors</th>
+                <th data-tooltip="Percentage of the 283 receptors">% of receptors</th>
+                <th data-tooltip="Mean |ΔRRCS| across receptors with an above-threshold change at this position">Mean |Δ|</th>
+                <th data-tooltip="Composite score: the mean of normalised recurrence and normalised mean |ΔRRCS|">CFR score</th>
               </tr>
             </thead>
             <tbody>
             {% for row in cfr_table %}
               <tr>
-                <td class="num">{{ row.rank }}</td>
+                <td class="num">{{ row.cfr_score_rank }}</td>
                 <td><strong>{{ row.generic_number }}</strong></td>
                 <td><span class="badge badge-teal">{{ row.segment }}</span></td>
-                <td class="num">{{ row.frequency }}</td>
-                <td class="num">{{ "%.1f"|format(row.frequency_pct) }}%</td>
+                <td class="num">{{ row.n_receptors }}</td>
+                <td class="num">{{ "%.1f"|format(row.pct_receptors) }}%</td>
                 <td class="num">{{ "%.2f"|format(row.mean_abs_delta) }}</td>
                 <td class="num">{{ "%.3f"|format(row.cfr_score) }}</td>
               </tr>
@@ -137,21 +146,22 @@
           <strong>CFR contact pairs</strong>
           <span class="v2-table-note">
             Contact pairs in which both residues are among the {{ cfr_top_n }} highest-ranked
-            recurrent CFR positions. Showing the {{ cfr_network_shown }} highest-ranked pairs
-            of {{ cfr_network_total }}.
+            recurrent CFR positions. Showing the {{ cfr_network_shown }} highest-ranked pairs,
+            ranked across {{ "{:,}".format(cfr_network_total) }} unique contact pairs.
           </span>
         </div>
         <div class="v2-table-scroll">
           <table class="v2-table">
             <thead>
-              <tr><th>CFR 1</th><th>CFR 2</th><th># GPCRs</th></tr>
+              <tr><th>Position 1</th><th>Position 2</th><th>Receptors</th><th>% of receptors</th></tr>
             </thead>
             <tbody>
             {% for row in cfr_network %}
               <tr>
                 <td><strong>{{ row.cfr_1 }}</strong></td>
                 <td><strong>{{ row.cfr_2 }}</strong></td>
-                <td class="num">{{ row.n_gpcrs }}</td>
+                <td class="num">{{ row.n_receptors }}</td>
+                <td class="num">{{ "%.1f"|format(row.pct_receptors) }}%</td>
               </tr>
             {% endfor %}
             </tbody>
@@ -164,7 +174,7 @@
     {# ---- D. Variant Correlation ---- #}
     <section class="analysis-section reveal" aria-labelledby="sec-d">
       <header class="section-head">
-        <h2 id="sec-d" data-tooltip="How genetic variants correlate with conformational change and pathogenicity, comparing the top {{ cfr_top_n }} recurrent CFR positions with positions outside that subset">D. Variant Correlation</h2>
+        <h2 id="sec-d" data-tooltip="How genetic variants correlate with conformational change and pathogenicity, comparing the top {{ cfr_top_n }} recurrent CFR positions with other generic-numbered positions">D. Variant Correlation</h2>
       </header>
 
       {% if 'chart-pathogenicity' in charts %}
@@ -174,14 +184,31 @@
            data-chart-layout-dark='{{ layout_dark_json }}'></div>
       {% endif %}
 
-      {% if path_stats %}
+      {% if fig3_or %}
       <div class="callout callout-accent">
-        <div class="callout-head">Pathogenicity enrichment at the top {{ cfr_top_n }} recurrent CFR positions</div>
+        <div class="callout-head">AlphaMissense pathogenicity at the top {{ cfr_top_n }} recurrent positions</div>
         <p>
-          Top {{ cfr_top_n }} recurrent CFR positions: <strong>{{ cfr_pathogenic_n }} / {{ cfr_total_n }}</strong> variants classified as pathogenic by AlphaMissense ({{ "%.1f"|format(cfr_pathogenic_pct) }}%).
-          Positions outside the top {{ cfr_top_n }}: <strong>{{ non_cfr_pathogenic_n }} / {{ non_cfr_total_n }}</strong> variants classified as pathogenic ({{ "%.1f"|format(non_cfr_pathogenic_pct) }}%).
-          Positions outside that subset are not necessarily outside the CFR set: many recur across receptors but rank below the reporting cutoff.
-          {{ path_stats.test }} test: χ² = {{ "%.2f"|format(path_stats.chi2) }}, <strong>p = {{ "%.2e"|format(path_stats.p_value) }}</strong>.
+          Among decisive AlphaMissense predictions, <strong>{{ "%.1f"|format(fig3_decisive.recurrent) }}%</strong>
+          were classified as pathogenic at the {{ cfr_top_n }} most recurrent generic positions,
+          compared with <strong>{{ "%.1f"|format(fig3_decisive.other) }}%</strong> at other
+          generic-numbered positions: odds ratio
+          <strong>{{ "%.2f"|format(fig3_or) }}</strong>
+          (95% CI {{ "%.2f"|format(fig3_ci_low) }} to {{ "%.2f"|format(fig3_ci_high) }}).
+          {% if fig3_adjusted %}
+          Adjusting for conservation reduces the odds ratio to
+          <strong>{{ "%.2f"|format(fig3_adjusted.odds_ratio) }}</strong>
+          (95% CI {{ "%.2f"|format(fig3_adjusted.ci_low) }} to {{ "%.2f"|format(fig3_adjusted.ci_high) }}).
+          {% endif %}
+        </p>
+        <p>
+          Ambiguous predictions are shown in the chart but excluded from the odds ratio.
+          {% for g in fig3_groups %}{{ g.label }}: n = {{ "{:,}".format(g.n) }}{% if not loop.last %}. {% else %}.{% endif %}{% endfor %}
+          The comparison group is every other generic-numbered position, which includes recurrent
+          positions ranked below the cutoff.
+        </p>
+        <p class="section-sub">
+          This association supports recurrence as a variant-prioritisation feature. It does not
+          establish pathogenicity.
         </p>
       </div>
       {% endif %}
