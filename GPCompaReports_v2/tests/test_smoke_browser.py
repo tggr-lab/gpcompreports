@@ -89,7 +89,11 @@ def _structural_signature(html):
     signature tests the real variation without testing 283 near-copies.
     """
     return (len(re.findall(r'data-section-title=', html)),
-            len(re.findall(r'report-section-head', html)))
+            len(re.findall(r'report-section-head', html)),
+            # Truncated reports carry an extra line under the RRCS heading.
+            # It is not a section, so the counts above cannot see it, and the
+            # suite would never open one of the 7 in a browser.
+            bool(re.search(r'rrcs-truncation-note', html)))
 
 
 def _representatives():
