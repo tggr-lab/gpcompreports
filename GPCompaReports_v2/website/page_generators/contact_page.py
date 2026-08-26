@@ -12,7 +12,10 @@ release check in docs/superpowers/RELEASE_CHECKLIST.md.
 """
 
 FORMSPREE_ENDPOINT = 'https://formspree.io/f/mljrqazl'
-CONTACT_EMAIL = 'tggrlab@gmail.com'
+#: The form's notifications are delivered to the lab account. That routing
+#: is a Formspree dashboard setting, not a value this module controls, and
+#: the address is deliberately not rendered on the page: visitors use the
+#: form, and a published mailto is an invitation to scrapers.
 
 
 def generate_contact_page(env, store, output_dir):
@@ -28,7 +31,6 @@ def generate_contact_page(env, store, output_dir):
         page_title='Contact · GPCompaRe',
         total_gpcrs=len(store.gpcr_ids),
         formspree_endpoint=FORMSPREE_ENDPOINT,
-        contact_email=CONTACT_EMAIL,
     )
     (output_dir / 'contact.html').write_text(html, encoding='utf-8')
     print("  Generated: contact.html")

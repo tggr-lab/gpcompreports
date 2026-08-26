@@ -67,9 +67,10 @@ def test_the_contact_page_names_no_individual_and_promises_no_future_contacts():
         'the page still promises contacts will be listed later')
     assert 'Named scientific and technical contacts' not in text
     emails = set(re.findall(r'[\w.+-]+@[\w.-]+\.\w+', text))
-    assert emails <= {'tggrlab@gmail.com'}, (
-        'an address other than the lab account is displayed: %s'
-        % sorted(emails - {'tggrlab@gmail.com'}))
+    assert not emails, (
+        'the contact page displays an email address: %s. Visitors use the '
+        'form; the delivery address is a Formspree dashboard setting and is '
+        'not published on the page.' % sorted(emails))
 
 
 @needs_build
