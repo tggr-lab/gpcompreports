@@ -488,3 +488,87 @@ def test_section_nav_is_reachable_by_keyboard(open_report, gpcr_id):
     page.wait_for_timeout(SETTLE_MS)
     assert page.evaluate('location.hash') == '#' + target, (
         '%s: Enter on a focused nav link did not navigate' % gpcr_id)
+
+
+# ---------------------------------------------------------------------------
+# Contact form: a real submission, intercepted before it leaves the machine
+# ---------------------------------------------------------------------------
+
+FORMSPREE_ENDPOINT = 'https://formspree.io/f/mljrqazl'
+
+
+def test_submitting_the_contact_form_posts_the_expected_fields(browser, server):
+    """Fill the required fields, submit, and capture the request.
+
+    The route handler aborts the request, so nothing reaches Formspree and no
+    email is sent. What is asserted is the destination, the method, and the
+    body the browser actually built from the form.
+    """
+    ctx = browser.new_context(viewport=VIEWPORT)
+    page = ctx.new_page()
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    for pattern in BLOCKED:
+        page.route(pattern, lambda route: route.abort())
+
+    captured = {}
+
+    def intercept(route, request):
+        captured['url'] = request.url
+        captured['method'] = request.method
+        captured['post'] = request.post_data
+        route.abort()
+
+    page.route('https://formspree.io/**', intercept)
+    page.goto('%s/contact.html' % server, wait_until='load')
+
+    page.fill('#contact-name', 'Ada Lovelace')
+    page.fill('#contact-email', 'ada@example.org')
+    page.fill('#contact-institution', 'Example University')
+    page.select_option('#contact-enquiry-type', 'Website problem')
+    page.fill('#contact-message', 'Test message, not sent anywhere.')
+    page.click('button[type="submit"]')
+    page.wait_for_timeout(1200)
+
+    assert captured, (
+        'submitting the form produced no request to formspree.io; the form is '
+        'not wired up')
+    assert captured['url'] == FORMSPREE_ENDPOINT, (
+        'form posted to %s, expected %s' % (captured['url'], FORMSPREE_ENDPOINT))
+    assert captured['method'] == 'POST', (
+        'form used %s, expected POST' % captured['method'])
+
+    body = captured['post'] or ''
+    for key, value in [('name', 'Ada+Lovelace'), ('email', 'ada%40example.org'),
+                       ('institution', 'Example+University'),
+                       ('enquiry_type', 'Website+problem'),
+                       ('_subject', 'GPCompaRe+website+enquiry')]:
+        assert '%s=%s' % (key, value) in body, (
+            'submitted body is missing %s=%s; body was %r' % (key, value, body[:400]))
+    assert 'message=Test' in body, 'the message field was not submitted'
+    # The honeypot must be submitted empty by a real user.
+    assert '_gotcha=&' in body or body.rstrip().endswith('_gotcha='), (
+        'the honeypot was not submitted empty: %r' % body[:400])
+    assert errors == [], 'submitting raised JavaScript errors: %s' % errors
+    ctx.close()
+
+
+def test_the_honeypot_is_not_reachable_by_keyboard(browser, server):
+    ctx = browser.new_context(viewport=VIEWPORT)
+    page = ctx.new_page()
+    for pattern in BLOCKED:
+        page.route(pattern, lambda route: route.abort())
+    page.goto('%s/contact.html' % server, wait_until='load')
+
+    box = page.locator('#contact-gotcha').bounding_box()
+    assert box is None or box['x'] < -1000, (
+        'the honeypot is positioned on screen: %s' % box)
+
+    page.focus('#contact-name')
+    reached = []
+    for _ in range(12):
+        page.keyboard.press('Tab')
+        reached.append(page.evaluate('document.activeElement.id'))
+    assert 'contact-gotcha' not in reached, (
+        'tabbing through the form reaches the honeypot: %s' % reached)
+    ctx.close()

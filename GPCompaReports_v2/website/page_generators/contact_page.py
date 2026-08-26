@@ -1,11 +1,17 @@
 """Generate the Contact page.
 
-The form posts to Formspree. The endpoint is a placeholder until the lab creates
-the account, see docs/superpowers/EXTERNAL_SETUP.md. Nothing here invents a
-credential.
+The form posts to Formspree over plain HTML: a real <form action> with
+method="POST". No JavaScript, no npm package, no AJAX helper.
+
+The template disables the form whenever this endpoint still starts with
+"FORMSPREE_", so a placeholder can never ship looking live. That guard stays.
+
+Spam protection beyond the _gotcha honeypot (Formspree CAPTCHA and "Restrict
+to Domain") is dashboard configuration, not code, and is recorded as a manual
+release check in docs/superpowers/RELEASE_CHECKLIST.md.
 """
 
-FORMSPREE_ENDPOINT_PLACEHOLDER = 'FORMSPREE_ENDPOINT_NOT_YET_CONFIGURED'
+FORMSPREE_ENDPOINT = 'https://formspree.io/f/mljrqazl'
 CONTACT_EMAIL = 'tggrlab@gmail.com'
 
 
@@ -21,7 +27,7 @@ def generate_contact_page(env, store, output_dir):
         nav_contact_url='contact.html',
         page_title='Contact · GPCompaRe',
         total_gpcrs=len(store.gpcr_ids),
-        formspree_endpoint=FORMSPREE_ENDPOINT_PLACEHOLDER,
+        formspree_endpoint=FORMSPREE_ENDPOINT,
         contact_email=CONTACT_EMAIL,
     )
     (output_dir / 'contact.html').write_text(html, encoding='utf-8')

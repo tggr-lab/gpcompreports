@@ -150,7 +150,7 @@ In rough priority order.
    Figure 3's denominators, so it is recorded for the later manuscript revision.
 6. **The database download must become a real archive before publication.** The software
    placeholder may persist.
-7. **External setup nobody can do but you**: Formspree account routed to `tggrlab@gmail.com`,
+7. **External setup nobody can do but you**: Formspree dashboard checks (the form itself is live in code),
    reCAPTCHA keys, domain restriction, named contacts, licences, Zenodo deposit. Listed in
    `docs/superpowers/EXTERNAL_SETUP.md`.
 

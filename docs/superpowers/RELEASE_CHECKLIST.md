@@ -82,7 +82,31 @@ pins it. The freeze test must pass against the build being released, and the
 manifest must not have been regenerated as part of the release. Regenerating
 it is a separate, deliberate act with manual review, never a release step.
 
-## 4. Nothing unresolved from the handoff
+## 4. Contact form: manual Formspree dashboard checks
+
+The form itself is live in code. It posts as plain HTML to
+`https://formspree.io/f/mljrqazl` with `method="POST"`, carries a `_subject`
+of `GPCompaRe website enquiry`, and includes a `_gotcha` honeypot hidden by
+the project stylesheet, removed from the tab order and `aria-hidden`.
+`tests/test_contact_form.py` and two browser tests pin all of that.
+
+The four items below **cannot be checked by any test in this repository**.
+They are dashboard or deployment settings, and each must be confirmed by a
+human before release:
+
+- [ ] **Notifications reach `tggrlab@gmail.com`.** Send one real test message
+      through the deployed form and confirm it arrives.
+- [ ] **Formspree spam protection / reCAPTCHA is enabled** in the form's
+      dashboard settings. No CAPTCHA key exists in the markup, and none should:
+      it is not a code setting.
+- [ ] **"Restrict to Domain" is enabled**, once the final public URL is
+      decided. Enter the hostname **without** `https://`.
+- [ ] **The deployed site does not send a `Referrer-Policy` stricter than
+      `strict-origin-when-cross-origin`.** Formspree's domain restriction reads
+      the referrer, so a stricter policy silently breaks submissions. Check any
+      host or CDN header, not just the page markup.
+
+## 5. Nothing unresolved from the handoff
 
 `docs/superpowers/V3_DRAFT_HANDOFF.md` section 13 lists decisions the owner
 must make, and `docs/superpowers/EXTERNAL_SETUP.md` lists setup only a human

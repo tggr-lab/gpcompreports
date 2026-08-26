@@ -234,6 +234,9 @@ Aviv Sourasky Medical Center, `tggrlab@gmail.com`, and a placeholder
 sentence: "Named scientific and technical contacts will be listed here once
 assigned."
 
+
+> **Superseded 2026-08-26.** The form is now live: it posts as plain HTML to `https://formspree.io/f/mljrqazl`, the submit button and all visible fields ship enabled, and the "not connected" notice no longer renders. What remains is dashboard-only and listed under "Contact form: manual Formspree dashboard checks" in `RELEASE_CHECKLIST.md`.
+
 ### Downloads page (`GPCompaReports_v2/templates/downloads.html`, new page)
 
 Heading "Downloads", subtitle stating neither archive is packaged yet.
@@ -725,6 +728,9 @@ invent. The full checklist, with exact steps and file locations, is
   submissions, and the Downloads page invents no file, link, or DOI.
   Publishing either page with real credentials, named contacts, or a real
   data archive is a separate, later release step.
+
+
+> **Superseded 2026-08-26.** The form is now live: it posts as plain HTML to `https://formspree.io/f/mljrqazl`, the submit button and all visible fields ship enabled, and the "not connected" notice no longer renders. What remains is dashboard-only and listed under "Contact form: manual Formspree dashboard checks" in `RELEASE_CHECKLIST.md`.
 
 ## 12. Other findings from the working ledger
 

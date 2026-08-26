@@ -23,10 +23,27 @@ def test_contact_form_accepts_no_file_uploads():
     assert 'type="file"' not in html
 
 
+#: The one Formspree endpoint the lab supplied. Any other is invented.
+SUPPLIED_FORMSPREE_ENDPOINT = 'https://formspree.io/f/mljrqazl'
+
+
 def test_contact_page_invents_no_credentials():
+    """The endpoint must be the supplied one, and nothing else may be conjured.
+
+    This used to assert that no Formspree endpoint appeared at all, which was
+    right while the form was a placeholder. The lab has since supplied one, so
+    the check now pins that exact value: a different endpoint would mean an
+    invented credential, which is what this test exists to catch.
+    """
     html = CONTACT.read_text(encoding='utf-8')
-    assert 'formspree.io/f/' not in html, 'a Formspree endpoint was invented'
+    found = set(re.findall(r'https://formspree\.io/f/[A-Za-z0-9]+', html))
+    assert found <= {SUPPLIED_FORMSPREE_ENDPOINT}, (
+        'the contact page references a Formspree endpoint that was not '
+        'supplied: %s' % sorted(found - {SUPPLIED_FORMSPREE_ENDPOINT}))
     assert not re.search(r'6L[\w-]{20,}', html), 'a reCAPTCHA site key was invented'
+    for token in ('sitekey', 'g-recaptcha', 'api_key', 'apiKey', 'secret'):
+        assert token.lower() not in html.lower(), (
+            'the contact page references %r, which looks like a credential' % token)
 
 
 def test_downloads_page_offers_no_dead_links():

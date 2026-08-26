@@ -66,6 +66,9 @@ TGGR team to close them before the Contact and Downloads pages go live.
 The Contact page can be built and deployed with the Formspree endpoint left
 unconfigured: the submit button is disabled and a visible notice tells
 visitors the form is not connected, so no message can be silently lost.
+
+
+> **Superseded 2026-08-26.** The form is now live: it posts as plain HTML to `https://formspree.io/f/mljrqazl`, the submit button and all visible fields ship enabled, and the "not connected" notice no longer renders. What remains is dashboard-only and listed under "Contact form: manual Formspree dashboard checks" in `RELEASE_CHECKLIST.md`.
 Shipping the page in this state is a documentation gap, not a functional
 bug. Publishing it with real Formspree/reCAPTCHA credentials and named
 contacts is a separate release step gated on the items above.
