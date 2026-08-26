@@ -564,22 +564,28 @@ this item.
 
 ## 10. Concerns affecting scientific accuracy, reproducibility, or the manuscript-to-site match
 
-**The Y160 numbering mismatch, corrected form.** The manuscript's Figure 4
-gives Y160 the generic number `3.37x37`. The snake plot on the PAR2 report
-*does* carry that number (verified directly in the SVG: a residue circle
-titled `Y160 3.37x37`), so the site can render it. What lacks an entry for
-position 160 is the annotation CSV that feeds the report's tables, which is
-a different source from the one the snake plot draws on. This is two
-numbering sources disagreeing, not one missing number. (An earlier version
-of this finding, recorded during this branch's own prep work, stated it
-more broadly as "no entry for position 160 anywhere"; that was wrong and
-has been corrected here.) Separately and consistently: the M159-Y160
-contact itself falls below PAR2's own threshold (\|ΔRRCS\| 1.78 against
-2.60, item 2), which matches Figure 4e, so the two sources agree on the
-science even though they disagree on the label. Flag for investigation
-before release. No change was made to the approved report, the manuscript,
-or the annotation file to resolve this. It needs a human decision about
-which numbering source is authoritative.
+**Y160: annotation coverage, not a numbering conflict. CLOSED 2026-08-26.**
+Y160 is `3.37x37` in the manuscript, in the full GPCRdb residue map, and in
+the report snake plot (verified in the SVG: a residue circle titled
+`Y160 3.37x37`, and `3.37x37` is present in the built report). All three
+sources agree on the position. What the original sparse per-report annotation
+CSV lacks is a row for residue 160 at all: it carries 159 (M, `3.36x36`) and
+then skips to the next annotated residue. So some report-level contact data
+may not display that generic number.
+
+This is an annotation-coverage limitation, the same one that makes a site
+recomputation give 356 recurrent positions where the submitted full-GPCRdb-map
+analysis gives 368. It is not a disagreement about which number Y160 carries,
+and there is no authoritative-source decision to make. Two earlier framings
+here were wrong and are superseded: first that there was "no entry for
+position 160 anywhere", then that this was "two numbering sources
+disagreeing".
+
+It does not affect the selected M159-F300 explainer, which uses `3.36x36` and
+`6.48x48`, both present. Consistently, the M159-Y160 contact falls below
+PAR2's own threshold (\|ΔRRCS\| 1.78 against 2.60, item 2), matching Figure 4e.
+No report or annotation change was made, because the report content is
+frozen.
 
 **Four receptors have contact data but no gnomAD variant data.** The batch
 run has 283 `*_rrcs_delta.csv` files (in

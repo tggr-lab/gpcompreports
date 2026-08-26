@@ -164,10 +164,13 @@ not five sixths. Both landing pages now state that recurrence counts are lower b
 the manuscript needs the same framing is your call. Nothing in the manuscript was touched.**
 Note also that a figure quoted as 45.9% is 45.8% on recomputation.
 
-**Y160 has two numbering sources that disagree.** Figure 4 gives Y160 the generic number
-`3.37x37`, and the snake plot does carry it, so the site can render it. What lacks any entry for
-position 160 is the annotation CSV that feeds the report tables. Worth resolving before release.
-Nothing was changed to paper over it.
+**Y160 is an annotation-coverage gap, not a numbering conflict. Closed 2026-08-26.** Y160 is
+`3.37x37` in the manuscript, in the full GPCRdb residue map and in the report snake plot. All
+three agree. The original sparse per-report annotation CSV has no row for residue 160, so
+report-level contact data may not display that generic number. This is the same annotation-coverage
+limitation that makes the site's own recurrence count 356 against the submitted 368, not a
+disagreement about the position. It does not affect the selected M159-F300 explainer. No report or
+annotation change was made, because the report content is frozen.
 
 ---
 
