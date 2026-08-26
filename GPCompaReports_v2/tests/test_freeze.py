@@ -1,61 +1,178 @@
-"""The PI approved the v2 report pages. With every V3 toggle off, the text
-inside the report sections must be what it was. This test compares a freshly
-built demo report against the last full build in GPCompaReports_v2/output/.
+"""The PI approved the v2 report pages. With every V3 toggle off, the content
+inside the report sections must be what it was.
+
+This used to compare a freshly built demo report against
+GPCompaReports_v2/output/reports/par2_human.html directly. That directory is
+gitignored: a routine `python3 generate_site.py` (no --output) overwrites it,
+after which the test would compare the branch against itself and pass
+forever, silently, on the one property this whole test exists to guard.
+
+The baseline now lives in a git-tracked fixture,
+tests/fixtures/freeze_manifest.json, generated deliberately by
+scripts/build_freeze_manifest.py from a pristine pre-V3 build and reviewed
+by hand before being committed. This test only ever reads that fixture; it
+never regenerates it.
+
+"Approved content" = the inner HTML of every <section class="report-section">
+element, in document order, not including the opening tag. The V3 branch adds
+id= and data-section-title= to that opening tag deliberately (sanctioned
+wayfinding); everything inside the tag is the PI-approved content that must
+not move. This regex and separator must be kept identical to the copy in
+scripts/build_freeze_manifest.py, or the manifest and this test will
+silently disagree about what "approved content" means.
 """
+import hashlib
+import json
+import os
 import re
 from pathlib import Path
 
 import pytest
 
 BASE = Path(__file__).resolve().parent.parent
-OLD = BASE / 'output' / 'reports' / 'par2_human.html'
-NEW = BASE / 'output_v3_demo' / 'reports' / 'par2_human.html'
+MANIFEST_PATH = BASE / 'tests' / 'fixtures' / 'freeze_manifest.json'
+
+# Overridable so the same test can be pointed at a full 283-receptor build
+# instead of the five-receptor demo, e.g.:
+#   FREEZE_BUILD_DIR=output_v3_alt python3 -m pytest tests/test_freeze.py
+# A relative value is resolved against BASE (GPCompaReports_v2/), matching
+# where output_v3_demo, output_v3_alt, etc. already live.
+_env_build_dir = os.environ.get('FREEZE_BUILD_DIR')
+if _env_build_dir:
+    BUILD_DIR = Path(_env_build_dir).expanduser()
+    if not BUILD_DIR.is_absolute():
+        BUILD_DIR = BASE / BUILD_DIR
+else:
+    BUILD_DIR = BASE / 'output_v3_demo'
+
+FULL_SITE_THRESHOLD = 283
 
 SECTION_RE = re.compile(
     r'<section class="report-section"[^>]*>(.*?)</section>', re.S)
-TAG_RE = re.compile(r'<[^>]+>')
-WS_RE = re.compile(r'\s+')
-
-
-def _section_text(html):
-    out = []
-    for body in SECTION_RE.findall(html):
-        text = WS_RE.sub(' ', TAG_RE.sub(' ', body)).strip()
-        out.append(text)
-    return out
-
-
-@pytest.mark.skipif(not NEW.exists(),
-                    reason='no demo build on disk, run scripts/build_demo.sh')
-def test_report_sections_are_unchanged_with_features_off():
-    # Skipping when there is no demo build is fine: there is nothing to check.
-    # Skipping when the demo EXISTS but the baseline does not is not fine. That
-    # is the case where a green run would mean "we never looked" while reading
-    # as "the freeze holds", on the one property this whole branch preserves.
-    # output/ is gitignored, so this is the likely state on a fresh clone.
-    assert OLD.exists(), (
-        'demo build present but no baseline at %s. Run a full build first, '
-        'this test cannot vouch for the freeze without one.' % OLD)
-    old = _section_text(OLD.read_text(encoding='utf-8'))
-    new = _section_text(NEW.read_text(encoding='utf-8'))
-    assert old, 'baseline produced no sections, the regex or the fixture is wrong'
-    assert len(new) == len(old), 'section count changed'
-    for i, (a, b) in enumerate(zip(old, new)):
-        assert a == b, 'section %d text changed' % i
-
-
+SECTION_SEP = b'\x00SECTION\x00'
 V3_TOKEN_RE = re.compile(r'v3-[a-z-]+')
 
 
-@pytest.mark.skipif(not NEW.exists(), reason='needs a demo build on disk')
-def test_no_v3_markup_inside_approved_sections():
-    """Structural half of the freeze rule.
+def _approved_sections(html):
+    return SECTION_RE.findall(html)
 
-    The text comparison above catches added words. This catches added markup
-    that carries no text yet, which is how a V3 feature would most likely
-    leak: an empty mount point or a hidden span inside approved content.
+
+def _approved_content_hash(html):
+    sections = _approved_sections(html)
+    blob = SECTION_SEP.join(section.encode('utf-8') for section in sections)
+    return hashlib.sha256(blob).hexdigest(), len(sections)
+
+
+def _load_manifest():
+    # This must fail, not skip, when the manifest is missing. A missing
+    # baseline means the freeze safeguard itself is absent, which is exactly
+    # the silent-pass failure mode this rewrite exists to close.
+    assert MANIFEST_PATH.exists(), (
+        'freeze manifest missing at %s. Without a baseline this test cannot '
+        'vouch for the freeze, so it fails rather than skips. Regenerate it '
+        'deliberately with scripts/build_freeze_manifest.py against a '
+        'pristine pre-V3 build (normally GPCompaReports_v2/output/), review '
+        'the result by hand, and commit it.' % MANIFEST_PATH)
+    return json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
+
+
+def _build_reports():
+    """gpcr_id -> Path for every report html present in BUILD_DIR."""
+    reports_dir = BUILD_DIR / 'reports'
+    if not reports_dir.is_dir():
+        return {}
+    return {path.stem: path for path in sorted(reports_dir.glob('*.html'))}
+
+
+def test_freeze_manifest_exists():
+    """Standalone and unconditional: this must fail whenever the manifest is
+    missing, regardless of whether any build is present to compare against.
     """
-    html = NEW.read_text(encoding='utf-8')
-    for i, body in enumerate(SECTION_RE.findall(html)):
-        found = V3_TOKEN_RE.findall(body)
-        assert not found, 'section %d contains V3 markup: %s' % (i, sorted(set(found)))
+    manifest = _load_manifest()
+    assert manifest.get('receptors'), 'manifest has no receptors recorded'
+
+
+@pytest.mark.skipif(not (BUILD_DIR / 'reports').is_dir(),
+                    reason='no build at %s, run scripts/build_demo.sh or set '
+                           'FREEZE_BUILD_DIR' % BUILD_DIR)
+class TestBuildAgainstManifest:
+    """Everything below needs an actual build on disk to compare. With no
+    build there is nothing to check, which is a different condition from a
+    missing manifest (that always fails, see test_freeze_manifest_exists).
+    """
+
+    def test_no_unexpected_receptor_in_the_build(self):
+        """A receptor in the build that the manifest has never seen is either
+        a new addition never approved by the PI, or a sign this build was not
+        generated the way the manifest assumes. Either way it must fail.
+        """
+        manifest = _load_manifest()
+        known = set(manifest['receptors'])
+        build = _build_reports()
+        unexpected = sorted(set(build) - known)
+        assert not unexpected, (
+            'receptor(s) present in the build are absent from the freeze '
+            'manifest (unexpected addition): %s' % unexpected)
+
+    def test_approved_section_content_is_unchanged(self):
+        manifest = _load_manifest()
+        build = _build_reports()
+        checked = 0
+        for gpcr_id, path in sorted(build.items()):
+            baseline = manifest['receptors'].get(gpcr_id)
+            if baseline is None:
+                continue  # already reported by test_no_unexpected_receptor_in_the_build
+            html = path.read_text(encoding='utf-8')
+            digest, count = _approved_content_hash(html)
+            assert count == baseline['section_count'], (
+                '%s: approved section count changed (manifest=%d, build=%d). '
+                'A report-section was added or removed inside the frozen '
+                'part of the page.' % (gpcr_id, baseline['section_count'], count))
+            assert digest == baseline['sha256'], (
+                '%s: approved content hash changed. The PI-approved '
+                'report-section content for this receptor no longer matches '
+                'the frozen baseline in %s.' % (gpcr_id, MANIFEST_PATH.name))
+            checked += 1
+        assert checked > 0, (
+            'no receptor in the build at %s matched the manifest; nothing '
+            'was actually checked' % BUILD_DIR)
+
+    def test_full_build_covers_every_manifest_receptor(self):
+        """Only a hard requirement once the build is plausibly the full site.
+        The five-receptor demo build was never supposed to have the other
+        278 pages, so it cannot fail this on incompleteness; a build that
+        claims to be complete (>= 283 reports) can.
+        """
+        manifest = _load_manifest()
+        build = _build_reports()
+        total = len(manifest['receptors'])
+        covered = sorted(set(manifest['receptors']) & set(build))
+        print('freeze coverage: %d/%d manifest receptors present in %s'
+              % (len(covered), total, BUILD_DIR))
+        if len(build) < FULL_SITE_THRESHOLD:
+            pytest.skip(
+                'build at %s has %d report(s), below the %d-receptor full-site '
+                'threshold; %d/%d manifest receptors covered so far, full '
+                'coverage not asserted' % (
+                    BUILD_DIR, len(build), FULL_SITE_THRESHOLD, len(covered), total))
+        missing = sorted(set(manifest['receptors']) - set(build))
+        assert not missing, (
+            'full build at %s (%d reports) is missing %d of %d manifest '
+            'receptors: %s' % (
+                BUILD_DIR, len(build), len(missing), total, missing[:10]))
+
+    def test_no_v3_markup_inside_approved_sections(self):
+        """Structural half of the freeze rule.
+
+        The content-hash comparison above catches added or changed words.
+        This catches added markup that carries no text yet, which is how a
+        V3 feature would most likely leak in: an empty mount point or a
+        hidden span inside approved content.
+        """
+        for gpcr_id, path in sorted(_build_reports().items()):
+            html = path.read_text(encoding='utf-8')
+            for i, body in enumerate(_approved_sections(html)):
+                found = V3_TOKEN_RE.findall(body)
+                assert not found, (
+                    '%s section %d contains V3 markup: %s'
+                    % (gpcr_id, i, sorted(set(found))))
