@@ -95,7 +95,12 @@ echo "==> Syncing output to gh-pages..."
 rsync -a --delete \
   --exclude='.git' --exclude='.nojekyll' \
   --exclude='/data/' \
+  --exclude='/poster/' --exclude='/dossier/' \
   "$OUTPUT/" "$WORKTREE/"
+# poster/ and dossier/ are not part of the website. They are outputs of
+# scripts/poster_figures.py and a one-off PAR dossier export that happen to
+# live under output/, which is long-lived. Without these excludes rsync
+# publishes them at guessable URLs even though no page links to them.
 # data/ holds build-time JSON caches (conservation_*.json, alphamissense_*.json)
 # that the HTML doesn't reference at runtime. Drop any stale data/ left from a
 # previous deploy so gh-pages stays lean.
