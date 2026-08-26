@@ -4,13 +4,23 @@ server side, never animated from a placeholder.
 Every intermediate frame of a count-up animation is a wrong number on a page whose
 whole purpose is to be quoted, so the animation is gone and this pins it.
 """
+import os
+import pathlib
 import re
 from pathlib import Path
 
 import pytest
 
 BASE = Path(__file__).resolve().parent.parent
-INDEX = BASE / 'output_v3_demo' / 'index.html'
+_env = os.environ.get('FREEZE_BUILD_DIR')
+if _env:
+    BUILD_DIR = pathlib.Path(_env).expanduser()
+    if not BUILD_DIR.is_absolute():
+        BUILD_DIR = BASE / _env
+else:
+    BUILD_DIR = BASE / 'output_v3_demo'
+
+INDEX = BUILD_DIR / 'index.html'
 LANDING_JS = BASE / 'static' / 'js' / 'landing.js'
 
 # Verified against the build on 2026-08-25. If a rebuild changes any of these,

@@ -1,11 +1,21 @@
 """The Contact and Downloads pages must not ship invented credentials or dead links."""
+import os
+import pathlib
 import re
 from pathlib import Path
 
 import pytest
 
 BASE = Path(__file__).resolve().parent.parent
-OUT = BASE / 'output_v3_demo'
+_env = os.environ.get('FREEZE_BUILD_DIR')
+if _env:
+    BUILD_DIR = pathlib.Path(_env).expanduser()
+    if not BUILD_DIR.is_absolute():
+        BUILD_DIR = BASE / _env
+else:
+    BUILD_DIR = BASE / 'output_v3_demo'
+
+OUT = BUILD_DIR
 CONTACT = OUT / 'contact.html'
 DOWNLOADS = OUT / 'downloads.html'
 
