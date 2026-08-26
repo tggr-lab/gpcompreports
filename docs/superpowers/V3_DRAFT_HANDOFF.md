@@ -705,6 +705,34 @@ before the site is published for the paper. `downloads_page.py`'s own
 module docstring already states this ordering; this item exists so it is
 not missed at review time.
 
+## Known non-blocking limitations
+
+Recorded deliberately. Neither affects any scientific value, and both were
+traced rather than assumed. No fix is planned for this release.
+
+**NPY6R renders no TM7 helix on its snake plot.** The build log prints
+`error with helix 7 'TM7'` once, from
+`ouroboros/src/ouroboros/vendor/diagrams_gpcr.py:126`, which catches a
+`KeyError` per helix and substitutes fallback coordinates. The cause is that
+the data genuinely has no TM7: `npy6r_human` is the only receptor of the 283
+with `tm_domains_found: 6`, and its annotation carries no TM7 segment and no
+`7.xx` generic numbers at all. NPY6R is the annotated pseudogene `NPY6RP` and
+is C-terminally truncated, so there is no seventh helix to draw. Its snake
+plot shows 0 TM7 residue circles and no H8, against 26 to 30 in comparable
+receptors. Nothing is omitted from the tables.
+
+**NPY6R's snake plot skips one residue circle, GLN64.** 289 of its 290
+residues are drawn; positions 60 to 63 and 65 to 70 all appear. GLN64
+participates in six contacts, one of them above the receptor threshold
+(ΔRRCS −3.905 against a threshold of 2.20), and **it appears in the RRCS
+tables normally**. Comparable receptors skip no residues. The cause was not
+established; it would require inspecting the GPCRdb residue-map input, and
+that investigation was deliberately not pursued.
+
+**In both cases the RRCS tables contain every contact.** These are rendering
+gaps in one receptor's snake plot, not missing or altered data.
+
+
 ## 11. External setup still required
 
 Nothing below is an oversight; each is a gap the implementation left
