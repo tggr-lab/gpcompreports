@@ -94,8 +94,9 @@ The four items below **cannot be checked by any test in this repository**.
 They are dashboard or deployment settings, and each must be confirmed by a
 human before release:
 
-- [ ] **Notifications reach `tggrlab@gmail.com`.** Send one real test message
-      through the deployed form and confirm it arrives.
+- [x] **Notifications reach `tggrlab@gmail.com`.** Confirmed working by the
+      repository owner on 2026-08-26. This covers delivery only; the three
+      items below are separate and still open.
 - [ ] **Formspree spam protection / reCAPTCHA is enabled** in the form's
       dashboard settings. No CAPTCHA key exists in the markup, and none should:
       it is not a code setting.
